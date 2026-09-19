@@ -1,6 +1,4 @@
-System Architecture
-
-
+```
 AdaptiveReadingGame/
 │
 ├── README.md
@@ -20,3 +18,4 @@ AdaptiveReadingGame/
         ├── java/
         │
         └── resources/
+```
