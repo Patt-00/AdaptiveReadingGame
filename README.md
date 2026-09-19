@@ -24,6 +24,7 @@ AdaptiveReadingGame/
 <h1>
     MVC ARCHITECTURE FOR SYSTEM
 </h1>
+
 ```
                     USER
                       |
