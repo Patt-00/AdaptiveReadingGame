@@ -1,3 +1,6 @@
+System Architecture
+
+
 AdaptiveReadingGame/
 │
 ├── README.md
