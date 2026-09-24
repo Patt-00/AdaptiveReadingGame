@@ -1,0 +1,6 @@
+.page { -fx-background-color: #f7f9fc; }
+.title { -fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: #1f3c5b; }
+.welcome { -fx-font-size: 20px; -fx-font-weight: bold; }
+.stat { -fx-background-color: white; -fx-background-radius: 8px; -fx-padding: 12px 16px; -fx-border-color: #dce5ef; -fx-border-radius: 8px; }
+.primary-button { -fx-background-color: #3973b8; -fx-text-fill: white; -fx-font-weight: bold; }
+.status { -fx-text-fill: #52616b; }
