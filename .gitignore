@@ -1,0 +1,14 @@
+# Java and Maven build output
+target/
+bin/
+
+# VS Code Java workspace files generated locally
+.classpath
+.project
+.settings/
+
+# Local IDE configuration and platform-specific JavaFX SDK downloads
+.idea/
+.run/
+.vscode/
+Modules/
