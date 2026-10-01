@@ -25,7 +25,7 @@ AdaptiveReadingGame/
 └── pom.xml
 ```
 
-The main application's package is `com.adaptivereadinggame`. Its launch class is **`com.adaptivereadinggame.AdaptiveReadingGameApp`**, and compilation produces `bin/com/adaptivereadinggame/*.class`. The earlier beginner dashboard is also retained under `main.java`; run `main.java.AdaptiveReadingGameApp` instead if you want that learning example.
+The application's package is `com.adaptivereadinggame`. Its launch class is **`com.adaptivereadinggame.AdaptiveReadingGameApp`**, and compilation produces `bin/com/adaptivereadinggame/*.class`. The app opens the main menu. The earlier `main.java` learning example has been removed; keep practice code in a separate folder outside this application.
 
 ## 2. Requirements
 
@@ -134,7 +134,7 @@ Windows separates classpath entries with `;`. Linux and macOS use `:`. The resou
 
 Run the compilation command again, then run the launch command. Compilation normally prints nothing when it succeeds. Do not launch after compiler errors: old `.class` files might still exist in `bin`.
 
-The compile commands include all Java source files and enable FXML for the main application's dashboard. If files declare a different package, update the launch class accordingly.
+The compile commands include all Java source files and enable FXML for the application's screens. If files declare a different package, update the launch class accordingly.
 
 ## 8. Common problems
 

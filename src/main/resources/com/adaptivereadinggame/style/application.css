@@ -4,3 +4,32 @@
 .stat { -fx-background-color: white; -fx-background-radius: 8px; -fx-padding: 12px 16px; -fx-border-color: #dce5ef; -fx-border-radius: 8px; }
 .primary-button { -fx-background-color: #3973b8; -fx-text-fill: white; -fx-font-weight: bold; }
 .status { -fx-text-fill: #52616b; }
+
+.main-menu { -fx-background-color: white; }
+.menu-title {
+    -fx-font-family: "Times New Roman";
+    -fx-font-size: 88px;
+    -fx-text-fill: black;
+}
+.menu-flourish {
+    -fx-fill: transparent;
+    -fx-stroke: black;
+    -fx-stroke-width: 2.5;
+}
+.menu-option {
+    -fx-font-family: "Georgia";
+    -fx-font-size: 52px;
+    -fx-text-fill: black;
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 8px 28px;
+    -fx-min-height: 76px;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+    -fx-border-width: 2px;
+    -fx-border-radius: 3px;
+}
+.menu-option:hover { -fx-text-fill: #655438; -fx-background-color: #f8f5ef; }
+.menu-option:focused { -fx-border-color: #655438; }
+.menu-option:pressed { -fx-background-color: #eee7db; }
+.menu-option:disabled { -fx-opacity: 0.4; -fx-cursor: default; }

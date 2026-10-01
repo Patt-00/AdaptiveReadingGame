@@ -12,8 +12,8 @@ public class AdaptiveReadingGameApp extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader loader = new FXMLLoader(
-                AdaptiveReadingGameApp.class.getResource("/com/adaptivereadinggame/view/dashboard.fxml"));
-        Scene scene = new Scene(loader.load(), 960, 640);
+                AdaptiveReadingGameApp.class.getResource("/com/adaptivereadinggame/view/main-menu.fxml"));
+        Scene scene = new Scene(loader.load(), 1280, 720);
         scene.getStylesheets().add(AdaptiveReadingGameApp.class
                 .getResource("/com/adaptivereadinggame/style/application.css").toExternalForm());
 
