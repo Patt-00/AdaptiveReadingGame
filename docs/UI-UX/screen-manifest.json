@@ -1,0 +1,345 @@
+{
+  "version": 1,
+  "frame": {
+    "width": 1280,
+    "height": 720
+  },
+  "sourceZip": "/home/patt/Desktop/AdaptiveReadingGame-main_UI.zip",
+  "sourceSha256": "f912b2910524c1abb791c06729db3e73ade8c99d90626848d2d473df0bda9264",
+  "fonts": {
+    "title": "Times New Roman",
+    "body": "Georgia",
+    "localFallback": "Times New Roman",
+    "note": "Georgia not installed locally. No font files distributed."
+  },
+  "screens": [
+    {
+      "id": "01",
+      "title": "Welcome",
+      "group": "Account",
+      "status": "Existing base",
+      "purpose": "Players choose whether to log in or create an account. This preserves the original simple welcome screen and provides the entry point for personalized progress.",
+      "rule": "LOG IN → 06; SIGN UP → 02."
+    },
+    {
+      "id": "02",
+      "title": "Sign up",
+      "group": "Account",
+      "status": "Existing base",
+      "purpose": "Players supply an account name and password. A successful signup takes them to login rather than entering the game automatically.",
+      "rule": "SIGN UP → 05 (sample success); BACK → 01. Validation variants: 03 and 04."
+    },
+    {
+      "id": "03",
+      "title": "Signup · missing fields",
+      "group": "Account",
+      "status": "Existing code state",
+      "purpose": "An inline message explains that the required fields are missing. The form stays available so the player can correct the problem without losing context.",
+      "rule": "Keep the same form; do not create an account until valid. Preview SIGN UP follows the corrected path."
+    },
+    {
+      "id": "04",
+      "title": "Signup · duplicate name",
+      "group": "Account",
+      "status": "Existing code state",
+      "purpose": "An inline message explains that the account name already exists. Players can choose another name or return to login.",
+      "rule": "Keep credentials masked; do not reveal another account’s details."
+    },
+    {
+      "id": "05",
+      "title": "Signup success → login",
+      "group": "Account",
+      "status": "Existing code state",
+      "purpose": "A success message confirms account creation on the login form. The player then logs in to reach the main menu.",
+      "rule": "LOG IN → 08 (new-player example). Real code must read actual account progress."
+    },
+    {
+      "id": "06",
+      "title": "Log in",
+      "group": "Account",
+      "status": "Existing base",
+      "purpose": "Players enter their account name and password to access their saved progress. The preview is a visual route demonstration and does not authenticate or collect credentials.",
+      "rule": "LOG IN → 08 (sample success); BACK → 01; error variant → 07."
+    },
+    {
+      "id": "07",
+      "title": "Login · invalid credentials",
+      "group": "Account",
+      "status": "Existing code state",
+      "purpose": "A neutral error message says the name or password is invalid. Players can correct their entries and retry without disclosing which credential was wrong.",
+      "rule": "Stay on login; LOG IN previews a successful corrected attempt."
+    },
+    {
+      "id": "08",
+      "title": "Main menu · no progress",
+      "group": "Menu",
+      "status": "Existing base + additions",
+      "purpose": "New players can start a game, open load/settings, or quit. Continue is disabled and explained because no resumable checkpoint exists.",
+      "rule": "NEW GAME → 11; LOAD → 30; SETTINGS → 32; LOG OUT → 34; QUIT → 35. Account name and Logout are additions."
+    },
+    {
+      "id": "09",
+      "title": "Main menu · returning player",
+      "group": "Menu",
+      "status": "Proposed state",
+      "purpose": "Returning players can continue their latest checkpoint or start a new game. This gives Continue a clear purpose and protects existing progress before a restart.",
+      "rule": "CONTINUE → 13 (sample checkpoint); NEW GAME → 10."
+    },
+    {
+      "id": "10",
+      "title": "New game confirmation",
+      "group": "Menu",
+      "status": "Proposed addition",
+      "purpose": "A returning player confirms starting a new playthrough. The message distinguishes restarting current progress from deleting manual saves.",
+      "rule": "START NEW → 11; CANCEL → 09. Keep manual saves unless the player explicitly deletes them."
+    },
+    {
+      "id": "11",
+      "title": "How to play",
+      "group": "Story",
+      "status": "Existing base + clarified copy",
+      "purpose": "Players learn the story controls before playing. The explanation clearly distinguishes narrative choices from scored Reading Checks.",
+      "rule": "NEXT → 12; BACK → 08. Space advances narrative only, never submits an assessment answer."
+    },
+    {
+      "id": "12",
+      "title": "Introduction",
+      "group": "Story",
+      "status": "Existing base",
+      "purpose": "The introduction establishes the player’s role before Chapter 1 begins. It preserves the existing brief servant premise, with final story copy still to be supplied by the team.",
+      "rule": "PLAY → 13; BACK → 11. Text is source placeholder, not an approved final script."
+    },
+    {
+      "id": "13",
+      "title": "Story · dialogue",
+      "group": "Story",
+      "status": "Existing base",
+      "purpose": "The player reads a character’s dialogue in the existing burgundy-and-gold panel. NEXT advances the conversation, while MENU opens navigation without advancing the story.",
+      "rule": "NEXT / Space → 14; MENU / Esc → 26. Restore the exact scene when returning from a menu."
+    },
+    {
+      "id": "14",
+      "title": "Story · thoughts",
+      "group": "Story",
+      "status": "Existing base",
+      "purpose": "The lighter panel and italic text distinguish the player’s private thoughts from spoken dialogue. Players advance when they finish reading.",
+      "rule": "NEXT / Space → 15; MENU / Esc → 26."
+    },
+    {
+      "id": "15",
+      "title": "Story · narrative choice",
+      "group": "Story",
+      "status": "Existing base + sample copy",
+      "purpose": "The player chooses how to respond to the character. These choices affect story branches and relationships, not comprehension score or difficulty.",
+      "rule": "All three preview choices → 16; real game must restore the chosen branch. Story choice text is illustrative."
+    },
+    {
+      "id": "16",
+      "title": "Story · branch continuation",
+      "group": "Story",
+      "status": "Proposed state",
+      "purpose": "The story acknowledges the chosen narrative action before the Reading Check. This prevents a story choice from jumping directly to a fabricated comprehension result.",
+      "rule": "NEXT → 17. Branch-specific dialogue is sample content; author each actual branch separately."
+    },
+    {
+      "id": "17",
+      "title": "Reading Check · unanswered",
+      "group": "Reading Check",
+      "status": "Proposed addition",
+      "purpose": "A separate passage and question measure comprehension. Submit stays disabled until an answer is selected, and the player can read at their own pace.",
+      "rule": "B → 18; A or C → 19. MENU pauses; no time limit or autoplay submission."
+    },
+    {
+      "id": "18",
+      "title": "Reading Check · selected B",
+      "group": "Reading Check",
+      "status": "Proposed addition",
+      "purpose": "The selected answer is visibly highlighted before submission. Players can change their selection until Submit records their first attempt.",
+      "rule": "SUBMIT → 20; A/C → 19. Selection alone must not score or advance the question."
+    },
+    {
+      "id": "19",
+      "title": "Reading Check · selected A",
+      "group": "Reading Check",
+      "status": "Proposed addition",
+      "purpose": "This variant shows a selected incorrect answer before submission. It demonstrates the wrong-answer route without disclosing correctness before the player submits.",
+      "rule": "SUBMIT → 21; B → 18. The example groups A/C into the incorrect selection route."
+    },
+    {
+      "id": "20",
+      "title": "Reading Check · correct feedback",
+      "group": "Reading Check",
+      "status": "Proposed addition",
+      "purpose": "The player sees confirmation and a passage-based explanation. The first submitted answer is locked, and the next action advances to another question.",
+      "rule": "NEXT QUESTION → 22 (representative final-question jump); the actual game must show questions 2–4."
+    },
+    {
+      "id": "21",
+      "title": "Reading Check · incorrect feedback",
+      "group": "Reading Check",
+      "status": "Proposed addition",
+      "purpose": "The player receives a supportive explanation of the correct reasoning. The incorrect first attempt remains recorded; feedback does not offer a score-changing retry.",
+      "rule": "NEXT QUESTION → 22 (representative final-question jump). No resubmission for this scored question."
+    },
+    {
+      "id": "22",
+      "title": "Reading Check · final question",
+      "group": "Reading Check",
+      "status": "Proposed state",
+      "purpose": "The final-question state marks the end of a five-question check. It reuses the same question layout so the team can implement one reusable assessment view.",
+      "rule": "SUBMIT → 22b after first-attempt recording. This is a fixed selected-state preview; sample passage repeats for layout only."
+    },
+    {
+      "id": "22b",
+      "title": "Reading Check · final feedback",
+      "group": "Reading Check",
+      "status": "Proposed state",
+      "purpose": "The final submitted answer receives the same explanatory feedback as earlier questions. View Results then moves to difficulty analysis rather than presenting another question.",
+      "rule": "VIEW RESULTS → 23. Reuse the feedback component with a final-question action variant; incorrect final feedback follows the same route."
+    },
+    {
+      "id": "23",
+      "title": "Preparing the next challenge",
+      "group": "Difficulty / Results",
+      "status": "Proposed addition",
+      "purpose": "A brief status panel tells the player that the completed answers are being analyzed. Progress is recorded before optional model analysis so a timeout does not lose the completed check.",
+      "rule": "NEXT (preview success) → 24; MODEL UNAVAILABLE (preview test route) → 25. Real Java code should transition automatically with a bounded timeout."
+    },
+    {
+      "id": "24",
+      "title": "Chapter results · normal",
+      "group": "Difficulty / Results",
+      "status": "Existing base + real-data design",
+      "purpose": "The result combines a comprehension score, first-answer count, and the next difficulty. Java validates any model recommendation before the player continues.",
+      "rule": "CONTINUE → 40. 80% / Medium is illustrative, not a fixed rule or a model guarantee."
+    },
+    {
+      "id": "25",
+      "title": "Chapter results · model fallback",
+      "group": "Difficulty / Results",
+      "status": "Proposed addition",
+      "purpose": "The result remains usable when the optional model fails or times out. Java applies its deterministic fallback policy and explains the outcome without alarming the player.",
+      "rule": "CONTINUE → 40. Easy is an example outcome; use actual validated policy output."
+    },
+    {
+      "id": "26",
+      "title": "Game menu / pause",
+      "group": "Navigation / Saves",
+      "status": "Proposed addition",
+      "purpose": "This menu pauses narrative progression and exposes save, load, settings, and exit actions. Return restores the exact prior scene or assessment state instead of restarting it.",
+      "rule": "SAVE → 27; LOAD → 30; SETTINGS → 32; MAIN MENU → 33; RETURN → captured previous scene in the preview."
+    },
+    {
+      "id": "27",
+      "title": "Save · occupied and empty slots",
+      "group": "Navigation / Saves",
+      "status": "Existing base + populated states",
+      "purpose": "Players can identify saves by chapter, scene, difficulty, and timestamp. Empty slots accept new saves, while occupied slots require overwrite confirmation.",
+      "rule": "Slot 1 → 29; empty Slot 2–6 → 28. Preserve the original six-slot page visually; finalize count with backend team."
+    },
+    {
+      "id": "28",
+      "title": "Save · success",
+      "group": "Navigation / Saves",
+      "status": "Proposed addition",
+      "purpose": "A visible confirmation appears only after persistence succeeds. The player stays on Save and can return to the held scene without losing their place.",
+      "rule": "RETURN → previous screen. Example shows a newly populated Slot 2; overwrite instead updates the chosen occupied slot."
+    },
+    {
+      "id": "29",
+      "title": "Save · overwrite confirmation",
+      "group": "Navigation / Saves",
+      "status": "Proposed addition",
+      "purpose": "The player confirms replacing an occupied slot before data is changed. Cancel preserves the existing save and returns to the slot list.",
+      "rule": "OVERWRITE → 28 after successful write; CANCEL → 27. Failure route is 39."
+    },
+    {
+      "id": "30",
+      "title": "Load · occupied and empty slots",
+      "group": "Navigation / Saves",
+      "status": "Existing base + populated states",
+      "purpose": "Players select a saved checkpoint using meaningful metadata. Empty slots are disabled, so the interface does not pretend to load nonexistent progress.",
+      "rule": "Slot 1 → 31 if current state is unsaved, otherwise resume immediately. If called from main menu with no active game, skip discard confirmation."
+    },
+    {
+      "id": "31",
+      "title": "Load · unsaved progress warning",
+      "group": "Navigation / Saves",
+      "status": "Proposed addition",
+      "purpose": "The player confirms discarding unsaved session progress before loading a checkpoint. Cancel returns to Load without changing the current session.",
+      "rule": "LOAD SAVE → 13 only after validation and successful restore; CANCEL → 30. Invalid save route is 38."
+    },
+    {
+      "id": "32",
+      "title": "Settings",
+      "group": "Navigation / Saves",
+      "status": "Existing base + text-size addition",
+      "purpose": "The existing audio and reading-speed controls retain their two-column layout. Text-size controls are a proposed accessibility addition, and autoplay pauses whenever a Reading Check is active.",
+      "rule": "RETURN restores caller. Preview sliders/text-size are appearance specifications, not working controls."
+    },
+    {
+      "id": "33",
+      "title": "Return to main menu confirmation",
+      "group": "Exit / Completion",
+      "status": "Proposed addition",
+      "purpose": "The player confirms leaving an active session before unsaved changes are discarded. This distinguishes Main Menu from Return, which resumes the held game.",
+      "rule": "MAIN MENU → 09; CANCEL → previous screen. Saved checkpoints remain available."
+    },
+    {
+      "id": "34",
+      "title": "Logout confirmation",
+      "group": "Exit / Completion",
+      "status": "Proposed addition",
+      "purpose": "The player confirms ending their authenticated session. Logout clears session access, but keeps saved progress associated with the account.",
+      "rule": "LOG OUT → 01; CANCEL → 09. If active unsaved play exists, use the same loss warning and allow cancel."
+    },
+    {
+      "id": "35",
+      "title": "Quit confirmation",
+      "group": "Exit / Completion",
+      "status": "Existing base",
+      "purpose": "The existing quit card warns that unsaved progress will be lost. Players can cancel without navigating or changing game state.",
+      "rule": "QUIT → 36 (terminal-state representation); CANCEL restores caller. Real app closes its window only on confirmation."
+    },
+    {
+      "id": "36",
+      "title": "Application closed · flow endpoint",
+      "group": "Exit / Completion",
+      "status": "Guide endpoint, not app screen",
+      "purpose": "This reference-only endpoint represents the application window closing. It is not a new screen for the JavaFX team to implement.",
+      "rule": "Preview RESTART → 01; real program has no rendered screen after exit."
+    },
+    {
+      "id": "37",
+      "title": "Story complete",
+      "group": "Exit / Completion",
+      "status": "Proposed addition",
+      "purpose": "The player receives a clear endpoint after the last available chapter is completed. They can return to the main menu without a Continue button pointing to nonexistent content.",
+      "rule": "MAIN MENU → 09 with story-complete metadata. Continue should replay or be disabled only if the team explicitly specifies that behavior."
+    },
+    {
+      "id": "38",
+      "title": "Load · unreadable save",
+      "group": "Navigation / Saves",
+      "status": "Proposed addition",
+      "purpose": "An error explains that the selected checkpoint could not be loaded. The current session and save data are preserved so the player can choose another slot.",
+      "rule": "BACK TO LOAD → 30. Do not partially restore or silently delete a damaged save."
+    },
+    {
+      "id": "39",
+      "title": "Save · persistence failed",
+      "group": "Navigation / Saves",
+      "status": "Proposed addition",
+      "purpose": "The player is told that the save did not succeed and the session remains unsaved. Retry attempts persistence again; cancel restores the session without claiming progress was saved.",
+      "rule": "RETRY → 28 is the successful retry example; CANCEL → previous screen. Keep the old slot intact on failure."
+    },
+    {
+      "id": "40",
+      "title": "Next chapter · loading / completion",
+      "group": "Exit / Completion",
+      "status": "Proposed addition",
+      "purpose": "The player sees a transition while the next chapter and validated difficulty are loaded. If there is no next chapter, the game shows Story Complete instead of entering an empty scene.",
+      "rule": "NEXT CHAPTER → 13 is a reusable-layout sample; STORY FINISHED → 37 is a reviewer test route. Real application chooses automatically."
+    }
+  ]
+}

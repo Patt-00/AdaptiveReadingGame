@@ -1,0 +1,25 @@
+{
+  "sourceZipUnchanged": "f912b2910524c1abb791c06729db3e73ade8c99d90626848d2d473df0bda9264",
+  "screenCount": 41,
+  "checks": [
+    "Signup → success → main menu",
+    "Continue disabled with no progress",
+    "Instructions → introduction → dialogue; Space advances story",
+    "Escape / Return restores exact story caller",
+    "Unanswered Submit disabled; selection never auto-submits; answer → feedback → final feedback → results",
+    "Incorrect answer → supportive feedback",
+    "Model fallback → continue → story completion",
+    "Settings Return restores selected assessment state",
+    "Overwrite Cancel leaves slots; empty slot → save-success state; modal background is inert",
+    "Load empty slots disabled; occupied slot → confirmation → restored checkpoint",
+    "Logout → Welcome",
+    "Quit Cancel restores menu caller",
+    "Quit → explicit guide endpoint",
+    "All-screen catalogue, flow, and build guide render",
+    "Print uses unique gradient references, avoiding invisible white-on-white dialogue"
+  ],
+  "scriptErrors": [],
+  "clippedText": [],
+  "pdf": "UIUX-Reference.pdf",
+  "fonts": "Georgia requested; Times New Roman fallback used locally"
+}
