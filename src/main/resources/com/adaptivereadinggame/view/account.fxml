@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.Group?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.SVGPath?>
+<StackPane fx:id="accountRoot" styleClass="account-screen" xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.adaptivereadinggame.controller.AccountController">
+    <Group>
+        <Pane fx:id="accountCanvas" prefWidth="1920" prefHeight="1080" minWidth="1920" minHeight="1080"
+              maxWidth="1920" maxHeight="1080">
+            <Label text="WELCOME" alignment="CENTER" layoutX="510" layoutY="90" prefWidth="900" prefHeight="110" styleClass="menu-title"/>
+            <Pane layoutX="640" layoutY="200" mouseTransparent="true">
+                <SVGPath styleClass="menu-flourish" content="M 316 88 C 291 22 233 26 206 63 C 164 119 82 92 71 55 C 61 19 102 6 115 29 C 129 53 97 49 105 34 M 316 88 C 275 49 232 61 190 78 C 149 95 122 80 150 54 C 177 31 239 36 259 65 C 284 99 248 104 237 88 M 316 88 C 277 18 219 18 171 44 C 120 70 66 116 21 75 C -18 39 7 -10 37 0 C 69 10 45 35 42 20 M 316 88 C 302 52 228 61 176 30 C 118 -5 138 48 230 64"/>
+                <SVGPath layoutX="324" scaleX="-1" styleClass="menu-flourish" content="M 316 88 C 291 22 233 26 206 63 C 164 119 82 92 71 55 C 61 19 102 6 115 29 C 129 53 97 49 105 34 M 316 88 C 275 49 232 61 190 78 C 149 95 122 80 150 54 C 177 31 239 36 259 65 C 284 99 248 104 237 88 M 316 88 C 277 18 219 18 171 44 C 120 70 66 116 21 75 C -18 39 7 -10 37 0 C 69 10 45 35 42 20 M 316 88 C 302 52 228 61 176 30 C 118 -5 138 48 230 64"/>
+            </Pane>
+            <VBox fx:id="selectionBox" alignment="CENTER" spacing="30" layoutX="660" layoutY="420" prefWidth="600">
+                <Button text="LOG IN" onAction="#chooseLogin" styleClass="menu-option" prefWidth="350"/>
+                <Button text="SIGN UP" onAction="#chooseSignup" styleClass="menu-option" prefWidth="350"/>
+            </VBox>
+            <VBox fx:id="formBox" alignment="CENTER" spacing="12" layoutX="670" layoutY="340" prefWidth="580" visible="false">
+                <Label fx:id="formTitle" text="LOG IN" styleClass="auth-heading"/>
+                <Label text="Username" styleClass="auth-body"/>
+                <TextField fx:id="usernameField" promptText="Username" accessibleText="Username" styleClass="auth-input" prefHeight="56"/>
+                <Label fx:id="displayNameLabel" text="Display name" styleClass="auth-body"/>
+                <TextField fx:id="displayNameField" promptText="Name shown in the game" accessibleText="Display name" styleClass="auth-input" prefHeight="56"/>
+                <Label text="Password" styleClass="auth-body"/>
+                <PasswordField fx:id="passwordField" promptText="Password" accessibleText="Password" onAction="#submit" styleClass="auth-input" prefHeight="56"/>
+                <Label fx:id="statusLabel" alignment="CENTER" wrapText="true" prefWidth="580" minHeight="46" styleClass="auth-status"/>
+                <Button fx:id="submitButton" text="LOG IN" onAction="#submit" defaultButton="true" styleClass="auth-action" prefWidth="350"/>
+                <Button text="BACK" onAction="#showSelection" styleClass="auth-secondary" prefWidth="200"/>
+            </VBox>
+            <Label fx:id="storageLabel" alignment="CENTER" layoutX="170" layoutY="985" prefWidth="1580" wrapText="true" styleClass="runtime-note"/>
+            <Label fx:id="fontLabel" alignment="CENTER" layoutX="170" layoutY="1020" prefWidth="1580" styleClass="runtime-note"/>
+        </Pane>
+    </Group>
+</StackPane>

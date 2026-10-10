@@ -70,6 +70,15 @@ public final class AssessmentService {
         return session.result;
     }
     public synchronized void discard(UUID sessionId) { sessions.remove(sessionId); }
+    /**
+     * Shared Dev 1 declaration for Dev 2's durable-resume implementation.
+     * Until implemented, fail BEFORE mutating sessions: never invent a new attempt,
+     * reset first answers, or claim an unfinished reading check has been restored.
+     * StoryService.restoreState must coordinate this action with its own state.
+     */
+    public synchronized UUID restoreAssessment(GameState gameState) {
+        throw new UnsupportedOperationException("Dev 2's durable reading-check restoration is not connected yet.");
+    }
     /** Dev 1 must call this on logout; completed results remain in the repository. */
     public synchronized void clearSessionsFor(UUID studentId) {
         sessions.entrySet().removeIf(entry -> entry.getValue().studentId.equals(studentId));

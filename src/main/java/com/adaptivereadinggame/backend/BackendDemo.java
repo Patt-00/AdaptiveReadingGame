@@ -23,6 +23,6 @@ public final class BackendDemo {
         System.out.println("Saved slots: " + backend.progressService().slots(studentId).size());
         System.out.println("Completed history: " + backend.progressService().history(studentId).size());
         backend.assessmentService().clearSessionsFor(studentId);
-        System.out.println("Demo uses volatile in-memory data. Login and database adapters are not implemented.");
+        System.out.println("Demo uses volatile in-memory data. Dev 1 login is available separately; MySQL is not connected.");
     }
 }

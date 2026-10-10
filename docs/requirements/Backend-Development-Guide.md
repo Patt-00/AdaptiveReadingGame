@@ -1,5 +1,7 @@
 # Backend skeleton and three-developer handoff
 
+> This page describes the original `main` scaffold. On branch `Dev1`, accounts, shared records, and account-facing coordination have been added. See [the current Dev 1 handoff](Dev1-Handoff.md) for implemented work and remaining integration tasks. MySQL is now the chosen database, but its adapters are still Dev 3's work.
+
 ## Architecture and current scope
 
 This is a JavaFX desktop application. Its backend is currently **Java application services running inside the same JVM**, not a REST server. Keep this dependency direction:
