@@ -2,7 +2,7 @@
 
 A school project for a story-driven reading game for elementary students. Players will read stories, make story decisions, and answer comprehension questions. The planned system will save progress per account and adjust reading difficulty after a completed chapter.
 
-The current school requirement is UI/UX designs. The application is an early JavaFX prototype.
+This `Dev1` branch adds the account/backend connections to the early JavaFX prototype. See the [Dev 1 handoff](docs/requirements/Dev1-Handoff.md) for exact teammate integration steps and remaining work.
 
 ## Requirements and running the app
 
@@ -17,7 +17,7 @@ mvn -B -DskipTests compile
 mvn javafx:run
 ```
 
-The launch class is `com.adaptivereadinggame.AdaptiveReadingGameApp`. It opens the main menu.
+The launch class is `com.adaptivereadinggame.AdaptiveReadingGameApp`. It opens authentication, then the main menu after a successful login.
 
 For commands without Maven, see [Manual Compilation](Module%20Guide/Manual%20Compilation.md).
 
@@ -25,17 +25,21 @@ For commands without Maven, see [Manual Compilation](Module%20Guide/Manual%20Com
 
 - Main menu layout: title, decorative divider, New Game, Continue, Save/Load, Settings, and Quit.
 - Menu scales with the window and includes hover and keyboard focus states.
-- Continue is disabled because saved games are not implemented.
-- New Game, Save/Load, and Settings show placeholder notices.
+- Working signup/login/logout with normalized usernames, protected password verifiers, and matching account/student IDs.
+- Account-safe history, full-save, load, Continue, and assessment coordination; no controller-supplied student IDs.
+- Continue is enabled only when the signed-in account has a full save. The default runtime has no prepared story or seeded saves.
+- Save/Load shows three real account-scoped slots. Saving needs an active game; successful writes and discard/overwrite confirmations are handled by services.
+- New Game honestly reports missing story content. Settings and the full playable story remain teammate work.
 - Quit displays a confirmation before closing the window.
 - The earlier FXML dashboard remains in the project but is not the opening screen.
 - The in-memory adaptive engine supplies demo data and placeholder reading material.
-- A Java backend skeleton now provides in-memory repositories, first-answer assessment, baseline difficulty selection, history, and three checkpoint slots. These services are not connected to the JavaFX screens yet.
-- `AuthService` and `PasswordHasher` are contracts only; Login, Signup, and Logout are not implemented.
-- Full story gameplay, persistent account saves, and a database adapter are not implemented.
-- Qwen is an experimental model candidate on the separate `feature/java-owned-qwen-prototype` branch, not integrated into main. No database engine has been selected.
+- Shared story/game-state/full-save records, repository interfaces, and strict version-1 JSON serialization now exist.
+- Java owns first-answer scoring and baseline next difficulty. The account coordinator writes the first answer through the draft repository before feedback.
+- The default adapters are temporary: accounts, saves, and results disappear on exit. Full story gameplay and restart-safe reading-check restore are not implemented.
+- MySQL is the group's chosen database; Dev 3's adapters are not connected here.
+- Qwen remains an experimental model candidate on the separate `feature/java-owned-qwen-prototype` branch and was not merged.
 
-The menu and cleanup passed a clean Maven compilation. This does not verify GUI appearance or interactions.
+Backend tests and opt-in native JavaFX interaction tests verify the implemented scope. Test stories/populated saves are fixtures only; they do not prove completed gameplay or MySQL persistence.
 
 ## Backend skeleton and team ownership
 
@@ -43,7 +47,7 @@ See [Backend Development Guide](docs/requirements/Backend-Development-Guide.md) 
 
 - Backend Dev 1: authentication, current-account lifecycle, authenticated save/load/Continue coordination.
 - Backend Dev 2: chapter/story flow, first-answer assessment, results, Java difficulty decisions, later model integration.
-- Dev 3: database choice, schema/migrations, repository adapters, and persistence tests.
+- Dev 3: MySQL schema/migrations, repository adapters, and persistence tests.
 
 Run the baseline backend without Python or a database:
 
@@ -52,7 +56,11 @@ mvn test
 mvn compile exec:java
 ```
 
-The console demo scores a sample question, records one completion, and saves a checkpoint. All demo data is volatile; this is not a login implementation or a fully wired game.
+The original console demo scores a sample question, records one completion, and saves a basic checkpoint. All demo data is volatile; this low-level demo is not a fully wired game. To check the new real account flow:
+
+```sh
+mvn compile exec:java -Dexec.mainClass=com.adaptivereadinggame.backend.Dev1Demo
+```
 
 ## Directory architecture
 
@@ -135,9 +143,9 @@ Current menu connection:
 
 ```text
 AdaptiveReadingGameApp
-    -> main-menu.fxml + application.css
-    -> MenuController
-    -> placeholder notices or quit confirmation
+    -> AppNavigator (one BackendContext)
+    -> account.fxml -> AccountController -> AccountGameService
+    -> main-menu.fxml -> MenuController -> AccountGameService
 ```
 
 An FXML button's `onAction="#newGame"` calls `newGame()` in its controller. The FXML `fx:controller` attribute selects that controller. An `fx:id` connects a screen element to a matching `@FXML` field.

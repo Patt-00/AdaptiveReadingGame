@@ -33,3 +33,41 @@
 .menu-option:focused { -fx-border-color: #655438; }
 .menu-option:pressed { -fx-background-color: #eee7db; }
 .menu-option:disabled { -fx-opacity: 0.4; -fx-cursor: default; }
+
+/* Dev 1 account screens retain the groupmate's white / serif reference style. */
+.account-screen { -fx-background-color: white; }
+.game-title { -fx-font-size: 68px; }
+.auth-heading { -fx-font-family: "Times New Roman"; -fx-font-size: 32px; -fx-text-fill: black; }
+.auth-body, .auth-input, .auth-action, .auth-secondary, .auth-status,
+.account-link, .account-note, .runtime-note { -fx-font-family: "Georgia"; }
+.auth-body { -fx-font-size: 22px; -fx-text-fill: #262626; }
+.auth-input { -fx-font-size: 25px; -fx-background-color: white; -fx-border-color: #8c7d68; -fx-border-radius: 2px; -fx-padding: 10px 15px; }
+.auth-input:focused { -fx-border-color: #6e1428; -fx-border-width: 2px; }
+.auth-action { -fx-font-size: 32px; -fx-background-color: transparent; -fx-text-fill: black; -fx-padding: 8px 24px; -fx-cursor: hand; }
+.auth-secondary { -fx-font-size: 24px; -fx-background-color: transparent; -fx-text-fill: black; -fx-padding: 5px 20px; -fx-cursor: hand; }
+.auth-action:hover, .auth-secondary:hover, .account-link:hover { -fx-text-fill: #655438; -fx-background-color: #f8f5ef; }
+.auth-action:focused, .auth-secondary:focused, .account-link:focused { -fx-border-color: #655438; }
+.auth-status { -fx-font-size: 22px; }
+.auth-error { -fx-text-fill: #9b1731; }
+.auth-success { -fx-text-fill: #2d6e33; }
+.account-link { -fx-font-size: 26px; -fx-background-color: transparent; -fx-text-fill: #6e1428; -fx-cursor: hand; -fx-padding: 5px 12px; }
+.account-note { -fx-font-size: 24px; -fx-text-fill: #262626; }
+.runtime-note { -fx-font-size: 21px; -fx-text-fill: #5b5147; }
+.reference-dialog { -fx-background-color: white; -fx-font-family: "Georgia"; -fx-font-size: 16px; }
+.reference-dialog .header-panel { -fx-background-color: #6e1428; -fx-border-color: #b89845; -fx-border-width: 0 0 2px 0; }
+.reference-dialog .header-panel .label { -fx-font-family: "Times New Roman"; -fx-text-fill: white; -fx-font-size: 23px; }
+.reference-dialog .button { -fx-background-color: #faf7f0; -fx-border-color: #ad945c; -fx-text-fill: #4b1221; -fx-cursor: hand; }
+.reference-dialog .button:focused { -fx-border-color: #6e1428; -fx-border-width: 2px; }
+.reference-dialog .scroll-pane, .reference-dialog .scroll-pane .viewport { -fx-background-color: white; }
+.slot-row, .history-record { -fx-background-color: #faf8f3; -fx-border-color: #c6b790; -fx-border-radius: 2px; -fx-padding: 12px; }
+.dialog-note { -fx-text-fill: #5b5147; -fx-font-size: 14px; }
+/* This fallback is explicitly announced in the screen footer and console. */
+.georgia-fallback .menu-option, .georgia-fallback .auth-body, .georgia-fallback .auth-input,
+.georgia-fallback .auth-action, .georgia-fallback .auth-secondary, .georgia-fallback .auth-status,
+.georgia-fallback .account-link, .georgia-fallback .account-note, .georgia-fallback .runtime-note,
+.reference-dialog.georgia-fallback { -fx-font-family: "Times New Roman"; }
+.serif-fallback .menu-title, .serif-fallback .auth-heading, .serif-fallback .menu-option,
+.serif-fallback .auth-body, .serif-fallback .auth-input, .serif-fallback .auth-action,
+.serif-fallback .auth-secondary, .serif-fallback .auth-status, .serif-fallback .account-link,
+.serif-fallback .account-note, .serif-fallback .runtime-note,
+.reference-dialog.serif-fallback, .reference-dialog.serif-fallback .header-panel .label { -fx-font-family: "Serif"; }

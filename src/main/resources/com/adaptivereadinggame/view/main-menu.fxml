@@ -6,6 +6,7 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.shape.SVGPath?>
 
 <StackPane fx:id="menuRoot" styleClass="main-menu" xmlns="http://javafx.com/javafx/21"
@@ -14,20 +15,26 @@
     <Group>
         <Pane fx:id="menuCanvas" prefWidth="1920" prefHeight="1080" minWidth="1920" minHeight="1080"
               maxWidth="1920" maxHeight="1080">
-            <Label text="TITLE" alignment="CENTER" layoutX="510" layoutY="58"
-                   prefWidth="900" prefHeight="110" styleClass="menu-title"/>
+            <Label text="ADAPTIVE READING GAME" alignment="CENTER" layoutX="300" layoutY="58"
+                   prefWidth="1320" prefHeight="110" styleClass="menu-title,game-title"/>
             <Pane layoutX="640" layoutY="174" mouseTransparent="true">
                 <SVGPath styleClass="menu-flourish" content="M 316 88 C 291 22 233 26 206 63 C 164 119 82 92 71 55 C 61 19 102 6 115 29 C 129 53 97 49 105 34 M 316 88 C 275 49 232 61 190 78 C 149 95 122 80 150 54 C 177 31 239 36 259 65 C 284 99 248 104 237 88 M 316 88 C 277 18 219 18 171 44 C 120 70 66 116 21 75 C -18 39 7 -10 37 0 C 69 10 45 35 42 20 M 316 88 C 302 52 228 61 176 30 C 118 -5 138 48 230 64"/>
                 <SVGPath layoutX="324" scaleX="-1" styleClass="menu-flourish" content="M 316 88 C 291 22 233 26 206 63 C 164 119 82 92 71 55 C 61 19 102 6 115 29 C 129 53 97 49 105 34 M 316 88 C 275 49 232 61 190 78 C 149 95 122 80 150 54 C 177 31 239 36 259 65 C 284 99 248 104 237 88 M 316 88 C 277 18 219 18 171 44 C 120 70 66 116 21 75 C -18 39 7 -10 37 0 C 69 10 45 35 42 20 M 316 88 C 302 52 228 61 176 30 C 118 -5 138 48 230 64"/>
             </Pane>
-            <VBox alignment="CENTER" spacing="24" layoutX="630" layoutY="342" prefWidth="660">
+            <VBox fx:id="menuOptions" alignment="CENTER" spacing="24" layoutX="630" layoutY="342" prefWidth="660">
                 <Button text="NEW GAME" onAction="#newGame" styleClass="menu-option"/>
-                <Button text="CONTINUE" disable="true" accessibleHelp="No saved game is available." styleClass="menu-option"/>
+                <Button fx:id="continueButton" text="CONTINUE" onAction="#continueGame" disable="true" accessibleHelp="No saved game is available." styleClass="menu-option"/>
                 <Button text="SAVE/LOAD" onAction="#saveLoad" styleClass="menu-option"/>
                 <Button text="SETTINGS" onAction="#settings" styleClass="menu-option"/>
                 <Button text="QUIT" onAction="#quit" styleClass="menu-option"/>
             </VBox>
+            <Label fx:id="accountLabel" alignment="CENTER" layoutX="510" layoutY="895" prefWidth="900" styleClass="account-note"/>
+            <HBox fx:id="accountActions" alignment="CENTER" spacing="35" layoutX="510" layoutY="930" prefWidth="900">
+                <Button text="READING HISTORY" onAction="#history" styleClass="account-link"/>
+                <Button text="LOG OUT" onAction="#logout" styleClass="account-link"/>
+            </HBox>
+            <Label fx:id="runtimeLabel" alignment="CENTER" layoutX="170" layoutY="990" prefWidth="1580" wrapText="true" styleClass="runtime-note"/>
+            <Label fx:id="fontLabel" alignment="CENTER" layoutX="170" layoutY="1025" prefWidth="1580" styleClass="runtime-note"/>
         </Pane>
     </Group>
 </StackPane>
-

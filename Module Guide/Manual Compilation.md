@@ -25,13 +25,14 @@ AdaptiveReadingGame/
 └── pom.xml
 ```
 
-The application's package is `com.adaptivereadinggame`. Its launch class is **`com.adaptivereadinggame.AdaptiveReadingGameApp`**, and compilation produces `bin/com/adaptivereadinggame/*.class`. The app opens the main menu. The earlier `main.java` learning example has been removed; keep practice code in a separate folder outside this application.
+The application's package is `com.adaptivereadinggame`. Its launch class is **`com.adaptivereadinggame.AdaptiveReadingGameApp`**, and compilation produces `bin/com/adaptivereadinggame/*.class`. On `Dev1`, the app opens authentication before the main menu. The earlier `main.java` learning example has been removed; keep practice code in a separate folder outside this application.
 
 ## 2. Requirements
 
 - Install a JDK with both `java` and `javac`. Use JDK 21 or newer to match the project's compiler release of 21.
 - Download and extract the JavaFX 21.0.5 **SDK** for your operating system and processor architecture. Match Windows, Linux, or macOS and x64 or ARM64 to your computer.
 - Put the extracted SDK in `Modules`. The examples assume `Modules/javafx-sdk-21.0.5/lib`. Change the path if your SDK folder has a different name.
+- On `Dev1`, put the three Jackson runtime JARs (`jackson-databind`, `jackson-core`, `jackson-annotations`) under `Modules/dependencies/`. Use the versions resolved by this branch's Jackson BOM in `pom.xml`, not unrelated versions. These are Java save-JSON libraries, not Python or MySQL drivers.
 - Verify Java in your terminal:
 
 ```text
@@ -40,6 +41,14 @@ javac -version
 ```
 
 Use the same JDK installation for compiling and running. JavaFX SDKs include native libraries, so each person must use the SDK for their operating system and processor architecture.
+
+If Maven is available, prepare only the Jackson JARs once with this project-root command (then the commands below still compile into the parent `bin` folder):
+
+```sh
+mvn dependency:copy-dependencies -DincludeScope=runtime -DincludeGroupIds=com.fasterxml.jackson.core -DoutputDirectory=Modules/dependencies
+```
+
+Without Maven, obtain the matching JARs from Maven Central according to this POM's BOM. Do not mix versions or commit downloaded JARs; `Modules/` is ignored. For the simplest all-dependency workflow, use `mvn javafx:run` instead.
 
 ## 3. Windows — PowerShell
 
@@ -58,10 +67,10 @@ $javafxLib = (Resolve-Path ".\Modules\javafx-sdk-21.0.5\lib").Path
 $javaSources = @(Get-ChildItem ".\src\main\java" -Recurse -Filter *.java | ForEach-Object { $_.FullName })
 
 # Compile into bin. Run the next command only if this succeeds.
-javac --release 21 --module-path "$javafxLib" --add-modules javafx.controls,javafx.fxml -encoding UTF-8 -d .\bin @javaSources
+javac --release 21 --module-path "$javafxLib" --add-modules javafx.controls,javafx.fxml -cp ".\Modules\dependencies\*" -encoding UTF-8 -d .\bin @javaSources
 
 # Run the JavaFX application.
-java --enable-native-access=javafx.graphics --module-path "$javafxLib" --add-modules javafx.controls,javafx.fxml -cp "bin;src/main/resources" com.adaptivereadinggame.AdaptiveReadingGameApp
+java --enable-native-access=javafx.graphics --module-path "$javafxLib" --add-modules javafx.controls,javafx.fxml -cp "bin;src/main/resources;Modules/dependencies/*" com.adaptivereadinggame.AdaptiveReadingGameApp
 ```
 
 These commands are for **PowerShell**, not Windows Command Prompt. Keep using the same terminal so `$javafxLib` remains available.
@@ -83,10 +92,10 @@ javafx_lib="$PWD/Modules/javafx-sdk-21.0.5/lib"
 mapfile -d '' -t java_sources < <(find src/main/java -type f -name '*.java' -print0)
 
 # Compile into bin. Run the next command only if this succeeds.
-javac --release 21 --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml -encoding UTF-8 -d bin "${java_sources[@]}"
+javac --release 21 --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml -cp "Modules/dependencies/*" -encoding UTF-8 -d bin "${java_sources[@]}"
 
 # Run the JavaFX application.
-java --enable-native-access=javafx.graphics --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml -cp "bin:src/main/resources" com.adaptivereadinggame.AdaptiveReadingGameApp
+java --enable-native-access=javafx.graphics --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml -cp "bin:src/main/resources:Modules/dependencies/*" com.adaptivereadinggame.AdaptiveReadingGameApp
 ```
 
 These source-collection commands require Bash. Keep using the same terminal so the variables remain available.
@@ -108,10 +117,10 @@ javafx_lib="$PWD/Modules/javafx-sdk-21.0.5/lib"
 java_sources=(src/main/java/**/*.java(N))
 
 # Compile into bin. Run the next command only if this succeeds.
-javac --release 21 --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml -encoding UTF-8 -d bin "${java_sources[@]}"
+javac --release 21 --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml -cp "Modules/dependencies/*" -encoding UTF-8 -d bin "${java_sources[@]}"
 
 # Run the JavaFX application.
-java --enable-native-access=javafx.graphics --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml -cp "bin:src/main/resources" com.adaptivereadinggame.AdaptiveReadingGameApp
+java --enable-native-access=javafx.graphics --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml -cp "bin:src/main/resources:Modules/dependencies/*" com.adaptivereadinggame.AdaptiveReadingGameApp
 ```
 
 The source-collection syntax above is for **zsh**, the default shell on modern macOS. Keep using the same terminal so the variables remain available.
@@ -143,6 +152,7 @@ The compile commands include all Java source files and enable FXML for the appli
 | `javac` not found or not recognized | Install a JDK and make its `bin` directory available on PATH. Reopen the terminal. |
 | `release version 21 not supported` | Your compiler is older than JDK 21. |
 | `Module javafx.controls not found` | Check the SDK `lib` path and that it contains `javafx.controls.jar`. |
+| `package com.fasterxml.jackson... does not exist` / `NoClassDefFoundError` for Jackson | Prepare the three matching Jackson JARs in `Modules/dependencies/`, then use the compile and runtime classpaths shown above. |
 | `Could not find or load main class` | Compile successfully, stay in the project root, and use `com.adaptivereadinggame.AdaptiveReadingGameApp`. |
 | `UnsupportedClassVersionError` | The runtime JDK is older than the compiler target or JavaFX dependency requirements. |
 | Graphics/native-library errors | Check the SDK's OS and processor architecture; a Windows DLL does not work on Linux/macOS. |

@@ -1,9 +1,9 @@
 package com.adaptivereadinggame;
 
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.stage.Stage;
+import com.adaptivereadinggame.backend.BackendContext;
+import com.adaptivereadinggame.controller.AppNavigator;
 
 import java.io.IOException;
 
@@ -11,17 +11,9 @@ import java.io.IOException;
 public class AdaptiveReadingGameApp extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader loader = new FXMLLoader(
-                AdaptiveReadingGameApp.class.getResource("/com/adaptivereadinggame/view/main-menu.fxml"));
-        Scene scene = new Scene(loader.load(), 1280, 720);
-        scene.getStylesheets().add(AdaptiveReadingGameApp.class
-                .getResource("/com/adaptivereadinggame/style/application.css").toExternalForm());
-
-        stage.setTitle("Adaptive Reading Game");
-        stage.setMinWidth(760);
-        stage.setMinHeight(520);
-        stage.setScene(scene);
-        stage.show();
+        // Dev 3 can inject the MySQL context here without changing the screens.
+        new AppNavigator(stage, BackendContext.inMemory(),
+                "Temporary storage — accounts and saves disappear when the app closes.").start();
     }
 
     public static void main(String[] args) {
