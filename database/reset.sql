@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS first_answer_drafts;
 DROP TABLE IF EXISTS question_choices;
 DROP TABLE IF EXISTS questions;
 DROP TABLE IF EXISTS story_choices;
+DROP TABLE IF EXISTS story_lines;
 DROP TABLE IF EXISTS story_nodes;
 DROP TABLE IF EXISTS chapters;
 DROP TABLE IF EXISTS students;

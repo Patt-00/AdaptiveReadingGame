@@ -1,19 +1,32 @@
-//Test Java file created by Claude.
-
 package com.adaptivereadinggame.repository.jdbc;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
+/**
+ * Console test: plays the story from the database.
+ * Menu: 1) Next / Choose   2) Save   3) Load   0) Quit      (save slots 1-5)
+ * Uses the fake demo student and chapter 1 from the seed files.
+ *
+ * Run:  export DB_PASS='yourpassword'
+ *       java -Dstdout.encoding=UTF-8 -cp "target/classes:$(cat /tmp/cp.txt)" \
+ *            com.adaptivereadinggame.repository.jdbc.StoryPlayTest
+ */
 public class StoryPlayTest {
 
     private static final String STUDENT_ID = "aaaaaaaa-0000-0000-0000-000000000001";
     private static final String CHAPTER_ID = "cccccccc-0000-0000-0000-000000000001";
     private static final int MAX_SLOTS = 5;
+    private static final int SCREEN_WIDTH = 70;
+
+    // One row of story_choices: where a scene leads. text == null means automatic "Next".
+    private record Link(String style, String text, String toNode) {}
 
     public static void main(String[] args) {
         String url  = env("DB_URL", "jdbc:mysql://localhost:3306/adaptive_reading");
-        String user = env("DB_USER", "Dev3");
+        String user = env("DB_USER", "argdev");
         String pass = System.getenv("DB_PASS");
         if (pass == null) {
             System.out.println("Set DB_PASS first:  export DB_PASS='yourpassword'");
@@ -23,8 +36,11 @@ public class StoryPlayTest {
         try (Connection conn = DriverManager.getConnection(url, user, pass);
              Scanner sc = new Scanner(System.in)) {
 
-            String difficulty = loadDifficulty(conn);
-            String currentNode = findStartNode(conn);
+            String difficulty = queryString(conn,
+                "SELECT difficulty FROM chapters WHERE id = ?", CHAPTER_ID);
+            String currentNode = queryString(conn,
+                "SELECT node_id FROM story_nodes WHERE chapter_id = ? AND is_start = 1 LIMIT 1",
+                CHAPTER_ID);
             if (difficulty == null || currentNode == null) {
                 System.out.println("No story found. Run:  bash database/setup.sh --reset");
                 return;
@@ -32,19 +48,24 @@ public class StoryPlayTest {
 
             boolean running = true;
             while (running) {
-                showScene(conn, currentNode);
-                System.out.println("1) Next   2) Save   3) Load   0) Quit");
+                List<Link> links = showScene(conn, currentNode);
+
+                String firstOption = links.isEmpty() ? "Next (no next scene yet)"
+                        : links.get(0).text() == null ? "Next" : "Choose";
+                System.out.println("1) " + firstOption + "   2) Save   3) Load   0) Quit");
                 System.out.print("> ");
                 if (!sc.hasNextLine()) break;
                 String input = sc.nextLine().trim();
 
                 switch (input) {
                     case "1": {
-                        String next = findNextNode(conn, currentNode);
-                        if (next == null) {
-                            System.out.println("\n(This is the last scene. There is no next scene.)");
+                        if (links.isEmpty()) {
+                            System.out.println("\n(No next scene yet. Add a link for this scene in story_choices.)");
+                        } else if (links.get(0).text() == null) {
+                            currentNode = links.get(0).toNode();          // automatic Next
                         } else {
-                            currentNode = next;
+                            String picked = chooseLink(sc, links);        // player picks a button
+                            if (picked != null) currentNode = picked;
                         }
                         break;
                     }
@@ -71,43 +92,95 @@ public class StoryPlayTest {
 
     // ---------- SHOW A SCENE ----------
 
-    private static void showScene(Connection conn, String nodeId) throws SQLException {
-        String sql = "SELECT scene_name, speaker, dialogue, background_image "
-                   + "FROM story_nodes WHERE chapter_id = ? AND node_id = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+    // Prints the scene header and all its lines. Returns the links that leave this scene.
+    private static List<Link> showScene(Connection conn, String nodeId) throws SQLException {
+        String nodeSql = "SELECT scene_name, location_label, background_image "
+                       + "FROM story_nodes WHERE chapter_id = ? AND node_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(nodeSql)) {
             ps.setString(1, CHAPTER_ID);
             ps.setString(2, nodeId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    System.out.println("\n==============================");
-                    System.out.println(rs.getString("scene_name")
+                    System.out.println("\n==============================================================");
+                    System.out.println(nodeId + "  " + rs.getString("scene_name")
                             + "   (background: " + rs.getString("background_image") + ")");
-                    System.out.println("==============================");
-                    String speaker = rs.getString("speaker");
-                    System.out.println((speaker == null ? "Narrator" : speaker) + ":");
-                    System.out.println(rs.getString("dialogue"));
-                    System.out.println();
+                    String label = rs.getString("location_label");
+                    if (label != null) System.out.println(label);
+                    System.out.println("==============================================================");
                 }
             }
         }
+
+        String lineSql = "SELECT line_type, speaker, expression, dialogue FROM story_lines "
+                       + "WHERE chapter_id = ? AND node_id = ? ORDER BY line_no";
+        try (PreparedStatement ps = conn.prepareStatement(lineSql)) {
+            ps.setString(1, CHAPTER_ID);
+            ps.setString(2, nodeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    System.out.println(formatLine(rs.getString("line_type"),
+                            rs.getString("speaker"), rs.getString("expression"),
+                            rs.getString("dialogue")));
+                }
+            }
+        }
+        System.out.println();
+
+        List<Link> links = new ArrayList<>();
+        String linkSql = "SELECT choice_style, choice_text, to_node_id FROM story_choices "
+                       + "WHERE chapter_id = ? AND from_node_id = ? ORDER BY choice_order";
+        try (PreparedStatement ps = conn.prepareStatement(linkSql)) {
+            ps.setString(1, CHAPTER_ID);
+            ps.setString(2, nodeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    links.add(new Link(rs.getString("choice_style"),
+                            rs.getString("choice_text"), rs.getString("to_node_id")));
+                }
+            }
+        }
+        return links;
     }
 
-    private static String findStartNode(Connection conn) throws SQLException {
-        return queryString(conn,
-            "SELECT node_id FROM story_nodes WHERE chapter_id = ? AND is_start = 1 LIMIT 1",
-            CHAPTER_ID);
+    private static String formatLine(String type, String speaker, String expression, String text) {
+        if ("SPEECH".equals(type)) {
+            String who = speaker == null ? "" :
+                    speaker + (expression == null ? "" : " [" + expression + "]") + ": ";
+            return who + text;
+        }
+        if ("THOUGHT".equals(type)) {
+            return "(" + (speaker == null ? "" : speaker + " thinks: ") + text + ")";
+        }
+        if ("CENTERED".equals(type)) {
+            int pad = Math.max(0, (SCREEN_WIDTH - text.length()) / 2);
+            return " ".repeat(pad) + text;
+        }
+        if ("DIRECTION".equals(type)) {
+            return "[" + text + "]";
+        }
+        return text;
     }
 
-    // "Next" follows the first choice (choice_order 1) of the current scene.
-    private static String findNextNode(Connection conn, String nodeId) throws SQLException {
-        return queryString(conn,
-            "SELECT to_node_id FROM story_choices "
-          + "WHERE chapter_id = ? AND from_node_id = ? ORDER BY choice_order LIMIT 1",
-            CHAPTER_ID, nodeId);
+    // ---------- CHOICE BUTTONS ----------
+
+    // Shows the buttons and returns the chosen scene id, or null to stay on this scene.
+    private static String chooseLink(Scanner sc, List<Link> links) {
+        System.out.println("\nWhat do you do?");
+        for (int i = 0; i < links.size(); i++) {
+            System.out.println((i + 1) + ") " + formatChoice(links.get(i)));
+        }
+        System.out.println("0) Go back");
+        System.out.print("> ");
+        int pick = readNumber(sc);
+        if (pick < 1 || pick > links.size()) return null;
+        return links.get(pick - 1).toNode();
     }
 
-    private static String loadDifficulty(Connection conn) throws SQLException {
-        return queryString(conn, "SELECT difficulty FROM chapters WHERE id = ?", CHAPTER_ID);
+    private static String formatChoice(Link link) {
+        if ("SPEECH".equals(link.style()))  return "\u201c" + link.text() + "\u201d";
+        if ("ACTION".equals(link.style()))  return "(" + link.text() + ")";
+        if ("THOUGHT".equals(link.style())) return "(thinking) " + link.text();
+        return link.text();
     }
 
     // ---------- SAVE ----------
