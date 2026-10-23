@@ -4,7 +4,6 @@ import com.adaptivereadinggame.model.AssessmentResult;
 import com.adaptivereadinggame.service.AccountGameService.ChapterSummary;
 import com.adaptivereadinggame.service.ConfirmationRequiredException;
 import com.adaptivereadinggame.model.Difficulty;
-import com.adaptivereadinggame.model.GameState;
 import com.adaptivereadinggame.model.SaveSnapshot;
 import javafx.beans.binding.Bindings;
 import javafx.concurrent.Task;
@@ -13,7 +12,9 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -62,13 +63,17 @@ public final class MenuController {
     }
 
     private void refresh() {
-        run("Read progress", () -> new MenuState(navigator.backend().accountGameService().snapshots(),
-                navigator.backend().accountGameService().history()), state -> {
+        run("Read progress", () -> {
+            var accountGame = navigator.backend().accountGameService();
+            boolean activeGame = accountGame.currentGame().isPresent();
+            return new MenuState(accountGame.snapshots(), accountGame.history(), activeGame);
+        }, state -> {
             slots = List.copyOf(state.slots());
             history = List.copyOf(state.history());
-            continueButton.setDisable(slots.isEmpty());
-            continueButton.setAccessibleHelp(slots.isEmpty() ? "No saved game is available."
-                    : "Resume the most recently saved checkpoint.");
+            continueButton.setText(state.activeGame() ? "RETURN TO GAME" : "CONTINUE");
+            continueButton.setDisable(!state.activeGame() && slots.isEmpty());
+            continueButton.setAccessibleHelp(state.activeGame() ? "Return to the active story or results."
+                    : slots.isEmpty() ? "No saved game is available." : "Resume the most recently saved checkpoint.");
         });
     }
 
@@ -79,8 +84,8 @@ public final class MenuController {
             return navigator.backend().accountGameService().availableChapters(nextDifficulty);
         }, chapters -> {
             if (chapters.isEmpty()) {
-                navigator.notice("Story not ready", "Dev 2’s story service and chapter content are not connected yet. "
-                        + "Your account is ready; no pretend story or score has been created.");
+                navigator.notice("No chapter available", "No prepared chapter is available at the recommended difficulty. "
+                        + "Load approved story content and prepare a chapter for that level. No pretend story or score has been created.");
                 return;
             }
             Dialog<Void> dialog = dialog("New Game", "Choose an available chapter");
@@ -90,9 +95,8 @@ public final class MenuController {
                 button.setMaxWidth(Double.MAX_VALUE);
                 button.setOnAction(event -> {
                     dialog.close();
-                    if (!allowDiscard("Start a new chapter?")) return;
-                    run("New Game", () -> navigator.backend().accountGameService().startChapter(chapter.id(), true),
-                            this::showLoadedState);
+                    try { navigator.showInstructions(chapter); }
+                    catch (IOException failure) { navigator.notice("Instructions unavailable", "The chapter instructions could not open."); }
                 });
                 content.getChildren().add(button);
             }
@@ -102,17 +106,24 @@ public final class MenuController {
     }
 
     @FXML private void continueGame() {
+        var active = navigator.backend().accountGameService().currentGame();
+        if (active.isPresent()) {
+            showGameplay();
+            return;
+        }
         if (!allowDiscard("Continue saved progress?")) return;
         run("Continue", () -> navigator.backend().accountGameService().continueGame(true), state -> {
             if (state.isEmpty()) navigator.notice("No saved progress", "Create a checkpoint in Save/Load first.");
-            else showLoadedState(state.get());
+            else showGameplay();
         });
     }
 
     @FXML private void saveLoad() {
         Dialog<Void> dialog = dialog("Save / Load", "Three account-specific save slots");
         VBox content = new VBox(14);
-        boolean hasGame = navigator.backend().accountGameService().currentGame().isPresent();
+        var accountGame = navigator.backend().accountGameService();
+        boolean hasActiveGame = accountGame.currentGame().isPresent();
+        boolean hasGame = hasActiveGame && accountGame.currentResult().isEmpty();
         for (int slot = 1; slot <= 3; slot++) {
             final int chosenSlot = slot;
             Optional<SaveSnapshot> snapshot = slots.stream().filter(item -> item.checkpoint().slot() == chosenSlot).findFirst();
@@ -126,6 +137,7 @@ public final class MenuController {
             details.setMaxWidth(Double.MAX_VALUE);
             HBox.setHgrow(details, Priority.ALWAYS);
             Button save = new Button("SAVE");
+            save.setId("saveSlot" + chosenSlot);
             save.setDisable(!hasGame);
             save.setAccessibleHelp(hasGame ? "Save current progress to slot " + chosenSlot
                     : "Start a playable chapter before saving.");
@@ -140,13 +152,14 @@ public final class MenuController {
                 });
             });
             Button load = new Button("LOAD");
+            load.setId("loadSlot" + chosenSlot);
             load.setDisable(snapshot.isEmpty());
             load.setOnAction(event -> {
                 if (!allowDiscard("Load slot " + chosenSlot + "?")) return;
                 dialog.close();
                 run("Load", () -> navigator.backend().accountGameService().load(chosenSlot, true), state -> {
                     if (state.isEmpty()) navigator.notice("Empty slot", "There is no checkpoint in this slot.");
-                    else showLoadedState(state.get());
+                    else showGameplay();
                 });
             });
             HBox row = new HBox(12, details, save, load);
@@ -154,9 +167,12 @@ public final class MenuController {
             row.setPadding(new Insets(16));
             content.getChildren().add(row);
         }
-        Label explanation = new Label(hasGame ? navigator.storageDescription()
-                : "No active chapter. Saving becomes available when Dev 2’s playable story is connected.\n"
-                + navigator.storageDescription());
+        String saveNote = hasGame ? navigator.storageDescription()
+                : hasActiveGame ? "This chapter result is already recorded. Start the next challenge before saving a new checkpoint.\n"
+                    + navigator.storageDescription()
+                : "No active chapter. Saving becomes available after a prepared story is started.\n"
+                    + navigator.storageDescription();
+        Label explanation = new Label(saveNote);
         explanation.setWrapText(true);
         explanation.setId("saveExplanation");
         explanation.setPrefWidth(640);
@@ -217,8 +233,31 @@ public final class MenuController {
     }
 
     @FXML private void settings() {
-        navigator.notice("Settings", "The full settings screen remains part of the UI team’s work.\n\n"
-                + navigator.storageDescription() + "\n" + navigator.fontNotice());
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Reading settings");
+        dialog.setHeaderText("Adjust the reading view");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
+        Slider textSize = new Slider(0.8, 1.6, navigator.readingFontScale());
+        textSize.setId("readingTextSize");
+        textSize.setShowTickMarks(true);
+        textSize.setShowTickLabels(true);
+        textSize.setMajorTickUnit(0.2);
+        textSize.setBlockIncrement(0.1);
+        textSize.setAccessibleText("Reading text size");
+        CheckBox artwork = new CheckBox("Show character artwork when available");
+        artwork.setId("showCharacterArtwork");
+        artwork.setSelected(navigator.characterArtworkEnabled());
+        Label soundNote = new Label("Narration audio is not available in this build.");
+        soundNote.setWrapText(true);
+        soundNote.getStyleClass().add("dialog-note");
+        VBox content = new VBox(14, new Label("Reading text size"), textSize, artwork, soundNote);
+        content.setPadding(new Insets(8));
+        dialog.getDialogPane().setContent(content);
+        navigator.styleDialog(dialog);
+        if (dialog.showAndWait().filter(ButtonType.APPLY::equals).isPresent()) {
+            navigator.setReadingFontScale(textSize.getValue());
+            navigator.setCharacterArtworkEnabled(artwork.isSelected());
+        }
     }
 
     @FXML private void quit() { navigator.requestQuit(); }
@@ -228,10 +267,9 @@ public final class MenuController {
                 || navigator.confirm(title, "Unsaved progress will be lost. Continue?");
     }
 
-    private void showLoadedState(GameState state) {
-        navigator.notice("Checkpoint ready", "Your checkpoint is at story node " + state.storyNodeId()
-                + ". The playable story screen belongs to Dev 2 and is not connected in this branch yet.");
-        refresh();
+    private void showGameplay() {
+        try { navigator.showCurrentGame(); }
+        catch (IOException failure) { navigator.notice("Game screen unavailable", "The game screen could not open."); }
     }
 
     private Dialog<Void> dialog(String title, String header) {
@@ -251,7 +289,7 @@ public final class MenuController {
             if (failure instanceof ConfirmationRequiredException)
                 message = "This action needs confirmation. Reopen Save/Load and try again.";
             else if (failure instanceof UnsupportedOperationException)
-                message = "Dev 2’s story/reading-check implementation is not connected yet. Your existing progress is unchanged.";
+                message = "The requested story action is not available. Your existing progress is unchanged.";
             else if (failure instanceof IllegalArgumentException)
                 message = "The selected chapter or checkpoint is not valid for this action. Your existing progress is unchanged.";
             else if (failure instanceof IllegalStateException)
@@ -288,5 +326,5 @@ public final class MenuController {
         accountActions.setDisable(false);
     }
 
-    private record MenuState(List<SaveSnapshot> slots, List<AssessmentResult> history) {}
+    private record MenuState(List<SaveSnapshot> slots, List<AssessmentResult> history, boolean activeGame) {}
 }

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane fx:id="instructionsRoot" styleClass="instructions-root" prefWidth="1280.0" prefHeight="720.0"
+            xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.adaptivereadinggame.controller.InstructionsController">
+    <top>
+        <VBox alignment="CENTER" spacing="8" styleClass="instructions-header">
+            <Label text="HOW TO PLAY" styleClass="instructions-title"/>
+            <Label fx:id="chapterLabel" styleClass="instructions-chapter" wrapText="true"/>
+            <Label fx:id="difficultyLabel" styleClass="instructions-difficulty"/>
+        </VBox>
+    </top>
+    <center>
+        <VBox alignment="CENTER_LEFT" spacing="17" styleClass="instructions-card" maxWidth="850"
+              prefHeight="480" maxHeight="520">
+            <Label text="READ THE STORY" styleClass="instructions-heading"/>
+            <Label text="Use Next to move through narration, dialogue, and thoughts. A story choice changes what happens in the narrative." styleClass="instructions-text" wrapText="true"/>
+            <Label text="ANSWER THE READING CHECK" styleClass="instructions-heading"/>
+            <Label text="Read the passage, select one answer, and submit it. You may change your selection before submitting." styleClass="instructions-text" wrapText="true"/>
+            <Label text="YOUR SCORE" styleClass="instructions-heading"/>
+            <Label text="Only the first submitted answer counts toward your comprehension score. Story choices do not change your score." styleClass="instructions-text" wrapText="true"/>
+            <Label text="SAVE YOUR PROGRESS" styleClass="instructions-heading"/>
+            <Label text="Open Menu at any time to save, load, adjust reading settings, or return to the main menu." styleClass="instructions-text" wrapText="true"/>
+        </VBox>
+    </center>
+    <bottom>
+        <HBox alignment="CENTER" spacing="22" styleClass="instructions-actions">
+            <Button text="BACK TO MENU" styleClass="gameplay-menu-button" onAction="#backToMenu"/>
+            <Button text="START CHAPTER" styleClass="gold-button" onAction="#startChapter"/>
+        </HBox>
+    </bottom>
+</BorderPane>

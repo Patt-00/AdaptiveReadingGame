@@ -22,7 +22,7 @@ public final class Dev1Demo {
             System.out.println("Logout clears current account: " + game.currentAccount().isEmpty());
             try { game.history(); throw new IllegalStateException("Access was not blocked"); }
             catch (SecurityException expected) { System.out.println("Logged-out progress access blocked: true"); }
-            System.out.println("Temporary data only. Dev 2 story/resume and Dev 3 MySQL adapters are not connected.");
+            System.out.println("Temporary data only. No story content pack is loaded.");
         } finally { Arrays.fill(password, '\0'); }
     }
 }

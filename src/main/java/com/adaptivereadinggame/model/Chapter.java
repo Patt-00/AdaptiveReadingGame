@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Prepared reading variant. Story-choice branching is a later gameplay feature. */
+/** Prepared reading variant with its passage and comprehension questions. */
 public record Chapter(UUID id, String title, String passage, Difficulty difficulty, List<Question> questions) {
     public Chapter {
         Objects.requireNonNull(id); Objects.requireNonNull(difficulty);

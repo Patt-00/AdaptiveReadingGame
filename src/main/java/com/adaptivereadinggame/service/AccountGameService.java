@@ -14,6 +14,9 @@ import java.util.*;
 public final class AccountGameService {
     /** Chapter picker data deliberately excludes passages, questions, and answer keys. */
     public record ChapterSummary(UUID id, String title, Difficulty difficulty) {}
+    /** Current screen data excludes question answer keys and is scoped to the signed-in learner. */
+    public record GameView(GameState state, ChapterSummary chapter, StoryNode storyNode, String passage,
+                           Optional<AssessmentResult> completedResult) {}
     private final AuthService auth;
     private final ProgressService progress;
     private final SaveSnapshotRepository snapshots;
@@ -55,10 +58,28 @@ public final class AccountGameService {
         if (currentGame != null) requireOwner(currentGame, studentId);
         return Optional.ofNullable(currentGame);
     }
+    public synchronized Optional<GameView> currentGameView() {
+        UUID studentId = studentId();
+        if (currentGame == null) return Optional.empty();
+        requireOwner(currentGame, studentId);
+        Chapter chapter = chapters.findChapter(currentGame.chapterId())
+                .orElseThrow(() -> new IllegalStateException("The active chapter is unavailable."));
+        StoryNode node = nodes.findNode(currentGame.chapterId(), currentGame.storyNodeId())
+                .orElseThrow(() -> new IllegalStateException("The active story node is unavailable."));
+        return Optional.of(new GameView(currentGame,
+                new ChapterSummary(chapter.id(), chapter.title(), chapter.difficulty()), node,
+                chapter.passage(), results.findCompleted(studentId, currentGame.chapterId())));
+    }
     public synchronized boolean hasUnsavedProgress() { studentId(); return hasUnsavedProgress; }
+    public synchronized Optional<AssessmentResult> currentResult() {
+        GameState state = requireGame();
+        return results.findCompleted(state.studentId(), state.chapterId());
+    }
     public synchronized List<AssessmentResult> history() { return List.copyOf(progress.history(studentId())); }
     public synchronized List<ChapterSummary> availableChapters(Difficulty difficulty) {
-        studentId(); return chapters.findByDifficulty(Objects.requireNonNull(difficulty)).stream()
+        UUID learnerId = studentId();
+        return chapters.findByDifficulty(Objects.requireNonNull(difficulty)).stream()
+                .filter(chapter -> results.findCompleted(learnerId, chapter.id()).isEmpty())
                 .map(chapter -> new ChapterSummary(chapter.id(), chapter.title(), chapter.difficulty())).toList();
     }
     public synchronized List<SaveSnapshot> snapshots() {
@@ -72,9 +93,12 @@ public final class AccountGameService {
         UUID studentId = studentId(); requireDiscardConfirmation(discardConfirmed);
         chapters.findChapter(Objects.requireNonNull(chapterId))
                 .orElseThrow(() -> new IllegalArgumentException("Unknown chapter"));
+        GameState previous = currentGame;
         GameState next = story.startChapter(studentId, chapterId);
         validateState(next, studentId);
-        currentGame = next; hasUnsavedProgress = true; return next;
+        currentGame = next; hasUnsavedProgress = true;
+        discardReplacedSession(previous, next);
+        return next;
     }
     public synchronized GameState advanceStory() {
         GameState previous = requireGame();
@@ -127,20 +151,27 @@ public final class AccountGameService {
         if (snapshot.checkpoint().difficulty() != chapter.difficulty())
             throw new IllegalArgumentException("Saved chapter difficulty no longer matches");
         GameState authoritative = saved;
+        boolean completedSavedAssessment = false;
         if (saved.assessmentSessionId() != null) {
-            if (results.findCompleted(studentId, saved.chapterId()).isPresent())
-                throw new IllegalStateException("This reading check is already completed. Open results instead.");
-            GameState draft = drafts.findDraft(saved.assessmentSessionId())
-                    .orElseThrow(() -> new IllegalStateException("The original reading-check draft is unavailable"));
-            validateState(draft, studentId);
-            if (!draft.chapterId().equals(saved.chapterId())
-                    || !Objects.equals(draft.assessmentSessionId(), saved.assessmentSessionId()))
-                throw new IllegalArgumentException("Reading-check draft does not match the save");
-            // An old save cannot reset first answers. The database draft wins completely.
-            authoritative = new GameState(studentId, saved.chapterId(), saved.storyNodeId(),
-                    saved.assessmentSessionId(), draft.questionIndex(), draft.firstAnswers());
+            Optional<AssessmentResult> completed = results.findCompleted(studentId, saved.chapterId());
+            if (completed.isPresent()) {
+                authoritative = new GameState(studentId, saved.chapterId(), saved.storyNodeId(), null, 0, Map.of());
+                completedSavedAssessment = true;
+            } else {
+                GameState draft = drafts.findDraft(saved.assessmentSessionId())
+                        .orElseThrow(() -> new IllegalStateException("The original reading-check draft is unavailable"));
+                validateState(draft, studentId);
+                if (!draft.chapterId().equals(saved.chapterId())
+                        || !Objects.equals(draft.assessmentSessionId(), saved.assessmentSessionId())
+                        || !draft.storyNodeId().equals(saved.storyNodeId()))
+                    throw new IllegalArgumentException("Reading-check draft does not match the save");
+                // An old save cannot reset first answers. The database draft wins completely.
+                authoritative = new GameState(studentId, saved.chapterId(), saved.storyNodeId(),
+                        saved.assessmentSessionId(), draft.questionIndex(), draft.firstAnswers());
+            }
         }
-        // Dev 2's contract validates/restores all game/question state before replacing it.
+        // The story service validates/restores game and question state before replacing it.
+        GameState previous = currentGame;
         GameState restored = story.restoreState(authoritative);
         validateState(restored, studentId);
         if (!restored.chapterId().equals(authoritative.chapterId())
@@ -149,10 +180,18 @@ public final class AccountGameService {
                 || !restored.firstAnswers().entrySet().containsAll(authoritative.firstAnswers().entrySet()))
             throw new IllegalStateException("Story restore returned inconsistent state");
         currentGame = restored;
-        hasUnsavedProgress = !restored.equals(saved);
+        hasUnsavedProgress = !completedSavedAssessment && !restored.equals(saved);
         if (restored.assessmentSessionId() != null)
             ownedSessions.put(restored.assessmentSessionId(), studentId);
+        discardReplacedSession(previous, restored);
         return restored;
+    }
+    private void discardReplacedSession(GameState previous, GameState next) {
+        if (previous == null || previous.assessmentSessionId() == null
+                || Objects.equals(previous.assessmentSessionId(), next.assessmentSessionId())) return;
+        UUID oldSession = previous.assessmentSessionId();
+        ownedSessions.remove(oldSession);
+        assessments.discard(oldSession);
     }
     public synchronized void logout(boolean discardConfirmed) {
         UUID studentId = studentId(); requireDiscardConfirmation(discardConfirmed);
@@ -164,7 +203,7 @@ public final class AccountGameService {
         }
     }
 
-    /** Account-safe access to the existing baseline, without changing Dev 2's grading code. */
+    /** Account-safe access to the assessment service; scoring remains in Java. */
     public synchronized UUID startAssessment(UUID chapterId) {
         UUID studentId = studentId();
         requireGame();
@@ -179,6 +218,8 @@ public final class AccountGameService {
             }
             if (!nodes.findNode(chapterId, currentGame.storyNodeId()).orElseThrow().readingCheck())
                 throw new IllegalStateException("Finish the story before starting its reading check");
+            if (results.findCompleted(studentId, chapterId).isPresent())
+                throw new IllegalStateException("This chapter is already complete. Open its reading history instead.");
         }
         UUID sessionId = assessments.start(studentId, Objects.requireNonNull(chapterId));
         GameState started = new GameState(studentId, chapterId, currentGame.storyNodeId(), sessionId, 0, Map.of());
@@ -190,6 +231,10 @@ public final class AccountGameService {
     public synchronized List<AssessmentService.QuestionPrompt> questions(UUID sessionId) {
         requireSessionOwner(sessionId); return assessments.questions(sessionId);
     }
+    public synchronized AssessmentService.QuestionFeedback feedback(UUID sessionId, UUID questionId) {
+        requireSessionOwner(sessionId);
+        return assessments.feedback(sessionId, questionId);
+    }
     public synchronized boolean submit(UUID sessionId, UUID questionId, int selectedIndex) {
         requireSessionOwner(sessionId);
         {
@@ -198,6 +243,11 @@ public final class AccountGameService {
             var prompts = assessments.questions(sessionId);
             var question = prompts.stream().filter(q -> q.id().equals(questionId)).findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("Question not in this chapter"));
+            if (!currentGame.firstAnswers().containsKey(questionId)) {
+                int expectedIndex = currentGame.questionIndex();
+                if (expectedIndex >= prompts.size() || !prompts.get(expectedIndex).id().equals(questionId))
+                    throw new IllegalStateException("Answer the current reading-check question first.");
+            }
             if (selectedIndex < 0 || selectedIndex >= question.choices().size())
                 throw new IllegalArgumentException("Invalid choice");
             // Account coordinator requires a durable first-answer write before any feedback.
@@ -249,12 +299,18 @@ public final class AccountGameService {
                 .orElseThrow(() -> new IllegalArgumentException("Saved story node is unavailable"));
         if (state.assessmentSessionId() != null && !node.readingCheck())
             throw new IllegalArgumentException("Reading-check state must be at a reading-check story node");
-        if (state.questionIndex() > chapter.questions().size()) throw new IllegalArgumentException("Invalid question position");
+        if (state.questionIndex() > chapter.questions().size()
+                || state.questionIndex() != state.firstAnswers().size())
+            throw new IllegalArgumentException("Invalid question position");
         for (var answer : state.firstAnswers().entrySet()) {
             Question question = chapter.questions().stream().filter(q -> q.id().equals(answer.getKey())).findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("Saved answer belongs to another chapter"));
             if (answer.getValue() < 0 || answer.getValue() >= question.choices().size())
                 throw new IllegalArgumentException("Invalid saved answer");
+        }
+        for (int index = 0; index < state.questionIndex(); index++) {
+            if (!state.firstAnswers().containsKey(chapter.questions().get(index).id()))
+                throw new IllegalArgumentException("Saved answers must be a continuous sequence of first attempts.");
         }
     }
     private void requireDiscardConfirmation(boolean confirmed) {

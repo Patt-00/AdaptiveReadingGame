@@ -5,7 +5,7 @@ import com.adaptivereadinggame.repository.*;
 import java.time.Clock;
 import java.util.*;
 
-/** Account-scoped queries and explicit save operation; authentication facade is still TODO. */
+/** Account-scoped history and save operations used by the authenticated game coordinator. */
 public final class ProgressService {
     private final StudentRepository students;
     private final ChapterRepository chapters;

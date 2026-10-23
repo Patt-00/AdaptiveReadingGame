@@ -5,10 +5,10 @@ import com.adaptivereadinggame.repository.*;
 import com.adaptivereadinggame.service.StoryService;
 import java.util.*;
 
-/** Honest integration boundary until Dev 2 supplies gameplay and Dev 3 supplies prepared nodes/drafts. */
+/** Test stand-in used when no story backend has been configured. */
 public final class UnavailableGameplay implements StoryService, StoryRepository, AssessmentDraftRepository {
     private static UnsupportedOperationException unavailable() {
-        return new UnsupportedOperationException("Dev 2's story/reading-check implementation is not connected yet.");
+        return new UnsupportedOperationException("No story backend has been configured.");
     }
     @Override public GameState startChapter(UUID studentId, UUID chapterId) { throw unavailable(); }
     @Override public GameState advanceStory(UUID studentId) { throw unavailable(); }

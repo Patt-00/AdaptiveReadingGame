@@ -4,7 +4,7 @@ import com.adaptivereadinggame.model.GameState;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Shared narrative actions. Dev 2 supplies the implementation, not Dev 1. */
+/** Narrative actions implemented from prepared chapter nodes. */
 public interface StoryService {
     GameState startChapter(UUID studentId, UUID chapterId);
     /** Advance only an automatic next node; do not skip a choice or reading check. */

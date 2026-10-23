@@ -4,7 +4,7 @@ import com.adaptivereadinggame.model.GameState;
 import java.util.Optional;
 import java.util.UUID;
 
-/** First-answer storage. Dev 3 implements persistence; Dev 2 applies scoring rules. */
+/** Stores unfinished reading-check drafts and preserves the first submitted answer. */
 public interface AssessmentDraftRepository {
     /**
      * Create only a new, valid assessment session with zero index and no first answers.

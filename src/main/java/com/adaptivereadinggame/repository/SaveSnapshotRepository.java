@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Dev 3 supplies full saves using the same slot records as SaveGameRepository. */
+/** Stores complete resumable snapshots alongside the account's save-slot records. */
 public interface SaveSnapshotRepository {
     /**
      * Store slot details and full state together, after validating referenced IDs.

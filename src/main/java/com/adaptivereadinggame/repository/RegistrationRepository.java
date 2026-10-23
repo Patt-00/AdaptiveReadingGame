@@ -3,7 +3,7 @@ package com.adaptivereadinggame.repository;
 import com.adaptivereadinggame.model.Account;
 import com.adaptivereadinggame.model.Student;
 
-/** Dev 3 supplies an atomic database implementation of this account operation. */
+/** Atomically stores a new account, its credential verifier, and its learner profile. */
 public interface RegistrationRepository {
     /**
      * Store account, protected password verifier, and learner together or store none.

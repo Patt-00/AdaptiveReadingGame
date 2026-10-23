@@ -54,8 +54,8 @@ class AccountGameServiceTest {
         assertThrows(IllegalStateException.class, () -> game.startAssessment(chapter.id()));
         start(); UUID oldSession = game.startAssessment(chapter.id());
         game.startChapter(chapter.id(), true);
-        assertThrows(IllegalStateException.class, () -> game.submit(oldSession, chapter.questions().getFirst().id(), 0));
-        assertThrows(IllegalStateException.class, () -> game.complete(oldSession));
+        assertThrows(SecurityException.class, () -> game.submit(oldSession, chapter.questions().getFirst().id(), 0));
+        assertThrows(SecurityException.class, () -> game.complete(oldSession));
     }
     @Test void cleanupFailureStillSignsOutAndClearsPrivateAccountState() {
         start(); UUID session = game.startAssessment(chapter.id()); story.failCleanup = true;
@@ -175,13 +175,17 @@ class AccountGameServiceTest {
         assertEquals(session, restored.assessmentSessionId()); assertEquals(1, restored.firstAnswers().get(question));
         assertTrue(game.hasUnsavedProgress()); // Restored newer draft differs from the older saved slot.
     }
-    @Test void completedAssessmentCannotBeRevivedFromOldSave() {
+    @Test void completedAssessmentSaveOpensStoredResultsWithoutRestoringItsAnswerSession() {
         start(); UUID session = UUID.randomUUID(); snapshot(1, now,
                 new GameState(first.id(), chapter.id(), "opening", session, 0, Map.of()));
-        var before = state();
-        data.saveCompleted(new AssessmentResult(new Attempt(UUID.randomUUID(), first.id(), chapter.id(), 0, 1, now),
-                Difficulty.MEDIUM, Difficulty.EASY));
-        assertThrows(IllegalStateException.class, () -> game.load(1, true)); assertEquals(before, state());
+        var completed = new AssessmentResult(new Attempt(UUID.randomUUID(), first.id(), chapter.id(), 0, 1, now),
+                Difficulty.MEDIUM, Difficulty.EASY);
+        data.saveCompleted(completed);
+        GameState restored = game.load(1, true).orElseThrow();
+        assertNull(restored.assessmentSessionId());
+        assertEquals(completed, game.currentResult().orElseThrow());
+        assertFalse(game.hasUnsavedProgress());
+        assertThrows(IllegalStateException.class, () -> game.startAssessment(chapter.id()));
     }
     @Test void invalidSlotsAndWrongOwnerAdapterDataAreRejected() {
         start(); assertThrows(IllegalArgumentException.class, () -> game.save(4, true));
@@ -213,11 +217,30 @@ class AccountGameServiceTest {
         assertThrows(IllegalStateException.class, () -> game.submit(session, chapter.questions().getFirst().id(), 0));
         assertEquals(before, state()); assertThrows(IllegalStateException.class, () -> game.complete(session));
     }
-    @Test void restoredSessionHasAccountAccessButBaselineRestoreIsExplicitlyUnimplemented() {
+    @Test void restoredSessionCanReopenItsAuthoritativeStoredDraft() {
         start(); UUID session = game.startAssessment(chapter.id()); game.save(1, false);
         game.load(1, true); // Test story port keeps the same still-active AssessmentService session.
         assertEquals(1, game.questions(session).size());
-        assertThrows(UnsupportedOperationException.class, () -> backend.assessmentService().restoreAssessment(state()));
+        var restartedAssessments = new AssessmentService(backend.students(), backend.chapters(), backend.assessments(),
+                new BaselineDifficultyPolicy(), Clock.fixed(now, ZoneOffset.UTC), drafts);
+        assertEquals(session, restartedAssessments.restoreAssessment(state()));
+        assertEquals(1, restartedAssessments.questions(session).size());
+    }
+    @Test void loadingAnOlderAssessmentSaveAfterCompletionOpensTheStoredResult() {
+        start();
+        UUID session = game.startAssessment(chapter.id());
+        UUID question = chapter.questions().getFirst().id();
+        assertTrue(game.submit(session, question, 0));
+        game.save(1, false);
+        var completed = game.complete(session);
+        game.logout(true);
+
+        game.login(first.username(), password);
+        GameState restored = game.load(1, false).orElseThrow();
+        assertNull(restored.assessmentSessionId());
+        assertEquals(completed, game.currentResult().orElseThrow());
+        assertFalse(game.hasUnsavedProgress());
+        assertEquals(1, game.history().size(), "loading a stale checkpoint must not create a second score");
     }
 
     private final class Drafts implements AssessmentDraftRepository {

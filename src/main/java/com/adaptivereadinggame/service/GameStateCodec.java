@@ -17,9 +17,9 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Approved version-1 save JSON for Dev 3's game_state_json column. This codec
+ * Approved version-1 save JSON for the game_state_json column. This codec
  * validates the data shape, not account authorization or live chapter membership.
- * Dev 2 must still validate/restore through StoryService using stored draft answers.
+ * Restore through StoryService using the authoritative stored draft answers.
  */
 public final class GameStateCodec {
     public static final int FORMAT_VERSION = 1;

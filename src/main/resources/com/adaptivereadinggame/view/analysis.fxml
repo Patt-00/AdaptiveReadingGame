@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane styleClass="analysis-root" prefWidth="1280.0" prefHeight="720.0"
+            xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.adaptivereadinggame.controller.AnalysisController">
+    <center>
+        <VBox alignment="CENTER" spacing="20" styleClass="analysis-card" prefWidth="780" maxWidth="780"
+              prefHeight="360" maxHeight="420">
+            <ProgressIndicator prefWidth="72" prefHeight="72" accessibleText="Analyzing comprehension results"/>
+            <Label text="PREPARING YOUR NEXT CHALLENGE" styleClass="analysis-heading"/>
+            <Label text="Java checks your comprehension score and recent progress. The optional model cannot change your score."
+                   styleClass="analysis-message" wrapText="true" maxWidth="700"/>
+        </VBox>
+    </center>
+</BorderPane>

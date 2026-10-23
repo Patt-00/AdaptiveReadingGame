@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane fx:id="resultsRoot" styleClass="results-root" prefWidth="1280.0" prefHeight="720.0"
+            xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.adaptivereadinggame.controller.ResultsController">
+    <center>
+        <VBox alignment="CENTER" spacing="18" styleClass="results-card" prefWidth="760" maxWidth="760"
+              prefHeight="510" maxHeight="540">
+            <Label text="CHAPTER RESULTS" styleClass="results-heading"/>
+            <Label fx:id="chapterTitle" styleClass="results-chapter" wrapText="true"/>
+            <Label fx:id="scoreLabel" styleClass="results-score"/>
+            <Label fx:id="answerCountLabel" styleClass="results-answer-count"/>
+            <Label fx:id="nextDifficultyLabel" styleClass="results-difficulty"/>
+            <Label fx:id="decisionSourceLabel" styleClass="results-note" wrapText="true"/>
+            <Label fx:id="nextChapterStatus" styleClass="results-status" wrapText="true"/>
+            <HBox alignment="CENTER" spacing="18">
+                <Button fx:id="nextChapterButton" text="NEXT CHALLENGE" styleClass="gold-button"
+                        onAction="#nextChapter"/>
+                <Button text="MAIN MENU" styleClass="gameplay-menu-button" onAction="#mainMenu"/>
+            </HBox>
+            <Region minHeight="4"/>
+        </VBox>
+    </center>
+</BorderPane>

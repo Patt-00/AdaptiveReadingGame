@@ -6,13 +6,23 @@ import java.util.Objects;
 /** One prepared dialogue/thought with exactly one kind of next action. */
 public record StoryNode(String storyNodeId, String speakerName, String dialogueText,
                         boolean thought, List<StoryChoice> storyChoices,
-                        String nextNodeId, boolean readingCheck) {
+                        String nextNodeId, boolean readingCheck, String speakerAssetKey) {
+    public StoryNode(String storyNodeId, String speakerName, String dialogueText,
+                     boolean thought, List<StoryChoice> storyChoices,
+                     String nextNodeId, boolean readingCheck) {
+        this(storyNodeId, speakerName, dialogueText, thought, storyChoices,
+                nextNodeId, readingCheck, "");
+    }
+
     public StoryNode {
         if (storyNodeId == null || storyNodeId.isBlank())
             throw new IllegalArgumentException("A story node needs an ID");
         Objects.requireNonNull(speakerName, "speakerName"); // Empty is allowed for narration.
         if (dialogueText == null || dialogueText.isBlank())
             throw new IllegalArgumentException("A story node needs dialogue text");
+        if (speakerAssetKey == null || (!speakerAssetKey.isEmpty()
+                && !speakerAssetKey.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,79}")))
+            throw new IllegalArgumentException("A speaker asset key must be a simple filename key.");
         storyChoices = List.copyOf(storyChoices);
         Objects.requireNonNull(nextNodeId, "nextNodeId");
         if (!nextNodeId.isEmpty() && nextNodeId.isBlank())

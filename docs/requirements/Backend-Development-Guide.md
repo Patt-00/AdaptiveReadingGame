@@ -1,6 +1,6 @@
 # Backend skeleton and three-developer handoff
 
-> This page describes the original `main` scaffold. On branch `Dev1`, accounts, shared records, and account-facing coordination have been added. See [the current Dev 1 handoff](Dev1-Handoff.md) for implemented work and remaining integration tasks. MySQL is now the chosen database, but its adapters are still Dev 3's work.
+> This page describes the original `main` scaffold. On branch `Dev1`, accounts, shared records, account-facing coordination, and MySQL repositories are implemented. See [the current Dev 1 handoff](Dev1-Handoff.md) and [MySQL setup guide](../../database/README.md) for that branch's behavior and remaining integration work.
 
 ## Architecture and current scope
 
@@ -42,9 +42,9 @@ Expected console demo: score `1/1`, next difficulty `HARD`, repeated completion 
 
 | Developer | Main ownership | Starting files | First deliverable |
 | --- | --- | --- | --- |
-| Backend Dev 1 — you | Authentication, current-account lifecycle, account-facing save/load/continue coordination, composition | `service/AuthService.java`, `service/PasswordHasher.java`, `service/ProgressService.java`, `backend/BackendContext.java` | Tested signup/login/logout with an authenticated account facade; then account-scoped Continue/save/load |
+| Backend Dev 1 (you) | Authentication, current-account lifecycle, account-facing save/load/continue coordination, composition | `service/AuthService.java`, `service/PasswordHasher.java`, `service/ProgressService.java`, `backend/BackendContext.java` | Tested signup/login/logout with an authenticated account facade; then account-scoped Continue/save/load |
 | Backend Dev 2 | Chapter/story flow, comprehension checks, scoring, results, Java difficulty decisions, eventual model integration | `service/AssessmentService.java`, `service/DifficultyPolicy.java`, `service/BaselineDifficultyPolicy.java`, `model/Chapter.java` | One chapter playable through service calls, with first-answer scoring and stable results |
-| Dev 3 — database | Database selection, schema/migrations, sample data, JDBC/storage adapters, persistence tests | `database/`, repository contracts; create `repository/jdbc/` after database choice | First persisted chapter read, followed by account/student registration and durable assessment/save operations |
+| Dev 3 (database) | Database selection, schema/migrations, sample data, JDBC/storage adapters, persistence tests | `database/`, repository contracts; create `repository/jdbc/` after database choice | First persisted chapter read, followed by account/student registration and durable assessment/save operations |
 
 Split by feature ownership, not “one person writes models and another writes controllers.” Each backend developer owns tests for their feature. Dev 3 writes adapter integration tests that enforce the same repository contracts as the in-memory adapters.
 
@@ -67,7 +67,7 @@ Acceptance tests: signup success and invalid input, duplicate normalized usernam
 1. Create a small prepared chapter/story with stable node IDs. Add a story-flow service with a clear current node and legal choice transitions; personal story choices must not contribute to comprehension scores.
 2. Use `AssessmentService.start`, `questions`, `submit`, and `complete` for comprehension checks. Public question prompts omit answer-key indexes. A second submission does not replace the first answer.
 3. Retain the same completed result on repeated completion or a replay of the same chapter variant. Coordinate logical chapter IDs and variant IDs with Dev 3 so replay cannot bypass scoring protections by changing IDs.
-4. Select the next prepared variant from Java's difficulty result. Baseline: at least 80% increases one level, 60% to below 80% keeps, below 60% decreases; clamp to EASY–MEDIUM–HARD. These rules are experimental, not validated educational assessment.
+4. Select the next prepared variant from Java's difficulty result. Baseline: at least 80% increases one level, 60% to below 80% keeps, below 60% decreases; clamp to EASY-MEDIUM-HARD. These rules are experimental, not validated educational assessment.
 5. Connect the results view to the persisted assessment result; do not recompute scores in controllers. Derive history/progress from assessment records, not the legacy dashboard's demo counters.
 6. Integrate AI only after the baseline works. The existing prototype is on `feature/java-owned-qwen-prototype`. Adapt its Java decision layer behind `DifficultyPolicy`; use context student/chapter IDs to query history, but send only numeric summaries to Python. Do not merge the whole branch blindly over newer main.
 7. Keep model/network work off the JavaFX thread. Before model integration, replace the coarse synchronized completion critical section with a per-session/in-flight design that does not block all other sessions during inference while still preventing duplicate completion.

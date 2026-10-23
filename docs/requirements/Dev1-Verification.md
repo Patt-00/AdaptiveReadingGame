@@ -1,5 +1,7 @@
 # Dev 1 verification
 
+> Historical snapshot: This verification predates the current playable-flow integration. See [current playable-flow verification](Dev1-Playable-Flow-Verification-2026-10-22.md) for the present application status and latest combined test run.
+
 Verified on October 11, 2026 (Asia/Manila), against the Dev 1 branch changes. This is evidence for the implemented Dev 1 scope, not a declaration that the whole game or MySQL integration is finished.
 
 ## Build and tests

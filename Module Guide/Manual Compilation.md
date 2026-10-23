@@ -1,4 +1,4 @@
-# Manual JavaFX Compilation — Windows, Linux, and macOS
+# Manual JavaFX compilation for Windows, Linux, and macOS
 
 This guide compiles AdaptiveReadingGame using `javac` and runs it using `java` in a terminal. Maven and an IDE are not required for these commands.
 
@@ -32,7 +32,8 @@ The application's package is `com.adaptivereadinggame`. Its launch class is **`c
 - Install a JDK with both `java` and `javac`. Use JDK 21 or newer to match the project's compiler release of 21.
 - Download and extract the JavaFX 21.0.5 **SDK** for your operating system and processor architecture. Match Windows, Linux, or macOS and x64 or ARM64 to your computer.
 - Put the extracted SDK in `Modules`. The examples assume `Modules/javafx-sdk-21.0.5/lib`. Change the path if your SDK folder has a different name.
-- On `Dev1`, put the three Jackson runtime JARs (`jackson-databind`, `jackson-core`, `jackson-annotations`) under `Modules/dependencies/`. Use the versions resolved by this branch's Jackson BOM in `pom.xml`, not unrelated versions. These are Java save-JSON libraries, not Python or MySQL drivers.
+- On `Dev1`, put the three Jackson runtime JARs (`jackson-databind`, `jackson-core`, `jackson-annotations`) under `Modules/dependencies/`. Use the versions resolved by this branch's Jackson BOM in `pom.xml`, not unrelated versions.
+- Add MySQL Connector/J 9.7.0 to `Modules/dependencies/` only when you run the app with MySQL settings. The project uses its JDBC driver at runtime and does not need MySQL classes to compile.
 - Verify Java in your terminal:
 
 ```text
@@ -45,12 +46,14 @@ Use the same JDK installation for compiling and running. JavaFX SDKs include nat
 If Maven is available, prepare only the Jackson JARs once with this project-root command (then the commands below still compile into the parent `bin` folder):
 
 ```sh
-mvn dependency:copy-dependencies -DincludeScope=runtime -DincludeGroupIds=com.fasterxml.jackson.core -DoutputDirectory=Modules/dependencies
+mvn dependency:copy-dependencies -DincludeScope=runtime -DincludeGroupIds=com.fasterxml.jackson.core,com.mysql -DoutputDirectory=Modules/dependencies
 ```
 
-Without Maven, obtain the matching JARs from Maven Central according to this POM's BOM. Do not mix versions or commit downloaded JARs; `Modules/` is ignored. For the simplest all-dependency workflow, use `mvn javafx:run` instead.
+Without Maven, obtain the matching JARs from Maven Central according to this POM's dependency versions. Do not mix versions or commit downloaded JARs; `Modules/` is ignored. For the simplest all-dependency workflow, use `mvn javafx:run` instead.
 
-## 3. Windows — PowerShell
+The manual commands use in-memory development storage when `ARG_DB_*` variables are absent. For MySQL mode, set all three variables and apply the schema first. Use the migration steps in [the MySQL setup guide](../database/README.md).
+
+## 3. Windows: PowerShell
 
 Open PowerShell. Replace `C:\path\to\AdaptiveReadingGame` with the actual project folder on your computer. All following paths are relative to that folder.
 
@@ -75,7 +78,7 @@ java --enable-native-access=javafx.graphics --module-path "$javafxLib" --add-mod
 
 These commands are for **PowerShell**, not Windows Command Prompt. Keep using the same terminal so `$javafxLib` remains available.
 
-## 4. Linux — Bash
+## 4. Linux: Bash
 
 Open a Bash terminal. Replace `/path/to/AdaptiveReadingGame` with the actual project folder on your computer. All following paths are relative to that folder.
 
@@ -100,7 +103,7 @@ java --enable-native-access=javafx.graphics --module-path "$javafx_lib" --add-mo
 
 These source-collection commands require Bash. Keep using the same terminal so the variables remain available.
 
-## 5. macOS — Terminal / zsh
+## 5. macOS: Terminal / zsh
 
 Open Terminal. Replace `/path/to/AdaptiveReadingGame` with the actual project folder on your computer. Use the macOS SDK for your Mac's processor: ARM64 for Apple Silicon or x64 for Intel.
 
@@ -153,6 +156,7 @@ The compile commands include all Java source files and enable FXML for the appli
 | `release version 21 not supported` | Your compiler is older than JDK 21. |
 | `Module javafx.controls not found` | Check the SDK `lib` path and that it contains `javafx.controls.jar`. |
 | `package com.fasterxml.jackson... does not exist` / `NoClassDefFoundError` for Jackson | Prepare the three matching Jackson JARs in `Modules/dependencies/`, then use the compile and runtime classpaths shown above. |
+| `No suitable driver` when MySQL is configured | Copy MySQL Connector/J and its runtime dependencies into `Modules/dependencies/`. Confirm the runtime classpath includes that folder. |
 | `Could not find or load main class` | Compile successfully, stay in the project root, and use `com.adaptivereadinggame.AdaptiveReadingGameApp`. |
 | `UnsupportedClassVersionError` | The runtime JDK is older than the compiler target or JavaFX dependency requirements. |
 | Graphics/native-library errors | Check the SDK's OS and processor architecture; a Windows DLL does not work on Linux/macOS. |

@@ -4,7 +4,7 @@ import com.adaptivereadinggame.model.Account;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Dev 3 adapter: enforce unique normalized usernames and never return password hashes here. */
+/** Stores public account records with unique normalized usernames and no credential data. */
 public interface AccountRepository {
     Optional<Account> findAccount(UUID id);
     Optional<Account> findByUsername(String normalizedUsername);

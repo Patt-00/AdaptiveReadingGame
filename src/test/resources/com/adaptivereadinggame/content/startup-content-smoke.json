@@ -1,0 +1,48 @@
+{
+  "formatVersion": 1,
+  "chapters": [
+    {
+      "id": "startup-smoke-chapter",
+      "title": "Startup Content Check",
+      "difficulty": "EASY",
+      "passage": "A temporary passage verifies that the application can load approved content.",
+      "startNodeId": "opening",
+      "nodes": [
+        {
+          "id": "opening",
+          "speakerName": "Guide",
+          "dialogueText": "The application loaded this temporary test chapter.",
+          "thought": false,
+          "readingCheck": false,
+          "nextNodeId": "reading-check",
+          "choices": []
+        },
+        {
+          "id": "reading-check",
+          "speakerName": "",
+          "dialogueText": "Read the passage and answer the question.",
+          "thought": false,
+          "readingCheck": true,
+          "nextNodeId": "",
+          "choices": []
+        }
+      ],
+      "questions": [
+        {
+          "id": "startup-question",
+          "prompt": "What is this chapter checking?",
+          "choices": ["Application startup", "A real story"],
+          "correctChoiceIndex": 0,
+          "explanation": "This synthetic chapter verifies the content-loading path only."
+        },
+        {
+          "id": "resume-question",
+          "prompt": "Where does the reader continue after saving?",
+          "choices": ["The next question", "A different chapter"],
+          "correctChoiceIndex": 0,
+          "explanation": "A saved reading check resumes at its next unanswered question."
+        }
+      ]
+    }
+  ]
+}
