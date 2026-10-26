@@ -45,7 +45,9 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.robot.Robot;
 import javafx.geometry.Bounds;
 import javafx.scene.image.ImageView;
+import javafx.scene.paint.Color;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
@@ -587,7 +589,25 @@ class Dev1UiTest {
                 && image.isVisible() && image.getImage() != null && !navigator.workInProgress());
         fx(() -> {
             assertEquals("Hailey", label("speakerName").getText());
-            assertNotNull(((ImageView) root().lookup("#speakerImage")).getImage());
+            ImageView portrait = (ImageView) root().lookup("#speakerImage");
+            assertNotNull(portrait.getImage());
+            assertEquals(0, portrait.getImage().getPixelReader().getColor(0, 0).getOpacity(), 0.01,
+                    "Character art keeps its transparent cutout around the pose.");
+            assertTrue(portrait.getFitHeight() >= 450, "The character pose uses the expanded story stage.");
+            Node panel = root().lookup("#storyPanel");
+            Node portraitColumn = root().lookup("#portraitColumn");
+            assertTrue(panel.getBoundsInParent().getHeight() < portraitColumn.getBoundsInParent().getHeight() - 80,
+                    "The dialogue panel remains compact beside the full character pose.");
+            StackPane portraitFrame = (StackPane) root().lookup("#portraitFrame");
+            assertTrue(portraitFrame.getBackground() == null || portraitFrame.getBackground().getFills().stream()
+                            .allMatch(fill -> fill.getFill() instanceof Color color && color.getOpacity() == 0),
+                    "The character cutout sits directly over the scene without the old paper card.");
+            Node speakerLabel = root().lookup("#speakerName");
+            assertEquals("storyPanel", speakerLabel.getParent().getParent().getId(),
+                    "The speaker name sits in the dialogue nameplate.");
+            ScrollPane dialogue = (ScrollPane) root().lookup("#dialogueScroll");
+            assertTrue(dialogue.getPrefViewportHeight() >= 96 && dialogue.getPrefViewportHeight() < 220,
+                    "Short lines keep the dialogue panel compact.");
             assertNull(root().lookup("#voiceButton"), "The reading screen has no audio control.");
             capture(root(), "draft-hailey-scene");
             return null;
@@ -900,7 +920,8 @@ class Dev1UiTest {
         ConnectionProvider connections = mysqlTestConnections();
         new MySqlSchemaMigrator(connections).migrate();
         BackendContext firstBackend = BackendContext.mysql(connections);
-        StoryPack.ChapterPack chapter = fixtureChapter("mysql-ui-" + shortId(), "MySQL UI fixture");
+        String fixtureTitle = "MySQL UI fixture " + shortId();
+        StoryPack.ChapterPack chapter = fixtureChapter("mysql-ui-" + shortId(), fixtureTitle);
         firstBackend.storyPackImporter().orElseThrow().importPack(new StoryPack(List.of(chapter)));
         String username = "mysql-ui-" + shortId();
         String passwordValue = "StrongPass1!";
@@ -928,7 +949,7 @@ class Dev1UiTest {
             return null;
         });
         await(() -> Window.getWindows().stream().anyMatch(window -> window != stage && window.isShowing()));
-        fx(() -> { dialogButtonContaining("MySQL UI fixture").fire(); return null; });
+        fx(() -> { dialogButtonContaining(fixtureTitle).fire(); return null; });
         await(() -> root().lookup("#instructionsRoot") != null && !navigator.workInProgress());
         fx(() -> { click("START CHAPTER"); return null; });
         await(() -> root().lookup("#gameplayRoot") != null && !navigator.workInProgress());

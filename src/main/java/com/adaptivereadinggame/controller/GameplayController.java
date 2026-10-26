@@ -13,6 +13,8 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Control;
+import javafx.animation.FadeTransition;
+import javafx.animation.TranslateTransition;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.ButtonType;
 import javafx.scene.image.Image;
@@ -27,6 +29,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.geometry.Pos;
+import javafx.util.Duration;
 import com.adaptivereadinggame.view.StoryArtworkPane;
 import javafx.scene.control.ScrollPane;
 import java.io.IOException;
@@ -34,6 +37,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /** Displays prepared story nodes and comprehension questions from the account-safe services. */
@@ -45,12 +50,16 @@ public final class GameplayController {
     private final AppNavigator navigator;
     private final CharacterAssetResolver assets = new CharacterAssetResolver();
     private final StoryAssetResolver storyAssets = new StoryAssetResolver();
+    private final Map<Path, Image> characterImageCache = new HashMap<>();
     private final ToggleGroup answerGroup = new ToggleGroup();
     private LoadedGame loaded;
     private AssessmentService.QuestionPrompt activeQuestion;
     private boolean showingFeedback;
     private boolean spaceHeld;
     private Boolean narrowStoryLayout;
+    private FadeTransition storyPanelFade;
+    private FadeTransition portraitFade;
+    private TranslateTransition portraitSlide;
 
     @FXML private BorderPane gameplayRoot;
     @FXML private StackPane centerRoot;
@@ -131,14 +140,20 @@ public final class GameplayController {
             row = column;
         } else {
             HBox line = new HBox(24, portraitColumn, storyPanel);
-            line.setAlignment(Pos.CENTER);
+            line.setAlignment(Pos.BOTTOM_CENTER);
+            line.setFillHeight(false);
             HBox.setHgrow(storyPanel, Priority.ALWAYS);
             row = line;
         }
         row.setMinWidth(0);
         storyRow.getChildren().setAll(row);
-        portraitFrame.setPrefHeight(narrow ? 220 : 330);
-        speakerImage.setFitHeight(narrow ? 220 : 330);
+        double portraitWidth = narrow ? 240 : 320;
+        double portraitHeight = narrow ? 220 : 460;
+        portraitFrame.setPrefWidth(portraitWidth);
+        portraitFrame.setMaxWidth(portraitWidth);
+        portraitFrame.setPrefHeight(portraitHeight);
+        speakerImage.setFitWidth(portraitWidth);
+        speakerImage.setFitHeight(portraitHeight);
     }
 
     private LoadedGame loadGame() {
@@ -193,21 +208,25 @@ public final class GameplayController {
         if (node.thought()) storyPanel.getStyleClass().add("thought-panel");
         storyModeLabel.setText(node.thought() ? "THOUGHT" : node.speakerName().isBlank() ? "NARRATION" : "DIALOGUE");
         speakerName.setText(node.speakerName().isBlank() ? "Narration" : node.speakerName());
+        speakerName.setVisible(!node.speakerName().isBlank());
+        speakerName.setManaged(!node.speakerName().isBlank());
         speakerInitials.setText(initials(node.speakerName()));
         boolean showCg = !node.cgAssetKey().isBlank();
         boolean showPortrait = !showCg && !node.speakerName().isBlank();
         portraitColumn.setVisible(showPortrait);
         portraitColumn.setManaged(showPortrait);
         storyPanel.getStyleClass().remove("cg-caption-panel");
-        storyPanel.setPrefWidth(showPortrait ? 800 : 980);
+        storyPanel.setPrefWidth(showPortrait ? 760 : 980);
         storyPanel.setMaxWidth(showPortrait ? 800 : 980);
-        storyText.setMaxWidth(showPortrait ? 740 : 920);
+        storyText.setMaxWidth(showPortrait ? 700 : 920);
         if (showCg) storyPanel.getStyleClass().add("cg-caption-panel");
         showSceneAssets(node);
         showCharacterImage(node);
         storyText.setText(node.dialogueText());
         footerText.setText("Story choices change the narrative. They do not affect your reading score.");
         applyReadingFontScale();
+        sizeDialogueViewport();
+        animateStoryPanelEntrance();
 
         if (!node.storyChoices().isEmpty()) {
             storyNextButton.setVisible(false);
@@ -236,6 +255,8 @@ public final class GameplayController {
         speakerImage.setImage(null);
         speakerImage.setVisible(false);
         speakerImage.setManaged(false);
+        speakerImage.setOpacity(1);
+        speakerImage.setTranslateX(0);
         if (!navigator.characterArtworkEnabled() || node.speakerAssetKey().isBlank() || !node.cgAssetKey().isBlank()) {
             speakerInitials.setVisible(!node.speakerName().isBlank());
             speakerInitials.setManaged(!node.speakerName().isBlank());
@@ -244,7 +265,8 @@ public final class GameplayController {
         try {
             String configuredRoot = System.getenv().getOrDefault("ARG_ASSET_DIR", "assets");
             assets.findCharacterImage(node.speakerAssetKey(), Path.of(configuredRoot)).ifPresent(path -> {
-                Image image = new Image(path.toUri().toString(), 250, 330, true, true, false);
+                Image image = characterImageCache.computeIfAbsent(path,
+                        imagePath -> new Image(imagePath.toUri().toString(), 640, 900, true, true, false));
                 if (!image.isError()) {
                     speakerImage.setImage(image);
                     speakerImage.setAccessibleText(node.speakerName());
@@ -252,12 +274,48 @@ public final class GameplayController {
                     speakerImage.setManaged(true);
                     speakerInitials.setVisible(false);
                     speakerInitials.setManaged(false);
+                    animatePortraitEntrance();
                 }
             });
         } catch (RuntimeException invalidAssetDirectory) {
             speakerInitials.setVisible(!node.speakerName().isBlank());
             speakerInitials.setManaged(!node.speakerName().isBlank());
         }
+    }
+
+    private void animatePortraitEntrance() {
+        if (portraitFade != null) portraitFade.stop();
+        if (portraitSlide != null) portraitSlide.stop();
+        speakerImage.setOpacity(0.72);
+        speakerImage.setTranslateX(14);
+        portraitFade = new FadeTransition(Duration.millis(180), speakerImage);
+        portraitFade.setFromValue(0.72);
+        portraitFade.setToValue(1.0);
+        portraitFade.play();
+        portraitSlide = new TranslateTransition(Duration.millis(180), speakerImage);
+        portraitSlide.setFromX(14);
+        portraitSlide.setToX(0);
+        portraitSlide.play();
+    }
+
+    private void animateStoryPanelEntrance() {
+        if (storyPanelFade != null) storyPanelFade.stop();
+        storyPanel.setOpacity(0.88);
+        storyPanelFade = new FadeTransition(Duration.millis(150), storyPanel);
+        storyPanelFade.setFromValue(0.88);
+        storyPanelFade.setToValue(1.0);
+        storyPanelFade.play();
+    }
+
+    private void sizeDialogueViewport() {
+        storyText.applyCss();
+        double panelWidth = storyPanel.getWidth() > 0 ? storyPanel.getWidth()
+                : storyPanel.getPrefWidth();
+        double availableTextWidth = Math.max(120, Math.min(storyText.getMaxWidth(), panelWidth - 76));
+        double neededHeight = storyText.prefHeight(availableTextWidth) + 12;
+        double viewportHeight = Math.max(96, Math.min(220, neededHeight));
+        dialogueScroll.setPrefViewportHeight(viewportHeight);
+        dialogueScroll.setMaxHeight(viewportHeight);
     }
 
     private void showSceneAssets(StoryNode node) {

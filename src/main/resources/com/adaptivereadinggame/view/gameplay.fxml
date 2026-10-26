@@ -37,16 +37,18 @@
                         visible="false" managed="false" onAction="#viewIllustration"/>
                 <StackPane fx:id="storyRow" minWidth="0" maxWidth="1120">
                     <VBox fx:id="portraitColumn" alignment="CENTER" spacing="10" styleClass="portrait-column">
-                        <StackPane fx:id="portraitFrame" styleClass="portrait-frame" prefWidth="250" maxWidth="250" prefHeight="330">
+                        <StackPane fx:id="portraitFrame" styleClass="portrait-frame" prefWidth="320" maxWidth="320" prefHeight="460">
                             <Label fx:id="speakerInitials" styleClass="speaker-initials" text=""/>
-                            <ImageView fx:id="speakerImage" fitWidth="250" fitHeight="330" preserveRatio="true"
-                                       smooth="true" visible="false" managed="false" accessibleText="Character artwork"/>
+                            <ImageView fx:id="speakerImage" fitWidth="320" fitHeight="460" preserveRatio="true"
+                                       smooth="true" styleClass="speaker-image" visible="false" managed="false"
+                                       accessibleText="Character artwork"/>
                         </StackPane>
-                        <Label fx:id="speakerName" styleClass="speaker-name" text="" wrapText="true"/>
                     </VBox>
-                    <VBox fx:id="storyPanel" minWidth="0" minHeight="-Infinity" spacing="12" styleClass="story-panel" maxWidth="800" prefWidth="800">
-                        <HBox alignment="CENTER_LEFT" spacing="12">
+                    <VBox fx:id="storyPanel" minWidth="0" minHeight="-Infinity" maxHeight="-Infinity" spacing="14" styleClass="story-panel" maxWidth="800" prefWidth="760">
+                        <HBox styleClass="story-panel-heading" alignment="CENTER_LEFT" spacing="12">
                             <Label fx:id="storyModeLabel" styleClass="story-mode" text="NARRATION"/>
+                            <Label fx:id="speakerName" styleClass="speaker-name" text="Narration" wrapText="true"
+                                   visible="false" managed="false"/>
                             <Region HBox.hgrow="ALWAYS"/>
                         </HBox>
                         <ScrollPane fx:id="dialogueScroll" fitToWidth="true" fitToHeight="false" pannable="true"
