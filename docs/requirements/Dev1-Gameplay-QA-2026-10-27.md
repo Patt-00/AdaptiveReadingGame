@@ -1,6 +1,6 @@
 # Gameplay repair and verification, 2026-10-27
 
-The gameplay sizing repair was tested in `59d98e8` on the `test-merge` worktree. The final commit `715e2c7` merges that tested tree with GitHub `main` at `a335ebb`. Verification was completed on 2026-10-27.
+The gameplay sizing repair was tested in `59d98e8` on the `test-merge` worktree. Merge commit `715e2c7` combines that tested tree with GitHub `main` at `a335ebb`. The published GitHub `main` tip is `20f46eb`. Verification was completed on 2026-10-27.
 
 ## Confirmed defects and repairs
 
