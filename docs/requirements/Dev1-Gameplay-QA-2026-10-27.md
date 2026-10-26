@@ -1,6 +1,6 @@
 # Gameplay repair and verification, 2026-10-27
 
-The gameplay sizing repair is in the `test-merge` worktree at `/home/patt/Desktop/AdaptiveReadingGame-Dev1`. This report records verification on 2026-10-27. The change remains local until its GitHub update is complete.
+The gameplay sizing repair was tested in `59d98e8` on the `test-merge` worktree. The final commit `715e2c7` merges that tested tree with GitHub `main` at `a335ebb`. Verification was completed on 2026-10-27.
 
 ## Confirmed defects and repairs
 
