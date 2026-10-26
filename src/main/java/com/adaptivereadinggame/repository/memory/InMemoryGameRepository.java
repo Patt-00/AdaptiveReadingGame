@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /** Replace through repository interfaces, never by adding SQL to a controller/service. */
 public final class InMemoryGameRepository implements ChapterRepository, AssessmentRepository, SaveGameRepository,
         StoryContentRepository {
-    private record AssessmentKey(UUID studentId, UUID chapterId) {}
+    private record AssessmentKey(UUID studentId, UUID chapterId, String checkpointId) {}
     private record SlotKey(UUID studentId, int slot) {}
     private final Map<UUID, Chapter> chapters = new ConcurrentHashMap<>();
     private final Map<AssessmentKey, AssessmentResult> results = new ConcurrentHashMap<>();
@@ -17,7 +17,9 @@ public final class InMemoryGameRepository implements ChapterRepository, Assessme
     private final Map<UUID, String> firstNodes = new ConcurrentHashMap<>();
     @Override public Optional<Chapter> findChapter(UUID id) { return Optional.ofNullable(chapters.get(Objects.requireNonNull(id))); }
     @Override public List<Chapter> findByDifficulty(Difficulty difficulty) {
-        return chapters.values().stream().filter(c -> c.difficulty() == difficulty)
+        return chapters.values().stream().filter(c -> c.difficulty() == difficulty
+                        || c.adaptive() && c.checkpoints().stream()
+                                .allMatch(checkpoint -> checkpoint.questionsByDifficulty().containsKey(difficulty)))
                 .sorted(Comparator.comparing(Chapter::title).thenComparing(Chapter::id)).toList();
     }
     @Override public Chapter saveChapter(Chapter chapter) {
@@ -28,10 +30,20 @@ public final class InMemoryGameRepository implements ChapterRepository, Assessme
         return existing == null ? chapter : existing;
     }
     @Override public synchronized void saveStoryNodes(UUID chapterId, List<StoryNode> nodes, String firstNodeId) {
+        Chapter chapter = chapters.get(Objects.requireNonNull(chapterId));
+        if (chapter == null) throw new IllegalArgumentException("Unknown chapter.");
+        saveStoryNodes(chapterId, nodes, firstNodeId, chapter.checkpoints());
+    }
+    @Override public synchronized void saveStoryNodes(UUID chapterId, List<StoryNode> nodes, String firstNodeId,
+                                                       List<StoryCheckpoint> checkpoints) {
         Objects.requireNonNull(chapterId);
         Objects.requireNonNull(nodes);
         if (!chapters.containsKey(chapterId)) throw new IllegalArgumentException("Unknown chapter.");
-        StoryGraphValidator.validate(nodes, firstNodeId);
+        Chapter chapter = chapters.get(chapterId);
+        if (!chapter.checkpoints().equals(List.copyOf(checkpoints)))
+            throw new IllegalArgumentException("Story checkpoint definitions must match the prepared chapter.");
+        if (chapter.adaptive()) StoryGraphValidator.validateAdaptive(nodes, firstNodeId, chapter.checkpoints());
+        else StoryGraphValidator.validate(nodes, firstNodeId);
         Map<String, StoryNode> byId = new LinkedHashMap<>();
         for (StoryNode node : nodes) {
             byId.put(node.storyNodeId(), node);
@@ -53,7 +65,18 @@ public final class InMemoryGameRepository implements ChapterRepository, Assessme
         return Optional.ofNullable(storyNodes.getOrDefault(chapterId, Map.of()).get(storyNodeId));
     }
     @Override public Optional<AssessmentResult> findCompleted(UUID studentId, UUID chapterId) {
-        return Optional.ofNullable(results.get(new AssessmentKey(studentId, chapterId)));
+        return findCompleted(studentId, chapterId, "");
+    }
+    @Override public Optional<AssessmentResult> findCompleted(UUID studentId, UUID chapterId, String checkpointId) {
+        return Optional.ofNullable(results.get(new AssessmentKey(studentId, chapterId,
+                Objects.requireNonNullElse(checkpointId, ""))));
+    }
+    @Override public List<AssessmentResult> resultsForChapter(UUID studentId, UUID chapterId) {
+        return results.entrySet().stream().filter(entry -> entry.getKey().studentId().equals(studentId)
+                        && entry.getKey().chapterId().equals(chapterId))
+                .map(Map.Entry::getValue)
+                .sorted(Comparator.comparing((AssessmentResult r) -> r.attempt().completedAt())
+                        .thenComparing(r -> r.attempt().id())).toList();
     }
     @Override public List<AssessmentResult> historyFor(UUID studentId) {
         return results.values().stream().filter(r -> r.attempt().studentId().equals(studentId))
@@ -61,7 +84,8 @@ public final class InMemoryGameRepository implements ChapterRepository, Assessme
     }
     @Override public AssessmentResult saveCompleted(AssessmentResult result) {
         var attempt = result.attempt();
-        var existing = results.putIfAbsent(new AssessmentKey(attempt.studentId(), attempt.materialId()), result);
+        var existing = results.putIfAbsent(new AssessmentKey(attempt.studentId(), attempt.materialId(),
+                attempt.checkpointId()), result);
         return existing == null ? result : existing;
     }
     @Override public Optional<SaveGame> findSlot(UUID studentId, int slot) {

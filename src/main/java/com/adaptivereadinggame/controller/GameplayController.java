@@ -1,6 +1,7 @@
 package com.adaptivereadinggame.controller;
 
 import com.adaptivereadinggame.content.CharacterAssetResolver;
+import com.adaptivereadinggame.content.StoryAssetResolver;
 import com.adaptivereadinggame.model.StoryNode;
 import com.adaptivereadinggame.model.StoryChoice;
 import com.adaptivereadinggame.service.AccountGameService;
@@ -11,11 +12,22 @@ import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.Control;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.ButtonType;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.event.EventHandler;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
+import javafx.geometry.Pos;
+import com.adaptivereadinggame.view.StoryArtworkPane;
 import javafx.scene.control.ScrollPane;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -32,15 +44,24 @@ public final class GameplayController {
 
     private final AppNavigator navigator;
     private final CharacterAssetResolver assets = new CharacterAssetResolver();
+    private final StoryAssetResolver storyAssets = new StoryAssetResolver();
     private final ToggleGroup answerGroup = new ToggleGroup();
     private LoadedGame loaded;
     private AssessmentService.QuestionPrompt activeQuestion;
     private boolean showingFeedback;
+    private boolean spaceHeld;
+    private Boolean narrowStoryLayout;
 
     @FXML private BorderPane gameplayRoot;
+    @FXML private StackPane centerRoot;
+    @FXML private StoryArtworkPane artworkLayer;
+    @FXML private StackPane storyRow;
+    @FXML private StackPane portraitFrame;
     @FXML private ScrollPane storyScroll;
+    @FXML private ScrollPane dialogueScroll;
     @FXML private ScrollPane assessmentScroll;
     @FXML private VBox storyPanel;
+    @FXML private VBox portraitColumn;
     @FXML private VBox storyChoices;
     @FXML private VBox answerChoices;
     @FXML private VBox feedbackPane;
@@ -62,35 +83,80 @@ public final class GameplayController {
     @FXML private Button storyNextButton;
     @FXML private Button submitButton;
     @FXML private Button nextQuestionButton;
+    @FXML private Button illustrationButton;
 
     public GameplayController(AppNavigator navigator) { this.navigator = Objects.requireNonNull(navigator); }
 
     @FXML private void initialize() {
+        storyScroll.viewportBoundsProperty().addListener((observable, before, after) -> updateStoryLayout(after.getWidth()));
+        updateStoryLayout(1280);
         gameplayRoot.setFocusTraversable(true);
         gameplayRoot.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ESCAPE) {
-                openMenu();
+                if (!navigator.workInProgress()) openMenu();
                 event.consume();
-            } else if (event.getCode() == KeyCode.SPACE && showingFeedback) {
-                nextQuestion();
-                event.consume();
-            } else if (event.getCode() == KeyCode.SPACE && storyScroll.isVisible() && storyNextButton.isVisible()) {
-                advanceStory();
+            } else if (event.getCode() == KeyCode.SPACE
+                    && !(gameplayRoot.getScene().getFocusOwner() instanceof Control)) {
+                if (!spaceHeld && !navigator.workInProgress()) {
+                    spaceHeld = true;
+                    if (showingFeedback) nextQuestion();
+                    else if (storyScroll.isVisible() && storyNextButton.isVisible()) advanceStory();
+                }
                 event.consume();
             }
+        });
+        EventHandler<KeyEvent> releaseShortcut = event -> {
+            if (event.getCode() == KeyCode.SPACE) spaceHeld = false;
+        };
+        // A release can arrive while the content is disabled by an asynchronous action.
+        gameplayRoot.sceneProperty().addListener((observable, previous, current) -> {
+            if (previous != null) previous.removeEventFilter(KeyEvent.KEY_RELEASED, releaseShortcut);
+            if (current != null) current.addEventFilter(KeyEvent.KEY_RELEASED, releaseShortcut);
         });
         fontNotice.setText(navigator.fontNotice());
         reload();
     }
 
+    private void updateStoryLayout(double width) {
+        boolean narrow = width < 900;
+        if (narrowStoryLayout != null && narrowStoryLayout == narrow) return;
+        narrowStoryLayout = narrow;
+        if (!storyRow.getChildren().isEmpty() && storyRow.getChildren().getFirst() instanceof Pane previous
+                && previous != portraitColumn) previous.getChildren().clear();
+        storyRow.getChildren().clear();
+        Pane row;
+        if (narrow) {
+            VBox column = new VBox(16, portraitColumn, storyPanel);
+            column.setAlignment(Pos.CENTER);
+            row = column;
+        } else {
+            HBox line = new HBox(24, portraitColumn, storyPanel);
+            line.setAlignment(Pos.CENTER);
+            HBox.setHgrow(storyPanel, Priority.ALWAYS);
+            row = line;
+        }
+        row.setMinWidth(0);
+        storyRow.getChildren().setAll(row);
+        portraitFrame.setPrefHeight(narrow ? 220 : 330);
+        speakerImage.setFitHeight(narrow ? 220 : 330);
+    }
+
     private LoadedGame loadGame() {
         AccountGameService game = navigator.backend().accountGameService();
         var view = game.currentGameView().orElseThrow(() -> new IllegalStateException("No chapter is active."));
-        if (view.completedResult().isPresent()) return new LoadedGame(view, List.of());
-        if (view.state().assessmentSessionId() == null && view.storyNode().readingCheck()) {
+        int skippedCompletedCheckpoints = 0;
+        while (view.completedResult().isEmpty() && view.state().assessmentSessionId() == null
+                && view.storyNode().readingCheck()) {
+            if (game.advanceCompletedCheckpointIfPresent()) {
+                if (++skippedCompletedCheckpoints > 20)
+                    throw new IllegalStateException("Too many saved checkpoint results form an invalid story path.");
+                view = game.currentGameView().orElseThrow(() -> new IllegalStateException("The story could not resume."));
+                continue;
+            }
             game.startAssessment(view.chapter().id());
             view = game.currentGameView().orElseThrow(() -> new IllegalStateException("The reading check could not be opened."));
         }
+        if (view.completedResult().isPresent()) return new LoadedGame(view, List.of());
         List<AssessmentService.QuestionPrompt> questions = view.state().assessmentSessionId() == null
                 ? List.of() : game.questions(view.state().assessmentSessionId());
         return new LoadedGame(view, questions);
@@ -121,11 +187,23 @@ public final class GameplayController {
         assessmentScroll.setVisible(false);
         assessmentScroll.setManaged(false);
         storyChoices.getChildren().clear();
+        storyScroll.setVvalue(0);
+        dialogueScroll.setVvalue(0);
         storyPanel.getStyleClass().remove("thought-panel");
         if (node.thought()) storyPanel.getStyleClass().add("thought-panel");
         storyModeLabel.setText(node.thought() ? "THOUGHT" : node.speakerName().isBlank() ? "NARRATION" : "DIALOGUE");
         speakerName.setText(node.speakerName().isBlank() ? "Narration" : node.speakerName());
         speakerInitials.setText(initials(node.speakerName()));
+        boolean showCg = !node.cgAssetKey().isBlank();
+        boolean showPortrait = !showCg && !node.speakerName().isBlank();
+        portraitColumn.setVisible(showPortrait);
+        portraitColumn.setManaged(showPortrait);
+        storyPanel.getStyleClass().remove("cg-caption-panel");
+        storyPanel.setPrefWidth(showPortrait ? 800 : 980);
+        storyPanel.setMaxWidth(showPortrait ? 800 : 980);
+        storyText.setMaxWidth(showPortrait ? 740 : 920);
+        if (showCg) storyPanel.getStyleClass().add("cg-caption-panel");
+        showSceneAssets(node);
         showCharacterImage(node);
         storyText.setText(node.dialogueText());
         footerText.setText("Story choices change the narrative. They do not affect your reading score.");
@@ -139,6 +217,8 @@ public final class GameplayController {
                 button.setId("story-choice-" + choice.choiceId());
                 button.setAccessibleText(choice.choiceText());
                 button.setMaxWidth(Double.MAX_VALUE);
+                button.setWrapText(true);
+                button.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
                 button.getStyleClass().add("story-choice-button");
                 button.setOnAction(event -> chooseStory(choice.choiceId()));
                 storyChoices.getChildren().add(button);
@@ -156,7 +236,7 @@ public final class GameplayController {
         speakerImage.setImage(null);
         speakerImage.setVisible(false);
         speakerImage.setManaged(false);
-        if (!navigator.characterArtworkEnabled() || node.speakerAssetKey().isBlank()) {
+        if (!navigator.characterArtworkEnabled() || node.speakerAssetKey().isBlank() || !node.cgAssetKey().isBlank()) {
             speakerInitials.setVisible(!node.speakerName().isBlank());
             speakerInitials.setManaged(!node.speakerName().isBlank());
             return;
@@ -180,10 +260,59 @@ public final class GameplayController {
         }
     }
 
+    private void showSceneAssets(StoryNode node) {
+        artworkLayer.clear();
+        illustrationButton.setVisible(false);
+        illustrationButton.setManaged(false);
+        try {
+            Path root = Path.of(System.getenv().getOrDefault("ARG_ASSET_DIR", "assets"));
+            if (!node.sceneAssetKey().isBlank()) {
+                storyAssets.findSceneImage(node.sceneAssetKey(), root).ifPresent(path -> {
+                    Image image = new Image(path.toUri().toString(), 1280, 720, false, true, false);
+                    if (!image.isError()) {
+                        artworkLayer.setSceneImage(image);
+                    }
+                });
+            }
+            if (!node.cgAssetKey().isBlank()) {
+                storyAssets.findCgImage(node.cgAssetKey(), root).ifPresent(path -> {
+                    Image image = new Image(path.toUri().toString(), 1280, 720, true, true, false);
+                    if (!image.isError()) {
+                        artworkLayer.setIllustration(image);
+                        illustrationButton.setVisible(true);
+                        illustrationButton.setManaged(true);
+                    }
+                });
+            }
+        } catch (RuntimeException invalidAssetDirectory) {
+            // Optional art never prevents the story text from being displayed.
+        }
+    }
+
+    @FXML private void viewIllustration() {
+        Image image = artworkLayer.illustrationImage();
+        if (image == null || navigator.workInProgress()) return;
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Story illustration");
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        ImageView fullImage = new ImageView(image);
+        fullImage.setPreserveRatio(true);
+        fullImage.setFitWidth(navigator.stage().getWidth() * 0.8);
+        fullImage.setFitHeight(navigator.stage().getHeight() * 0.7);
+        fullImage.setAccessibleText("Full story illustration");
+        dialog.getDialogPane().setContent(new StackPane(fullImage));
+        navigator.styleDialog(dialog);
+        dialog.showAndWait();
+    }
+
     private void showAssessment(AccountGameService.GameView view,
                                 List<AssessmentService.QuestionPrompt> questions) {
+        artworkLayer.clear();
         storyScroll.setVisible(false);
         storyScroll.setManaged(false);
+        storyNextButton.setVisible(false);
+        storyNextButton.setManaged(false);
+        assessmentScroll.setVvalue(0);
         assessmentScroll.setVisible(true);
         assessmentScroll.setManaged(true);
         footerText.setText("No timer. Only your first submitted answer counts toward the score.");
@@ -219,6 +348,7 @@ public final class GameplayController {
             choice.setId("answer-" + option);
             choice.setAccessibleText("Choice " + letter(option) + ": " + activeQuestion.choices().get(option));
             choice.setWrapText(true);
+            choice.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
             choice.setMaxWidth(Double.MAX_VALUE);
             choice.setUserData(option);
             choice.setToggleGroup(answerGroup);
@@ -274,9 +404,15 @@ public final class GameplayController {
         nextQuestionButton.setAccessibleHelp(index + 1 >= loaded.questions().size()
                 ? "Complete the reading check and view your results."
                 : "Continue to the next reading-check question.");
+        javafx.application.Platform.runLater(() -> {
+            assessmentScroll.applyCss();
+            assessmentScroll.layout();
+            assessmentScroll.setVvalue(assessmentScroll.getVmax());
+        });
     }
 
     @FXML private void nextQuestion() {
+        if (navigator.workInProgress()) return;
         if (!showingFeedback && activeQuestion != null) return;
         if (loaded != null && loaded.view().state().questionIndex() >= loaded.questions().size()) openAnalysis();
         else reload();
@@ -319,6 +455,7 @@ public final class GameplayController {
     }
 
     @FXML private void openMenu() {
+        if (navigator.workInProgress()) return;
         try { navigator.showMenu(); }
         catch (IOException failure) { navigator.notice("Menu unavailable", "The main menu could not open."); }
     }

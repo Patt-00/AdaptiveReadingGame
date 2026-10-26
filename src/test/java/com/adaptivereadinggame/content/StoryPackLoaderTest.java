@@ -103,4 +103,22 @@ class StoryPackLoaderTest {
         String badAnswer = PACK.replace("\"correctChoiceIndex\":1", "\"correctChoiceIndex\":8");
         assertThrows(IllegalArgumentException.class, () -> loader.parse(badAnswer));
     }
+
+    @Test void loadsTheCurrentDraftWithBothInvestigationOrdersAndThreeDifficultyVariants() throws IOException {
+        StoryPack pack = loader.read(Path.of("assets/content/hailey-investigation-draft.json"));
+        assertEquals(StoryPack.CURRENT_FORMAT_VERSION, pack.formatVersion());
+        var chapter = pack.chapters().getFirst().chapter();
+        assertTrue(chapter.adaptive());
+        assertEquals(4, chapter.checkpoints().size());
+        assertTrue(chapter.checkpoints().stream().allMatch(checkpoint ->
+                checkpoint.questionsByDifficulty().keySet().equals(java.util.Set.of(
+                        com.adaptivereadinggame.model.Difficulty.EASY,
+                        com.adaptivereadinggame.model.Difficulty.MEDIUM,
+                        com.adaptivereadinggame.model.Difficulty.HARD))));
+        assertTrue(pack.chapters().getFirst().nodes().stream().anyMatch(node -> node.storyChoices().stream()
+                .anyMatch(choice -> choice.routeId().equals("study-first"))));
+        assertTrue(pack.chapters().getFirst().nodes().stream().anyMatch(node -> node.storyChoices().stream()
+                .anyMatch(choice -> choice.routeId().equals("hall-first"))));
+        assertTrue(pack.chapters().getFirst().nodes().stream().anyMatch(com.adaptivereadinggame.model.StoryNode::storyComplete));
+    }
 }

@@ -1,8 +1,8 @@
-﻿# Adaptive Reading Game
+# Adaptive Reading Game
 
-A school project for a story-driven reading game for elementary students. Players will read stories, make story decisions, and answer comprehension questions. The planned system will save progress per account and adjust reading difficulty after a completed chapter.
+A school project for a story-driven reading game for elementary students. Players read stories, make story decisions, and answer comprehension questions. The application saves progress per account and adjusts reading difficulty after a completed checkpoint.
 
-This `Dev1` branch connects account services, reusable story and assessment services, MySQL repositories, a versioned content-pack loader, and live JavaFX gameplay screens. The approved story, comprehension questions, and character art are not included yet. See [adding content](assets/README.md) and the [Dev 1 handoff](docs/requirements/Dev1-Handoff.md).
+This version connects account services, adaptive story checkpoints, MySQL repositories, the optional difficulty helper, and live JavaFX screens. It includes a provisional story pack and the character and scene artwork shared by the group. The draft uses an unnamed servant and Prince Owen as the working name. The culprit and final ending remain pending. The student game uses written dialogue and images. See [story content and art](assets/README.md) and the [Dev 1 handoff](docs/requirements/Dev1-Handoff.md).
 
 ## Requirements and running the app
 
@@ -21,9 +21,9 @@ The launch class is `com.adaptivereadinggame.AdaptiveReadingGameApp`. It opens a
 
 With no database settings, the app uses visibly labeled in-memory development storage. To use MySQL, set `ARG_DB_URL`, `ARG_DB_USER`, and `ARG_DB_PASSWORD`, then apply the schema described in [database setup](database/README.md).
 
-To load approved story content, set `ARG_CONTENT_PACK` to a local version-1 JSON pack before launching. See [the content-pack guide](assets/README.md). The application has no built-in story or test chapter.
+The app loads `assets/content/hailey-investigation-draft.json` when `ARG_CONTENT_PACK` is not set. Set `ARG_CONTENT_PACK` to a local version-1 or version-2 JSON pack to use other content. The bundled episode is a review draft and ends before a culprit or final ending is chosen. See [the content-pack guide](assets/README.md).
 
-Character image keys resolve under `assets/characters/` by default. Set `ARG_ASSET_DIR` only when approved art is stored under a different local assets folder.
+Character, scene, and CG keys resolve under `assets/characters/`, `assets/scenes/`, and `assets/cg/`. Set `ARG_ASSET_DIR` only when the same folder layout is stored under another trusted asset root.
 
 The optional Qwen helper runs separately from Java. Follow the [model-tool guide](model-tool/README.md) to start it; Java keeps the difficulty decision and uses its fallback when the helper is unavailable.
 
@@ -32,33 +32,33 @@ For commands without Maven, see [Manual Compilation](Module%20Guide/Manual%20Com
 ## Current status
 
 - Main menu layout: title, decorative divider, New Game, Continue, Save/Load, Settings, and Quit.
-- Menu scales with the window and includes hover and keyboard focus states.
+- Menus keep readable text as the window changes size and scroll when needed. Hover and keyboard focus states remain available.
 - Working signup/login/logout with normalized usernames, protected password verifiers, and matching account/student IDs.
 - Account-safe history, full-save, load, Continue, and assessment coordination; no controller-supplied student IDs.
-- Continue is enabled when the signed-in account has a full save. If a chapter is already active, the button becomes Return to Game and resumes its story, question, or results view. The default runtime has no prepared story or seeded saves.
+- Continue is enabled when the signed-in account has a full save. If an episode is active, the button becomes Return to Game and resumes its story, checkpoint, or result view. A new account has no saved progress.
 - Save/Load shows three real account-scoped slots. Saving needs an active game; successful writes and discard/overwrite confirmations are handled by services.
-- New Game lists prepared chapters when a valid content pack is loaded. With no pack, it explains that story content is not ready.
+- New Game lists prepared story episodes at the Java-approved starting difficulty. The bundled draft supports Study-first and Hall-first routes.
 - Quit displays a confirmation before closing the window.
 - The earlier FXML dashboard remains in the project but is not the opening screen.
-- The older standalone backend demo may use synthetic records for local checks; it is not the player-facing story source. The JavaFX app loads only chapters from an approved content pack.
-- Shared story/game-state/full-save records, repository interfaces, and strict version-1 JSON serialization now exist.
+- The older standalone backend demo may use synthetic records for local checks; it is not the player-facing story source. The JavaFX app loads story and question text from versioned JSON packs.
+- Shared story, checkpoint, game-state, and full-save records support version-1 packs and adaptive version-2 packs. Save encoding uses version 2 and still reads version-1 snapshots.
 - Java owns first-answer scoring and the final difficulty decision. `ModelAssistedDifficultyPolicy` summarizes stored history, asks the optional local helper, validates the recommendation, and keeps the deterministic fallback.
 - The app selects MySQL when all three `ARG_DB_*` settings are present. It uses in-memory development storage when all three settings are absent.
-- MySQL adapters persist accounts, students, chapters, story nodes, first-answer drafts, results with the validated difficulty decision source, and three full-save slots. The schema migrations V001 through V003 are in `database/migrations/`.
+- MySQL adapters persist accounts, episodes, route choices, checkpoints, first-answer drafts, checkpoint results, decision sources, and three full-save slots. The schema migrations V001 through V004 are in `database/migrations/`.
 - Generic story transitions keep narrative choices separate from comprehension scoring. MySQL and in-memory adapters store chapter graphs and first-answer drafts; unfinished assessments can restore from their stored first answers.
-- Approved content is not bundled. The live app uses `how-to-play.fxml`, `gameplay.fxml`, `results.fxml`, and `analysis.fxml` with dynamic chapter data, story choices, comprehension questions, feedback, scores, and adaptive difficulty. The 40 `uiux-*.fxml` screens remain static visual references.
-- Settings provide a session-only reading text-size adjustment and character-art toggle. Narration audio is unavailable until audio assets exist. Educator reports and parent/guardian progress views need agreed access roles and report fields before implementation.
+- The live app uses `how-to-play.fxml`, `gameplay.fxml`, `results.fxml`, and `analysis.fxml` for the adaptive story and checkpoint flow. The 40 `uiux-*.fxml` files remain visual references. The player can make story choices and answer the separate checkpoint question.
+- Settings provide a session-only reading text-size adjustment and character-art toggle. The reading flow uses text and images, with no audio control or media dependency.
 - Java integrates an optional local Qwen recommendation behind `DifficultyPolicy`. Java scores first answers, summarizes stored history, validates the recommendation, and applies the fallback. The Python helper returns one label and receives no account IDs or raw answers.
-- Qwen stays experimental and is not a trained reading-level classifier. The app holds the current level until three consecutive sections at the same difficulty exist. The pinned weight is included in the local Dev1 working copy through Git LFS; this LFS change is not on GitHub yet.
+- Qwen stays experimental and is not a trained reading-level classifier. Java holds the current level until three consecutive sections at the same difficulty exist, checks model suggestions, and applies its fallback. The pinned weight uses Git LFS, and the supplied image paths have Git LFS rules.
 
-Backend tests, opt-in native JavaFX tests, a disposable-MySQL integration test, Python helper contract tests, and an opt-in real-model smoke test verify the implemented scope. Synthetic story fixtures exercise the live gameplay flow in tests only. The group-authored story and questions, actual model quality, and family or educator progress views remain unverified. See [playable-flow verification](docs/requirements/Dev1-Playable-Flow-Verification-2026-10-22.md) for the current test record.
+Backend tests, JavaFX UI tests, a disposable-MySQL integration test, Python helper contract tests, and an opt-in real-model smoke test cover their respective code paths. The version-2 draft pack has in-memory route and difficulty coverage plus MySQL save and restore coverage. The group has not approved its answer keys, main character, suspect, or ending. The model quality remains unverified. Teacher and parent reporting are outside the student-game scope. See [gameplay repair and verification](docs/requirements/Dev1-Gameplay-QA-2026-10-27.md) for current local results. Earlier reports remain historical records.
 
 ## Current implementation ownership
 
 The backend implementation is consolidated in the Dev1 workstream. The [Backend Development Guide](docs/requirements/Backend-Development-Guide.md) records the original service plan; the [Dev 1 handoff](docs/requirements/Dev1-Handoff.md) describes the current implementation and remaining group inputs.
 
 - Backend implementation: accounts, gameplay, MySQL persistence, content-pack loading, and optional model integration are connected in this branch.
-- Remaining group inputs: provide the approved story, comprehension questions, character artwork, and any final UI/UX details. The app loads story material through the versioned content pack rather than story-specific Java classes.
+- Remaining group inputs: confirm the story and question wording, approve the unnamed player and culprit, provide the ending, and confirm final UI/UX details. The app loads story material through the versioned content pack rather than story-specific Java classes.
 
 Run the baseline backend without Python or a database:
 
@@ -77,7 +77,12 @@ mvn compile exec:java -Dexec.mainClass=com.adaptivereadinggame.backend.Dev1Demo
 
 ```text
 AdaptiveReadingGame/
-|-- assets/                         Content-pack guide and future approved artwork
+|-- assets/
+|   |-- content/                    Provisional story-pack JSON
+|   |   `-- source/                 Storyboard snapshot and node-source mapping
+|   |-- characters/                 Character-expression artwork
+|   |-- scenes/                     Background art
+|   `-- cg/                         Story illustrations
 |-- database/
 |   |-- migrations/                 Versioned MySQL schema files
 |   `-- examples/                   Versioned full-save JSON example
@@ -92,7 +97,7 @@ AdaptiveReadingGame/
 |   |   |-- MainController.java     Deprecated launcher forwarding to the main app
 |   |   `-- com/adaptivereadinggame/
 |   |       |-- ai/                 Java model client and recommendation service
-|   |       |-- content/            Story-pack validation, import, and asset lookup
+|   |       |-- content/            Versioned story packs and safe asset lookup
 |   |       |-- AdaptiveReadingGameApp.java
 |   |       |-- backend/             BackendContext composition and console demo
 |   |       |-- controller/
@@ -106,6 +111,7 @@ AdaptiveReadingGame/
 |   |       |   |-- AssessmentResult.java
 |   |       |   |-- Student.java
 |   |       |   |-- Chapter.java
+|   |       |   |-- StoryCheckpoint.java
 |   |       |   |-- Difficulty.java
 |   |       |   |-- DifficultyDecisionSource.java
 |   |       |   |-- ReadingMaterial.java
@@ -179,7 +185,7 @@ AdaptiveReadingGameApp
     -> results.fxml / analysis.fxml -> stored Java assessment result
     -> ARG_DB_* settings -> MySqlAccountRepository + MySqlGameRepository
     -> no database settings -> in-memory development repositories
-    -> optional ARG_CONTENT_PACK -> validate and import approved chapters
+    -> ARG_CONTENT_PACK or bundled draft pack -> validate and import story episodes
 ```
 
 An FXML button's `onAction="#newGame"` calls `newGame()` in its controller. The FXML `fx:controller` attribute selects that controller. An `fx:id` connects a screen element to a matching `@FXML` field.
@@ -203,14 +209,14 @@ When gameplay calls assessment completion, `ModelAssistedDifficultyPolicy` reads
 2. Main menu, including new game, continue, save/load, settings, logout, and quit
 3. How to Play for the selected chapter
 4. Story dialogue, thoughts, and narrative choices
-5. Separate reading passage and comprehension questions
-6. First-answer feedback and chapter results
-7. Analysis, next-chapter selection, or a clear no-chapter state
+5. Separate Study or Hall passage and comprehension checkpoint
+6. First-answer feedback, checkpoint result, and the next story route
+7. Draft-boundary summary, analysis, or a clear no-content state
 
 Gameplay can return to the main menu and resume the active story or reading check. Additional states include answer feedback and explanations, quit and overwrite confirmations, account validation errors, empty save slots, and disabled Continue when neither active nor saved progress exists.
 
 Story choices affect story events. Reading Checks assess understanding using the first submitted answer. A retry after the answer is revealed must not increase the assessment score.
 
-The new backend's `Difficulty` enum uses Easy, Medium, and Hard. For a chapter with five questions: 4-5 correct increases one level, 3 keeps the level, and 0-2 decreases one level, within the allowed range. These are prototype rules, not a validated reading assessment. The existing `ReadingLevel` enum still uses four legacy dashboard bands; the new gameplay services do not use it for difficulty decisions.
+The new backend's `Difficulty` enum uses Easy, Medium, and Hard. Each current checkpoint has one question at each level, so one checkpoint score is 0% or 100%. Java stores each first answer and validates the recommendation before applying the next level. The optional model waits for three consecutive sections at the same level. This small draft cannot establish that the rule or model measures reading ability. The older four-band `ReadingLevel` enum is separate and does not affect checkpoint difficulty.
 
 The [concept proposal](https://docs.google.com/document/d/1XHok_fuPZJek9GvWUSSv_Bs5QgfURQUb/edit) asks for educator diagnostic reports and transparent parent/guardian progress views. It does not define viewing roles, report fields, or a student-skill taxonomy. Those decisions are needed before implementing the views.

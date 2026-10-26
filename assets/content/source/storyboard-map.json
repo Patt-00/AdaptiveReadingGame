@@ -1,0 +1,1348 @@
+{
+  "sourceUrl": "https://docs.google.com/document/d/1XCnuefpntPIm9DIGByQVLk0237jc4Sa2aV80zqCjbm8/edit",
+  "sha256": "4bb518357f7b6d6b96faad2c2a3bcba0b032393b853e5308866d8251252eee50",
+  "nodeSourceLines": {
+    "draft-notice": [],
+    "opening-poem": [
+      89,
+      92,
+      95,
+      98,
+      101,
+      104,
+      107,
+      110
+    ],
+    "opening-monologue": [
+      114,
+      115,
+      116,
+      117,
+      118
+    ],
+    "solarium-opening": [
+      121,
+      124
+    ],
+    "solarium-opening-02": [
+      130,
+      133,
+      136
+    ],
+    "amelia-task": [
+      140
+    ],
+    "amelia-task-02": [
+      147,
+      150
+    ],
+    "amelia-task-03": [
+      153,
+      154,
+      155,
+      156
+    ],
+    "amelia-task-04": [
+      160,
+      161
+    ],
+    "amelia-response": [
+      165,
+      170
+    ],
+    "amelia-acknowledges": [
+      167
+    ],
+    "amelia-nods": [
+      172
+    ],
+    "amelia-private": [
+      177,
+      178
+    ],
+    "amelia-private-02": [
+      181,
+      182,
+      183,
+      184,
+      185,
+      186,
+      187
+    ],
+    "eris-arrives": [
+      191
+    ],
+    "eris-arrives-02": [
+      197,
+      198,
+      199,
+      200,
+      201
+    ],
+    "eris-arrives-03": [
+      205
+    ],
+    "eris-address-choice": [
+      207,
+      213,
+      219
+    ],
+    "eris-lighten-up": [
+      209,
+      210
+    ],
+    "eris-you": [
+      215,
+      216
+    ],
+    "eris-ahem": [
+      221
+    ],
+    "eris-ahem-02": [
+      223
+    ],
+    "eris-request": [
+      228
+    ],
+    "eris-request-choice": [
+      232,
+      236
+    ],
+    "tart-approval": [
+      233
+    ],
+    "guest-approval": [
+      237
+    ],
+    "tart-private-chat": [
+      244
+    ],
+    "tart-private-chat-02": [
+      248,
+      251
+    ],
+    "tart-private-chat-03": [
+      255
+    ],
+    "tart-private-chat-04": [
+      258,
+      259
+    ],
+    "tart-private-chat-05": [
+      263
+    ],
+    "tart-private-chat-06": [
+      266,
+      267
+    ],
+    "tart-private-chat-07": [
+      271
+    ],
+    "tart-private-chat-08": [
+      274
+    ],
+    "guest-private-chat": [
+      244
+    ],
+    "guest-private-chat-02": [
+      248,
+      251
+    ],
+    "guest-private-chat-03": [
+      255
+    ],
+    "guest-private-chat-04": [
+      258,
+      259
+    ],
+    "guest-private-chat-05": [
+      263
+    ],
+    "guest-private-chat-06": [
+      266,
+      267
+    ],
+    "guest-private-chat-07": [
+      271
+    ],
+    "guest-private-chat-08": [
+      274
+    ],
+    "tart-route": [
+      278
+    ],
+    "tart-route-02": [
+      289,
+      290,
+      296
+    ],
+    "tart-route-03": [
+      303,
+      304
+    ],
+    "tart-delay-choice": [
+      308,
+      316,
+      332
+    ],
+    "tart-apology": [
+      310,
+      313
+    ],
+    "tart-kitchens": [
+      318,
+      321,
+      322
+    ],
+    "tart-kitchens-02": [
+      326,
+      329
+    ],
+    "tart-silence": [
+      334,
+      335
+    ],
+    "tart-silence-02": [
+      339
+    ],
+    "tart-silence-03": [
+      343,
+      346
+    ],
+    "tart-surprise": [
+      350,
+      351,
+      352
+    ],
+    "tart-surprise-02": [
+      356,
+      359
+    ],
+    "amelia-dismiss-choice": [
+      363,
+      378
+    ],
+    "amelia-private-warning": [
+      365
+    ],
+    "amelia-leave-choice": [
+      367,
+      372
+    ],
+    "amelia-leave-now": [
+      369
+    ],
+    "amelia-start-moving": [
+      374,
+      375
+    ],
+    "amelia-confused-warning": [
+      380,
+      381,
+      382
+    ],
+    "amelia-forgot-choice": [
+      385,
+      391
+    ],
+    "amelia-forgot": [
+      387,
+      388
+    ],
+    "amelia-still-confused": [
+      393,
+      394,
+      395,
+      396,
+      397
+    ],
+    "tart-herald": [
+      402,
+      403
+    ],
+    "tart-herald-02": [
+      410,
+      411,
+      412
+    ],
+    "tart-herald-03": [
+      416
+    ],
+    "hailey-entrance-thought": [
+      419,
+      420,
+      421,
+      422
+    ],
+    "hailey-reaction-choice": [
+      426,
+      435,
+      440
+    ],
+    "hailey-busy": [
+      428
+    ],
+    "hailey-busy-02": [
+      432
+    ],
+    "hailey-interrupt": [
+      437
+    ],
+    "hailey-pale": [
+      442
+    ],
+    "hailey-wonder": [
+      449,
+      450,
+      451,
+      452,
+      453,
+      454
+    ],
+    "hailey-arrives": [
+      458,
+      459
+    ],
+    "hailey-arrives-02": [
+      463,
+      466
+    ],
+    "hailey-arrives-03": [
+      472
+    ],
+    "hailey-arrives-04": [
+      475
+    ],
+    "hailey-arrives-05": [
+      481
+    ],
+    "guest-introductions": [
+      486,
+      487
+    ],
+    "guest-introductions-02": [
+      490,
+      491
+    ],
+    "guest-introductions-03": [
+      497
+    ],
+    "guest-introductions-04": [
+      503
+    ],
+    "guest-introductions-05": [
+      509
+    ],
+    "guest-introductions-06": [
+      512,
+      513
+    ],
+    "guest-introductions-07": [
+      516
+    ],
+    "guest-introductions-08": [
+      520
+    ],
+    "guest-introductions-09": [
+      525,
+      526,
+      527,
+      528,
+      529
+    ],
+    "guest-introductions-10": [
+      533
+    ],
+    "guest-introductions-11": [
+      537
+    ],
+    "tart-goblet": [
+      540
+    ],
+    "tart-goblet-02": [
+      546
+    ],
+    "tart-goblet-03": [
+      550
+    ],
+    "greet-route": [
+      282
+    ],
+    "greet-route-02": [
+      560,
+      561
+    ],
+    "greet-route-03": [
+      563,
+      564,
+      565,
+      566,
+      567
+    ],
+    "greet-route-04": [
+      569
+    ],
+    "greet-route-05": [
+      570
+    ],
+    "greet-route-06": [
+      572
+    ],
+    "davor-business-choice": [
+      573,
+      576,
+      578
+    ],
+    "davor-swift": [
+      575
+    ],
+    "davor-perimeter": [
+      577
+    ],
+    "davor-place": [
+      580,
+      581
+    ],
+    "guest-peace": [
+      582
+    ],
+    "guest-peace-02": [
+      584
+    ],
+    "guest-peace-03": [
+      585
+    ],
+    "guest-peace-04": [
+      586,
+      587,
+      588
+    ],
+    "guest-peace-05": [
+      590
+    ],
+    "guest-peace-06": [
+      592
+    ],
+    "guest-peace-07": [
+      594
+    ],
+    "guest-peace-08": [
+      597
+    ],
+    "guest-peace-09": [
+      599
+    ],
+    "guest-service-choice": [
+      601,
+      604,
+      607
+    ],
+    "guest-courier": [
+      603
+    ],
+    "guest-welcome": [
+      606
+    ],
+    "guest-attention": [
+      609
+    ],
+    "guest-attention-02": [
+      611
+    ],
+    "guest-emrys": [
+      613,
+      614,
+      615,
+      616
+    ],
+    "guest-emrys-02": [
+      618
+    ],
+    "guest-emrys-03": [
+      619,
+      620,
+      621,
+      622,
+      623,
+      624,
+      625
+    ],
+    "guest-herald": [
+      627,
+      628,
+      629
+    ],
+    "guest-herald-02": [
+      630
+    ],
+    "guest-herald-03": [
+      631,
+      632,
+      633,
+      634,
+      635
+    ],
+    "guest-herald-04": [
+      637,
+      638
+    ],
+    "guest-herald-05": [
+      640
+    ],
+    "guest-herald-06": [
+      642
+    ],
+    "guest-herald-07": [
+      643
+    ],
+    "guest-herald-08": [
+      645
+    ],
+    "guest-herald-09": [
+      647
+    ],
+    "poisoning-cg": [
+      652,
+      653,
+      654,
+      655
+    ],
+    "poisoning-cg-02": [
+      659
+    ],
+    "poisoning-cg-03": [
+      662
+    ],
+    "poisoning-cg-04": [
+      664
+    ],
+    "poisoning-cg-05": [
+      665,
+      666,
+      667
+    ],
+    "poisoning-cg-06": [
+      671,
+      672,
+      673
+    ],
+    "poisoning-cg-07": [
+      676,
+      677
+    ],
+    "poisoning-cg-08": [
+      679
+    ],
+    "poisoning-cg-09": [
+      681
+    ],
+    "poisoning-cg-10": [
+      682,
+      683,
+      684
+    ],
+    "poisoning-panic": [
+      690
+    ],
+    "poisoning-panic-02": [
+      696
+    ],
+    "poisoning-panic-03": [
+      699,
+      700
+    ],
+    "poisoning-panic-04": [
+      706
+    ],
+    "poisoning-panic-05": [
+      712
+    ],
+    "poisoning-panic-06": [
+      715,
+      716
+    ],
+    "poisoning-panic-07": [
+      722
+    ],
+    "poisoning-panic-08": [
+      727,
+      728
+    ],
+    "poisoning-panic-09": [
+      734
+    ],
+    "poisoning-panic-10": [
+      737,
+      738
+    ],
+    "poisoning-panic-11": [
+      742
+    ],
+    "poisoning-panic-12": [
+      747,
+      748,
+      749
+    ],
+    "poisoning-panic-13": [
+      752
+    ],
+    "poisoning-panic-14": [
+      755,
+      756
+    ],
+    "poisoning-panic-15": [
+      759
+    ],
+    "poisoning-panic-16": [
+      765
+    ],
+    "poisoning-panic-17": [
+      771
+    ],
+    "poisoning-panic-18": [
+      777
+    ],
+    "poisoning-panic-19": [
+      783
+    ],
+    "poisoning-panic-20": [
+      786
+    ],
+    "poisoning-panic-21": [
+      789
+    ],
+    "poisoning-panic-22": [
+      795
+    ],
+    "poisoning-panic-23": [
+      798
+    ],
+    "poisoning-panic-24": [
+      801
+    ],
+    "poisoning-panic-25": [
+      804
+    ],
+    "poisoning-panic-26": [
+      807
+    ],
+    "poisoning-panic-27": [
+      810,
+      811,
+      812
+    ],
+    "move-hailey": [
+      816
+    ],
+    "move-hailey-02": [
+      828
+    ],
+    "move-hailey-03": [
+      831,
+      832
+    ],
+    "move-hailey-04": [
+      836
+    ],
+    "move-hailey-05": [
+      840,
+      841,
+      842
+    ],
+    "move-hailey-06": [
+      845
+    ],
+    "move-hailey-07": [
+      848,
+      849
+    ],
+    "investigation-context": [
+      854,
+      855
+    ],
+    "investigation-context-02": [
+      858
+    ],
+    "investigation-context-03": [
+      861
+    ],
+    "investigation-context-04": [
+      864
+    ],
+    "investigation-context-05": [
+      867
+    ],
+    "investigation-context-06": [
+      870
+    ],
+    "investigation-context-07": [
+      876
+    ],
+    "investigation-context-08": [
+      879,
+      880
+    ],
+    "investigation-context-09": [
+      886
+    ],
+    "investigation-context-10": [
+      889
+    ],
+    "investigation-context-11": [
+      893,
+      894,
+      895
+    ],
+    "accusation-choice": [
+      899,
+      908,
+      920
+    ],
+    "accusation-goblet": [
+      902
+    ],
+    "accusation-goblet-02": [
+      906
+    ],
+    "accusation-panic": [
+      912,
+      913
+    ],
+    "accusation-panic-02": [
+      917,
+      918
+    ],
+    "accusation-gallows": [
+      924
+    ],
+    "accusation-gallows-02": [
+      929
+    ],
+    "accusation-gallows-03": [
+      935
+    ],
+    "accusation-gallows-04": [
+      939
+    ],
+    "owen-responsibility": [
+      944,
+      947,
+      950
+    ],
+    "owen-responsibility-02": [
+      954
+    ],
+    "owen-responsibility-03": [
+      957
+    ],
+    "owen-responsibility-04": [
+      962,
+      963
+    ],
+    "owen-responsibility-05": [
+      966,
+      967
+    ],
+    "take-control-choice": [
+      973,
+      983,
+      991
+    ],
+    "control-symptoms": [
+      976,
+      977
+    ],
+    "control-symptoms-02": [
+      981
+    ],
+    "control-documents": [
+      987
+    ],
+    "control-documents-02": [
+      989
+    ],
+    "control-search": [
+      995
+    ],
+    "control-search-02": [
+      999
+    ],
+    "desk-investigation": [
+      1004,
+      1005,
+      1006
+    ],
+    "desk-investigation-02": [
+      1009,
+      1010
+    ],
+    "desk-investigation-03": [
+      1013
+    ],
+    "investigation-route-choice": [
+      1019,
+      1022
+    ],
+    "study-first-scene": [
+      1020,
+      1021
+    ],
+    "study-first-scene-02": [
+      1028,
+      1029
+    ],
+    "study-first-scene-03": [
+      1039,
+      1040,
+      1041
+    ],
+    "study-first-scene-04": [
+      1047,
+      1050,
+      1053
+    ],
+    "study-first-scene-05": [
+      1059,
+      1063
+    ],
+    "study-first-scene-06": [
+      1069
+    ],
+    "study-first-search-choice": [
+      1072,
+      1082,
+      1091,
+      1098,
+      1109
+    ],
+    "study-first-response-1": [
+      1075
+    ],
+    "study-first-response-1-02": [
+      1079,
+      1080
+    ],
+    "study-first-response-2": [
+      1086
+    ],
+    "study-first-response-2-02": [
+      1090
+    ],
+    "study-first-response-3": [
+      1095,
+      1096
+    ],
+    "study-first-response-4": [
+      1102,
+      1103
+    ],
+    "study-first-response-4-02": [
+      1107,
+      1108
+    ],
+    "study-first-response-5": [
+      1113
+    ],
+    "study-first-response-5-02": [
+      1117
+    ],
+    "study-first-evidence": [
+      1119,
+      1122
+    ],
+    "study-first-evidence-02": [
+      1123
+    ],
+    "study-first-evidence-03": [
+      1125
+    ],
+    "study-first-evidence-04": [
+      1127
+    ],
+    "study-first-evidence-05": [
+      1129
+    ],
+    "study-first-evidence-06": [
+      1131
+    ],
+    "study-first-evidence-07": [
+      1133
+    ],
+    "study-first-evidence-08": [
+      1135
+    ],
+    "study-first-evidence-09": [
+      1137
+    ],
+    "study-first-evidence-10": [
+      1139
+    ],
+    "study-first-evidence-11": [
+      1141
+    ],
+    "study-first-evidence-12": [
+      1146,
+      1147
+    ],
+    "study-first-evidence-13": [
+      1153,
+      1154,
+      1155
+    ],
+    "study-first-evidence-14": [
+      1161
+    ],
+    "study-first-evidence-15": [
+      1167,
+      1168
+    ],
+    "study-first-deduction-choice": [
+      1171,
+      1181,
+      1191
+    ],
+    "study-first-deduction-1": [
+      1175
+    ],
+    "study-first-deduction-1-02": [
+      1179
+    ],
+    "study-first-deduction-2": [
+      1185
+    ],
+    "study-first-deduction-2-02": [
+      1189
+    ],
+    "study-first-deduction-3": [
+      1195
+    ],
+    "study-first-deduction-3-02": [
+      1199
+    ],
+    "study-first-synthesis": [
+      1202
+    ],
+    "study-second-scene": [
+      1033,
+      1034
+    ],
+    "study-second-scene-02": [
+      1039,
+      1040,
+      1041
+    ],
+    "study-second-scene-03": [
+      1047,
+      1050,
+      1053
+    ],
+    "study-second-scene-04": [
+      1059,
+      1063
+    ],
+    "study-second-scene-05": [
+      1069
+    ],
+    "study-second-search-choice": [
+      1072,
+      1082,
+      1091,
+      1098,
+      1109
+    ],
+    "study-second-response-1": [
+      1075
+    ],
+    "study-second-response-1-02": [
+      1079,
+      1080
+    ],
+    "study-second-response-2": [
+      1086
+    ],
+    "study-second-response-2-02": [
+      1090
+    ],
+    "study-second-response-3": [
+      1095,
+      1096
+    ],
+    "study-second-response-4": [
+      1102,
+      1103
+    ],
+    "study-second-response-4-02": [
+      1107,
+      1108
+    ],
+    "study-second-response-5": [
+      1113
+    ],
+    "study-second-response-5-02": [
+      1117
+    ],
+    "study-second-evidence": [
+      1119,
+      1122
+    ],
+    "study-second-evidence-02": [
+      1123
+    ],
+    "study-second-evidence-03": [
+      1125
+    ],
+    "study-second-evidence-04": [
+      1127
+    ],
+    "study-second-evidence-05": [
+      1129
+    ],
+    "study-second-evidence-06": [
+      1131
+    ],
+    "study-second-evidence-07": [
+      1133
+    ],
+    "study-second-evidence-08": [
+      1135
+    ],
+    "study-second-evidence-09": [
+      1137
+    ],
+    "study-second-evidence-10": [
+      1139
+    ],
+    "study-second-evidence-11": [
+      1141
+    ],
+    "study-second-evidence-12": [
+      1146,
+      1147
+    ],
+    "study-second-evidence-13": [
+      1153,
+      1154,
+      1155
+    ],
+    "study-second-evidence-14": [
+      1161
+    ],
+    "study-second-evidence-15": [
+      1167,
+      1168
+    ],
+    "study-second-deduction-choice": [
+      1171,
+      1181,
+      1191
+    ],
+    "study-second-deduction-1": [
+      1175
+    ],
+    "study-second-deduction-1-02": [
+      1179
+    ],
+    "study-second-deduction-2": [
+      1185
+    ],
+    "study-second-deduction-2-02": [
+      1189
+    ],
+    "study-second-deduction-3": [
+      1195
+    ],
+    "study-second-deduction-3-02": [
+      1199
+    ],
+    "study-second-synthesis": [
+      1202
+    ],
+    "hall-first-scene": [
+      1023,
+      1024
+    ],
+    "hall-first-scene-02": [
+      1264
+    ],
+    "hall-first-scene-03": [
+      1273
+    ],
+    "hall-first-scene-04": [
+      1277,
+      1278,
+      1279
+    ],
+    "hall-first-search-choice": [
+      1285,
+      1298,
+      1303
+    ],
+    "hall-first-response-1": [
+      1290,
+      1291
+    ],
+    "hall-first-response-1-02": [
+      1295
+    ],
+    "hall-first-response-2": [
+      1300
+    ],
+    "hall-first-response-3": [
+      1307
+    ],
+    "hall-first-evidence": [
+      1313
+    ],
+    "hall-first-evidence-02": [
+      1316
+    ],
+    "hall-first-evidence-03": [
+      1320
+    ],
+    "hall-first-evidence-04": [
+      1323
+    ],
+    "hall-first-evidence-05": [
+      1324
+    ],
+    "hall-first-evidence-06": [
+      1327
+    ],
+    "hall-first-evidence-07": [
+      1328
+    ],
+    "hall-first-evidence-08": [
+      1331
+    ],
+    "hall-first-evidence-09": [
+      1334
+    ],
+    "hall-first-evidence-10": [
+      1337
+    ],
+    "hall-first-evidence-11": [
+      1338
+    ],
+    "hall-first-evidence-12": [
+      1341
+    ],
+    "hall-first-evidence-13": [
+      1342
+    ],
+    "hall-first-evidence-14": [
+      1345
+    ],
+    "hall-first-evidence-15": [
+      1349
+    ],
+    "hall-first-evidence-16": [
+      1352
+    ],
+    "hall-first-evidence-17": [
+      1353
+    ],
+    "hall-first-evidence-18": [
+      1356
+    ],
+    "hall-first-evidence-19": [
+      1357
+    ],
+    "hall-first-evidence-20": [
+      1365
+    ],
+    "hall-first-evidence-21": [
+      1368
+    ],
+    "hall-first-evidence-22": [
+      1374
+    ],
+    "hall-first-evidence-23": [
+      1377
+    ],
+    "hall-first-evidence-24": [
+      1383
+    ],
+    "hall-first-evidence-25": [
+      1386
+    ],
+    "hall-first-deduction-choice": [
+      1389,
+      1394,
+      1399
+    ],
+    "hall-first-deduction-1": [
+      1391
+    ],
+    "hall-first-deduction-2": [
+      1396
+    ],
+    "hall-first-deduction-3": [
+      1401
+    ],
+    "hall-first-synthesis": [
+      1406,
+      1407,
+      1408
+    ],
+    "hall-second-scene": [
+      1268
+    ],
+    "hall-second-scene-02": [
+      1273
+    ],
+    "hall-second-scene-03": [
+      1277,
+      1278,
+      1279
+    ],
+    "hall-second-search-choice": [
+      1285,
+      1298,
+      1303
+    ],
+    "hall-second-response-1": [
+      1290,
+      1291
+    ],
+    "hall-second-response-1-02": [
+      1295
+    ],
+    "hall-second-response-2": [
+      1300
+    ],
+    "hall-second-response-3": [
+      1307
+    ],
+    "hall-second-evidence": [
+      1313
+    ],
+    "hall-second-evidence-02": [
+      1316
+    ],
+    "hall-second-evidence-03": [
+      1320
+    ],
+    "hall-second-evidence-04": [
+      1323
+    ],
+    "hall-second-evidence-05": [
+      1324
+    ],
+    "hall-second-evidence-06": [
+      1327
+    ],
+    "hall-second-evidence-07": [
+      1328
+    ],
+    "hall-second-evidence-08": [
+      1331
+    ],
+    "hall-second-evidence-09": [
+      1334
+    ],
+    "hall-second-evidence-10": [
+      1337
+    ],
+    "hall-second-evidence-11": [
+      1338
+    ],
+    "hall-second-evidence-12": [
+      1341
+    ],
+    "hall-second-evidence-13": [
+      1342
+    ],
+    "hall-second-evidence-14": [
+      1345
+    ],
+    "hall-second-evidence-15": [
+      1349
+    ],
+    "hall-second-evidence-16": [
+      1352
+    ],
+    "hall-second-evidence-17": [
+      1353
+    ],
+    "hall-second-evidence-18": [
+      1356
+    ],
+    "hall-second-evidence-19": [
+      1357
+    ],
+    "hall-second-evidence-20": [
+      1365
+    ],
+    "hall-second-evidence-21": [
+      1368
+    ],
+    "hall-second-evidence-22": [
+      1374
+    ],
+    "hall-second-evidence-23": [
+      1377
+    ],
+    "hall-second-evidence-24": [
+      1383
+    ],
+    "hall-second-evidence-25": [
+      1386
+    ],
+    "hall-second-deduction-choice": [
+      1389,
+      1394,
+      1399
+    ],
+    "hall-second-deduction-1": [
+      1391
+    ],
+    "hall-second-deduction-2": [
+      1396
+    ],
+    "hall-second-deduction-3": [
+      1401
+    ],
+    "hall-second-synthesis": [
+      1406,
+      1407,
+      1408
+    ],
+    "study-first-check": [],
+    "study-first-correct": [
+      1246
+    ],
+    "study-first-correct-02": [
+      1250
+    ],
+    "study-first-incorrect": [
+      1253
+    ],
+    "study-first-incorrect-02": [
+      1259
+    ],
+    "hall-second-check": [],
+    "hall-second-correct": [
+      1454
+    ],
+    "hall-second-incorrect": [
+      1462
+    ],
+    "hall-first-check": [],
+    "hall-first-correct": [
+      1454,
+      1458
+    ],
+    "hall-first-incorrect": [
+      1462,
+      1466
+    ],
+    "study-second-check": [],
+    "study-second-correct": [
+      1246
+    ],
+    "study-second-incorrect": [
+      1253
+    ],
+    "draft-complete": []
+  }
+}

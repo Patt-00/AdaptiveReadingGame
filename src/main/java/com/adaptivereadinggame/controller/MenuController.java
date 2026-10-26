@@ -5,7 +5,6 @@ import com.adaptivereadinggame.service.AccountGameService.ChapterSummary;
 import com.adaptivereadinggame.service.ConfirmationRequiredException;
 import com.adaptivereadinggame.model.Difficulty;
 import com.adaptivereadinggame.model.SaveSnapshot;
-import javafx.beans.binding.Bindings;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -17,7 +16,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -40,7 +38,6 @@ public final class MenuController {
     private List<SaveSnapshot> slots = List.of();
     private List<AssessmentResult> history = List.of();
     @FXML private StackPane menuRoot;
-    @FXML private Pane menuCanvas;
     @FXML private VBox menuOptions;
     @FXML private HBox accountActions;
     @FXML private Button continueButton;
@@ -51,10 +48,6 @@ public final class MenuController {
     public MenuController(AppNavigator navigator) { this.navigator = Objects.requireNonNull(navigator); }
 
     @FXML private void initialize() {
-        var scale = Bindings.min(menuRoot.widthProperty().divide(1920),
-                menuRoot.heightProperty().divide(1080));
-        menuCanvas.scaleXProperty().bind(scale);
-        menuCanvas.scaleYProperty().bind(scale);
         accountLabel.setText(navigator.backend().accountGameService().currentAccount()
                 .map(account -> "Welcome, " + account.displayName()).orElse("No account signed in"));
         runtimeLabel.setText(navigator.storageDescription());
@@ -179,7 +172,11 @@ public final class MenuController {
         explanation.setMinHeight(Region.USE_PREF_SIZE);
         explanation.getStyleClass().add("dialog-note");
         content.getChildren().add(explanation);
-        dialog.getDialogPane().setContent(content);
+        ScrollPane slotsScroll = new ScrollPane(content);
+        slotsScroll.setFitToWidth(true);
+        slotsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        slotsScroll.setPrefViewportHeight(Math.min(360, navigator.stage().getHeight() * 0.55));
+        dialog.getDialogPane().setContent(slotsScroll);
         dialog.showAndWait();
     }
 
@@ -247,10 +244,7 @@ public final class MenuController {
         CheckBox artwork = new CheckBox("Show character artwork when available");
         artwork.setId("showCharacterArtwork");
         artwork.setSelected(navigator.characterArtworkEnabled());
-        Label soundNote = new Label("Narration audio is not available in this build.");
-        soundNote.setWrapText(true);
-        soundNote.getStyleClass().add("dialog-note");
-        VBox content = new VBox(14, new Label("Reading text size"), textSize, artwork, soundNote);
+        VBox content = new VBox(14, new Label("Reading text size"), textSize, artwork);
         content.setPadding(new Insets(8));
         dialog.getDialogPane().setContent(content);
         navigator.styleDialog(dialog);

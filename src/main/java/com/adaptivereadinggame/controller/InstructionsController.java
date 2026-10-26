@@ -39,7 +39,7 @@ public final class InstructionsController {
         boolean confirmed = discardConfirmed;
         instructionsRoot.setDisable(true);
         navigator.runAsync("Start chapter",
-                () -> navigator.backend().accountGameService().startChapter(chapter.id(), confirmed),
+                () -> navigator.backend().accountGameService().startChapter(chapter.id(), chapter.difficulty(), confirmed),
                 ignored -> {
                     navigator.clearPendingChapter();
                     try { navigator.showGameplay(); }

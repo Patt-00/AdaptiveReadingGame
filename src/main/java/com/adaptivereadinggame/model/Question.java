@@ -4,9 +4,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-public record Question(UUID id, String prompt, List<String> choices, int correctChoiceIndex, String explanation) {
+public record Question(UUID id, String prompt, List<String> choices, int correctChoiceIndex,
+                       String explanation, String checkpointId, Difficulty difficulty) {
     public Question(UUID id, String prompt, List<String> choices, int correctChoiceIndex) {
-        this(id, prompt, choices, correctChoiceIndex, "");
+        this(id, prompt, choices, correctChoiceIndex, "", "", null);
+    }
+
+    public Question(UUID id, String prompt, List<String> choices, int correctChoiceIndex, String explanation) {
+        this(id, prompt, choices, correctChoiceIndex, explanation, "", null);
     }
 
     public Question {
@@ -19,5 +24,10 @@ public record Question(UUID id, String prompt, List<String> choices, int correct
             throw new IllegalArgumentException("Correct choice must exist in choices.");
         }
         explanation = Objects.requireNonNullElse(explanation, "");
+        checkpointId = Objects.requireNonNullElse(checkpointId, "");
+        if (checkpointId.isBlank() != (difficulty == null))
+            throw new IllegalArgumentException("Checkpoint questions need both a checkpoint ID and difficulty.");
+        if (!checkpointId.isEmpty() && !checkpointId.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,99}"))
+            throw new IllegalArgumentException("A checkpoint ID must use letters, numbers, dots, underscores, or hyphens.");
     }
 }

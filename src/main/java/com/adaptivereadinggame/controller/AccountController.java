@@ -2,14 +2,12 @@ package com.adaptivereadinggame.controller;
 
 import com.adaptivereadinggame.model.Account;
 import com.adaptivereadinggame.service.AuthException;
-import javafx.beans.binding.Bindings;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
@@ -22,7 +20,6 @@ public final class AccountController {
     private final AppNavigator navigator;
     private boolean signupMode;
     @FXML private StackPane accountRoot;
-    @FXML private Pane accountCanvas;
     @FXML private VBox selectionBox;
     @FXML private VBox formBox;
     @FXML private TextField usernameField;
@@ -38,10 +35,6 @@ public final class AccountController {
     public AccountController(AppNavigator navigator) { this.navigator = Objects.requireNonNull(navigator); }
 
     @FXML private void initialize() {
-        var scale = Bindings.min(accountRoot.widthProperty().divide(1920),
-                accountRoot.heightProperty().divide(1080));
-        accountCanvas.scaleXProperty().bind(scale);
-        accountCanvas.scaleYProperty().bind(scale);
         storageLabel.setText(navigator.storageDescription());
         fontLabel.setText(navigator.fontNotice());
         showSelection();
@@ -56,14 +49,18 @@ public final class AccountController {
         usernameField.clear();
         displayNameField.clear();
         selectionBox.setVisible(true);
+        selectionBox.setManaged(true);
         formBox.setVisible(false);
+        formBox.setManaged(false);
         status("", false);
     }
 
     private void showForm(boolean signup) {
         signupMode = signup;
         selectionBox.setVisible(false);
+        selectionBox.setManaged(false);
         formBox.setVisible(true);
+        formBox.setManaged(true);
         displayNameField.setVisible(signup);
         displayNameField.setManaged(signup);
         displayNameLabel.setVisible(signup);
@@ -119,6 +116,8 @@ public final class AccountController {
         });
         task.setOnFailed(event -> {
             finishTask();
+            if (!(task.getException() instanceof AuthException))
+                System.err.println("Account operation failed: " + task.getException().getClass().getSimpleName());
             // Known validation/authentication messages are safe for the user; no stack traces or secrets.
             String message = task.getException() instanceof AuthException
                     ? task.getException().getMessage() : "The account operation failed. Please try again.";

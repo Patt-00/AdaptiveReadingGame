@@ -134,7 +134,7 @@ The source-collection syntax above is for **zsh**, the default shell on modern m
 |---|---|
 | `--release 21` | Compile for Java 21, matching the project's Maven configuration. |
 | `--module-path` | Tell Java where to find JavaFX modules. |
-| `--add-modules javafx.controls,javafx.fxml` | Enable JavaFX controls, the FXML loader, and required graphics/base modules. |
+| `--add-modules javafx.controls,javafx.fxml` | Enable JavaFX controls and FXML loading. |
 | `-encoding UTF-8` | Read source files using UTF-8. |
 | `-d bin` | Put compiled classes in the project-root `bin` directory. |
 | `-cp` | Locate compiled classes and resources when running. |

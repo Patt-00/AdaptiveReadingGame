@@ -15,13 +15,17 @@ import java.util.Objects;
 
 /** Displays the stored score and lets the learner choose a prepared next-level chapter. */
 public final class ResultsController {
-    private record ResultsData(AssessmentResult result, String chapterTitle, List<ChapterSummary> nextChapters) {}
+    private record ResultsData(AssessmentResult result, String chapterTitle, List<ChapterSummary> nextChapters,
+                               boolean adaptive, boolean sectionEnd, boolean terminal, String completionMessage,
+                               int totalCorrect, int totalQuestions, int checkpointCount) {}
 
     private final AppNavigator navigator;
     private List<ChapterSummary> nextChapters = List.of();
+    @FXML private Label resultsHeading;
     @FXML private Label chapterTitle;
     @FXML private Label scoreLabel;
     @FXML private Label answerCountLabel;
+    @FXML private Label episodeProgressLabel;
     @FXML private Label nextDifficultyLabel;
     @FXML private Label decisionSourceLabel;
     @FXML private Label nextChapterStatus;
@@ -31,12 +35,23 @@ public final class ResultsController {
 
     @FXML private void initialize() {
         navigator.runAsync("Load chapter result", () -> {
-            var game = navigator.backend().accountGameService().currentGameView()
+            var accountGame = navigator.backend().accountGameService();
+            var game = accountGame.currentGameView()
                     .orElseThrow(() -> new IllegalStateException("No chapter is active."));
-            var result = game.completedResult()
+            var result = accountGame.currentResult()
                     .orElseThrow(() -> new IllegalStateException("The chapter result has not been stored."));
-            var next = navigator.backend().accountGameService().availableChapters(result.nextDifficulty());
-            return new ResultsData(result, game.chapter().title(), next);
+            boolean adaptive = !game.state().activeCheckpointId().isEmpty()
+                    || !game.state().lastCompletedCheckpointId().isEmpty()
+                    || game.storyNode().storyComplete() || !game.state().routeId().isEmpty();
+            List<AssessmentResult> episodeResults = adaptive ? accountGame.episodeResults() : List.of(result);
+            int totalCorrect = episodeResults.stream().mapToInt(item -> item.attempt().correctAnswers()).sum();
+            int totalQuestions = episodeResults.stream().mapToInt(item -> item.attempt().totalQuestions()).sum();
+            boolean terminal = game.storyNode().storyComplete();
+            boolean sectionEnd = terminal || adaptive && !terminal && accountGame.checkpointEndsSection();
+            var next = adaptive || terminal ? List.<ChapterSummary>of()
+                    : accountGame.availableChapters(result.nextDifficulty());
+            return new ResultsData(result, game.chapter().title(), next, adaptive, sectionEnd, terminal, game.storyNode().dialogueText(),
+                    totalCorrect, totalQuestions, episodeResults.size());
         }, this::render, failure -> {
             navigator.notice("Results unavailable", "The saved chapter result could not be opened.");
             mainMenu();
@@ -45,22 +60,53 @@ public final class ResultsController {
 
     private void render(ResultsData data) {
         AssessmentResult result = data.result();
+        resultsHeading.setText(data.adaptive() ? (data.terminal() ? "STORY SECTION COMPLETE" : "CHECKPOINT RESULTS")
+                : "CHAPTER RESULTS");
         chapterTitle.setText(data.chapterTitle());
-        scoreLabel.setText("Comprehension score: " + Math.round(result.attempt().score() * 100) + "%");
-        answerCountLabel.setText(result.attempt().correctAnswers() + " of "
-                + result.attempt().totalQuestions() + " first answers correct");
+        scoreLabel.setText(data.adaptive() && (data.terminal() || data.sectionEnd())
+                ? "Story section score: " + percent(data.totalCorrect(), data.totalQuestions()) + "%"
+                : "Comprehension score: " + Math.round(result.attempt().score() * 100) + "%");
+        answerCountLabel.setText(data.adaptive() && !data.terminal()
+                ? checkpointTitle(result.attempt().checkpointId()) + " checkpoint: "
+                        + result.attempt().correctAnswers() + " of " + result.attempt().totalQuestions() + " correct"
+                : data.totalCorrect() + " of " + data.totalQuestions() + " first answers correct");
+        episodeProgressLabel.setVisible(data.adaptive());
+        episodeProgressLabel.setManaged(data.adaptive());
+        if (data.adaptive()) episodeProgressLabel.setText("Checkpoint results stored: " + data.checkpointCount()
+                + "  ·  Story choices do not affect comprehension scores.");
         nextDifficultyLabel.setText("Next difficulty: " + titleCase(result.nextDifficulty().name()));
         decisionSourceLabel.setText(sourceMessage(result.decisionSource()));
         nextChapters = List.copyOf(data.nextChapters());
-        boolean available = !nextChapters.isEmpty();
+        boolean adaptiveAction = data.adaptive();
+        boolean available = adaptiveAction || !nextChapters.isEmpty();
         nextChapterButton.setDisable(!available);
-        nextChapterButton.setText(available ? "NEXT CHALLENGE" : "NO CHAPTER READY");
-        nextChapterStatus.setText(available
-                ? "Your result is recorded. Choose a prepared chapter at the recommended difficulty."
-                : "Your result is recorded. No chapter is loaded at the recommended difficulty yet.");
+        nextChapterButton.setText(adaptiveAction
+                ? data.terminal() ? "MAIN MENU" : "CONTINUE STORY"
+                : available ? "NEXT CHALLENGE" : "NO CHAPTER READY");
+        nextChapterButton.setVisible(!data.terminal());
+        nextChapterButton.setManaged(!data.terminal());
+        nextChapterStatus.setText(data.adaptive()
+                ? data.terminal()
+                    ? data.completionMessage()
+                    : data.sectionEnd()
+                        ? "This is the last available checkpoint. Continue to the end of this story section."
+                        : "Your first answer is recorded. Continue to the other investigation area at the recommended difficulty."
+                : available
+                    ? "Your result is recorded. Choose a prepared chapter at the recommended difficulty."
+                    : "Your result is recorded. No chapter is loaded at the recommended difficulty yet.");
     }
 
     @FXML private void nextChapter() {
+        var accountGame = navigator.backend().accountGameService();
+        var current = accountGame.currentGameView().orElse(null);
+        if (current != null && (current.storyNode().storyComplete()
+                || !current.state().activeCheckpointId().isEmpty() || !current.state().routeId().isEmpty())) {
+            if (current.storyNode().storyComplete()) { mainMenu(); return; }
+            navigator.runAsync("Continue story", accountGame::continueAfterCheckpoint, ignored -> {
+                showGameplay();
+            }, failure -> navigator.notice("Story unavailable", "The saved checkpoint outcome could not be opened."));
+            return;
+        }
         if (nextChapters.isEmpty()) return;
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Next challenge");
@@ -114,5 +160,15 @@ public final class ResultsController {
     private static String titleCase(String value) {
         String lower = value.toLowerCase(java.util.Locale.ROOT);
         return Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
+    }
+
+    private static String checkpointTitle(String value) {
+        return java.util.Arrays.stream(value.split("[-_.]"))
+                .filter(part -> !part.isBlank()).map(ResultsController::titleCase)
+                .collect(java.util.stream.Collectors.joining(" "));
+    }
+
+    private static long percent(int correct, int total) {
+        return total == 0 ? 0 : Math.round((double) correct / total * 100);
     }
 }

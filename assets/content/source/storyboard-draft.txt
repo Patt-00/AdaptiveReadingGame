@@ -1,0 +1,1508 @@
+👹 Art guide
+Characters:
+
+
+-Princess Hailey: The host, planning to confront all the people who wronged her at the party. She gets poisoned in the middle of a speech and will soon die if help doesn't arrive soon.
+Motive for the party:  She is a princess who genuinely cares for her kingdom but was put on a pedestal (worshipped and harassed) for so long that she was tired of it all and was planning to abdicate her throne but gets poisoned before announcing.
+
+
+  
+
+
+
+-Lady Amelia: Hailey's Lady-in-waiting. She is Hailey's right hand woman who is reserved and shy but empathetically perceptive.
+Possible motive: Hailey ‘bought’ Amelia’s loyalty by clearing her family's debt. She could've killed the princess to be free or tired of feeling like a “charity case”.
+  
+
+
+
+
+
+-Lady Eris: Hailey's fellow noblelady and best friend. She is Hailey's confidante and the source of information in gossip.
+Possible motive: Eris is very envious of Hailey's beauty and influence, and often spreads negative rumors about the princess. As the rumors get traced back, Eris’ reputation and name could be ruined forever or could end with treason.
+
+
+  
+
+
+
+-Sir Davor: Hailey's childhood friend and knight. He has always been protecting his mistress' since he was a squire and is a renowned hero.
+Possible motive: He is obsessed with Hailey to a toxic degree and is upset that she is betrothed to another, driving him to manic desperation. His obsession twists into a "if I can't have you, no one will" mindset after she rejects his advances. 
+
+
+  
+
+
+
+-Prince Owen: Hailey's fiance. He is from another kingdom and is soon to marry her. He is cunning,handsome, and just.
+Possible motive: His marriage with Hailey is arranged, and hates the idea that he has to get married just to be king of his kingdom. The marriage contract secretly strips Owen's kingdom of its sovereign resources or rights, making him a puppet king. If she dies after entering his kingdom but before their marriage, the contract could be deemed fulfilled.
+
+
+  
+
+
+
+-Lord Robert: Owen’s secretary and cousin. He serves as Owen’s aide in his princely duties and acts like an ambassador or a spokesperson in his absence.
+Possible motive: Robert believes Owen is weak and that marrying into Hailey’s kingdom will destabilize their kingdom. He tries to position himself, frame Owen, and take his place to secure the throne. 
+
+
+  
+
+
+
+-The Mage Emrys: Owen bodyguard. They are a mage who lives reclusively and has an intimidating reputation, having the knowledge of forbidden grimoires.
+Possible motive: Hailey discovered Emrys’s forbidden knowledge and intended to use her speech to expose them, ensuring their public execution to gain political favor with her anti-magic nobles. Emrys acted purely out of self-defense to destroy the evidence/silence her before she could name them. 
+
+
+  
+
+
+
+CG references:
+
+
+CG 1(poisoning)
+  
+
+
+
+CG 2(Killer caught)
+  
+
+
+
+
+
+Possible Endings:
+
+
+1. Correct Suspect + Antidote Found
+2. Wrong Suspect + Antidote Found
+3. Correct Suspect + No Antidote
+4. Wrong Suspect + No Antidote
+
+
+Things to figure out:
+-Who will be MC
+-Who will be killer
+🫥 Script(intro)
+“The Sun, the hearth of life and tenderness,
+
+
+Pours burning love on the delighted earth,
+
+
+And when you rest in the valley you know,
+
+
+How nubile earth is, how it overflows;
+
+
+How, raised up by soul, its immense breast
+
+
+Is love, as God is, and, like woman, flesh,
+
+
+And big with sap and sunlight will enclose
+
+
+The mighty seething of all embryos!”[a][b]
+
+
+MC(BlackScreen)
+Have you ever experienced something beautiful?
+Something so unmistakably bright that your eyes hurt?
+Something so perfect that you couldn't help but reach for it.
+Oh, Princess.
+Truly your light will never waver even at the most adverse situation.[c]
+
+
+SOLARIUM HALL, INT., EVENING
+
+
+Truly, Her Highness’ taste in parties really is peculiar.[d]
+
+
+
+
+MC
+“It’s quite the intimate setting…”
+
+
+It’s a rare occasion for our princess to entertain guests outside the daylight hours, even more so hosting one.
+
+
+It must be of urgent matter for her to hastily put up a somewhat modest gathering. 
+
+
+Amelia (Serious)
+MC, Was it?
+
+
+???
+
+
+Amelia (neutral)
+Please have the initiative to finalize the refreshments for the guests before Her Highness asks.
+
+
+Seeing we have special guests coming, she expects everything to operate smoothly. Is that clear?
+
+
+Ah, Lady Amelia. 
+The Princess’ Head Lady-in-Waiting and overseer of us, the humble servants.
+She’s in charge of all the duties the Mistress overlooked or needed help with- not that her intellect couldn’t handle such administrative work-Lady Amelia is the first person you’d see with Her Highness.
+I heard that she was our Master’s most loyal servant after her fallen family’s debt had been cleared.
+
+
+Amelia (Serious)
+…
+I trust you’ve heard me the first time?
+
+
+***
+1. IF (“Ah, of course, my Lady. I’ll confer with the other servants.”)
+Amelia (Smiling)
+Good.
+
+
+2. IF (Nod in acknowledgement)
+Amelia(Serious)
+…
+***[e]
+
+
+Amelia(Serious)
+Please accomplish this as soon as possible.
+I was instructed that this gathering is so private that even servants are not allowed attendance.
+
+
+Oh.
+It must be an administrative related gathering, then.
+It’s understandable.
+Servants in a kingdom have wide ears and are susceptible to spreading gossip or falsehood.
+It doesn’t help that Her Highness is a very precise and private person.
+Even I haven’t seen the princess for myself, save for the murals I’ve seen around the palace walls.
+I’ve also heard that people claimed that it wasn’t half of her beauty and grace.
+
+
+???
+My, Lady Amelia,still working hard even at a party?
+
+
+[Eris shows in frame]
+
+
+Lady Eris.
+Having the continent’s most revered monarch as your closest confidante must’ve boosted her social standing,
+But it feels like she isn’t making it a big deal about it. The master's inner court really is amazing.
+Gracious, beautiful, humble, and stylish. She is every noblewoman’s dream, second only to our Princess of course.
+The palace whispers also pertained that Lady Eris quell any negative rumors anyone might have against our great princess.
+
+
+Eris (serious)
+You.
+***
+1. IF (“Y-yes, Lady Eris…?”)
+Eris(Smiling)
+Oh, lighten up, dear!
+It’s not like I bite.
+
+
+2. IF (“Me?”)
+Eris
+Yes you, silly.
+Who else would I be pertaining to?
+
+
+3. IF (Maybe she was calling someone else…)
+Eris(annoyed)
+…
+Eris(smiling)
+*Ahem*
+***[f]
+
+
+Eris (smiling)
+Anyways, could you be so kind and bring me one of those tasty berry tarts once they’re available?
+
+
+***
+1. IF (“Of course, Madam.”)[g]
+Eris smiles while Amelia is annoyed
+
+
+2. IF (“There would be a dessert cart ready soon, my Lady.”)[h]
+Amelia smiles while Eris is annoyed
+***[i]
+
+
+
+
+Amelia
+Please refrain from distracting the staff away from their assigned tasks, Lady Eris.
+
+
+Eris
+Isn’t catering to a guest one of their duties?
+
+
+Besides, you ought to liven up for a change. Halles will worry again if you keep overworking yourself.
+
+
+Amelia (distressed)
+…
+
+
+For Lady Eris to address Her Highness so casually, they must be really close.
+The respect they have for each other runs so deep that I feel that the Lady could predict the master’s behaviour.
+
+
+Amelia
+…Very well.
+
+
+I should leave.
+It’d be rude to intrude in their conversation.
+
+
+MC
+If I may, I would like to excuse myself.
+
+
+I bowed to them as a courtesy, hanging my head low before leaving.
+
+
+[IF “Pick up Tart”]
+Lady Eris must’ve been waiting for her tart. I should  check the kitchens if there are any available.
+
+
+[IF “Greet Guests”]
+Other guests are arriving. I should welcome them.
+
+
+[Proceed to next tab]
+
+
+🫓 Pick up tart
+I suppose Lady Eris could eat first.
+There are other servants available to greet any incoming guests anyways.
+
+
+[Screen fade to black to indicate timeskip]
+
+
+SOLARIUM HALL, INT., EVENING
+
+
+[Eris shows in frame]
+
+
+Eris (Annoyed)
+What took you so long, girl/boy?
+I’m starving.
+
+
+***
+1. IF (“I apologise if it took too long…”)
+Eris (Smiling)
+I was only playing with you, dear.
+
+
+What matters is I have my tart now.
+
+
+2. IF (“The kitchens weren’t done with baking them.”)
+Eris (Angry)
+And how is that my problem?
+
+
+They should’ve prepared earlier.
+…
+
+
+Eris (Teasing)
+Hahaha! I was jesting, dear.
+
+
+I get really scary when I’m in need of a snack.
+
+
+3. IF (Say Nothing)
+Eris (Serious)
+Oh, so you’re mute now.
+…
+
+
+MC
+…
+
+
+Eris (Teasing)
+Don’t worry, dear. I was only playing with you dear.
+
+
+All is forgiven now that I have my tart.
+***[j]        
+
+
+I’ve…never seen this side of Lady Eris…
+I guess all those rumors of her having quite the personality are deemed true…
+Her sudden switches in behavior caught me off guard.
+
+
+Amelia (Serious)
+Okay.
+
+
+You’ve served the tart.
+
+
+***
+1. IF (“Whatever do you mean, my Lady?”)
+Amelia (Nervous)
+I told you this is a very private gathering.
+***
+1.1 IF (“Oh… I’ll leave then.”)
+Amelia (Serious)
+I suggest you hurry before Her Highness comes in and-
+
+
+1.2 IF (“I forgot, I’m  so sorry!”)
+Amelia (Serious)
+Gods above…
+Well, I’d start moving before the party starts-
+
+
+2. IF (Stare at her in confusion)
+Amelia (Serious)
+Gods above…
+Not even servants are to be present in the party.
+Have you forgotten?
+
+
+2.1 IF (“Uhm… I forgot, my lady…”)
+Amelia (Nervous)
+Not even servants are to be present in the party.
+Forgetting is rarely an excuse for Her Highness-
+
+
+2.2 IF (Continue to stare at her in confusion)
+Amelia (Serious)
+Gods above…
+Not even servants are to be present in the party.
+Or have you forgotten?
+It doesn’t matter.
+What you need to right now is leave before Her Highness arrives-
+***
+***[k]
+
+
+Before Lady Amelia could finish her sentence, the grand doors of the Hall opened with a loud creek.
+The herald’s voice echoed through the vast room.
+
+
+[Amelia gets nervous]
+
+
+Herald(Off-screen)
+Hear ye!
+All rise for the arrival of The Jewel of Aurelium!
+Her Royal Majesty, Princess Hailey!
+
+
+Amelia(Nervous)
+Shoot.
+
+
+Her Highness really is here…
+By the look on Lady Amelia’s face, she really is unhappy that I’m still here.
+Oh no.
+Will I get punished for this?
+
+
+***[l]
+1. IF (“I can still leave…”)
+Amelia(Nervous)
+You probably should…
+
+
+???
+I presume you’re not too busy, Amelia?
+
+
+2. IF (Try and sneak off)
+???
+Oh, am I interrupting something?
+
+
+3. IF (Freeze in terror)
+???
+What’s the matter, dear? You look pale as a ghost.
+***[m][n]
+
+
+[Hailey shows in frame]
+
+
+Oh.
+Uh…
+Wow, She’s…
+I can’t believe the Princess of Aurelium is right before me!
+The murals portray her semblance poorly.
+The air and aura she carries around her is very poised and elegant, it’s intimidating me.
+
+
+Hailey(Worried)
+Amelia, is our friend all right?
+Perhaps she’s overworked…
+
+
+Amelia(Nervous)
+E-Everything is fine, milady.
+
+
+This servant was just finalizing the remaining arrangements before retiring for the night.
+
+
+Hailey(Smiling)
+
+
+I see. See to it that they rest afterward. No one in my court should suffer in silence.
+
+
+Hailey glances over her shoulder as heavy footsteps echo from the main entrance.
+
+
+Hailey (Neutral)
+
+
+It seems our remaining guests have arrived.
+
+
+
+
+I quickly step back toward the shadow of the pillars, trying to make myself as invisible as possible while keeping my head bowed.
+Entering right behind Her Highness is a tall, handsome man with an effortlessly charming smile, accompanied by a sharp-eyed noble holding a ledger.
+
+
+Prince Owen, Her Highness’s betrothed from the neighboring realm, alongside his secretary and cousin, Lord Robert.
+While Prince Owen radiates a warm, regal authority, Lord Robert scans the hall with cool, calculating eyes—measuring every guard, exit, and noble in the room.
+
+
+Owen (Smiling)
+
+
+My fair Princess. You look radiant tonight, despite the sudden urgency of this gathering.
+
+
+Robert(Neutal)
+
+
+Your Highness. We have arrived as requested, though I trust this meeting will yield the diplomatic clarity our realm requires.
+
+
+Hailey(Smiling)
+
+
+Welcome, Prince Owen, Lord Robert.
+
+
+Standing directly at the threshold of the dais is a towering knight in polished silver plate, his hand never straying far from the pommel of his broadsword.
+Sir Davor.
+
+
+The Princess’s childhood friend and legendary shield. He guards her not merely as a knight guards his sovereign, but with a fierce, suffocating possessiveness—his hazel eyes glaring at anyone who dares step too close to Her Highness.
+
+
+Davor(Neutral)
+Your Highness, the hall is secure. Though... I still question the presence of foreign mages within your sanctuary.
+
+
+
+
+Sir Davor’s gaze shifts toward the shadows behind Prince Owen, where a tall, cloak-wrapped figure glides silently into the room.
+The Mage Emrys.
+Prince Owen’s private bodyguard and a practitioner of forbidden arcane arts.
+In a kingdom where magic is strictly outlawed, Emrys’s presence alone sends a chilling pressure through the air.
+They say nothing, their glowing eyes fixed entirely on the silver goblet sitting atop the lectern.
+
+
+Owen(Calm)
+Emrys is here under my personal protection, Sir Davor. There is no cause for alarm.
+
+
+Hailey(Nervous)
+Peace, Davor. Tonight is a night for absolute truth, not petty squabbles.
+
+
+Princess Hailey walks gracefully up the steps of the dais, her long dress rustling against the marble floor. Lady Amelia quickly steps forward to offer her the ceremonial silver goblet filled with blue spiced wine.
+
+
+Amelia(Nervous)
+
+
+Your Goblet, Her Highness...
+
+
+Hailey(Smiling)
+Thank you, Amelia.
+
+
+
+
+[Proceed to “Poisoning”]
+
+
+🗣️ Greet Guests
+MC
+(I make my way down the carpeted hallway toward the Solarium Hall entrance. The low murmur of chatter begins to drift from the foyer as the remaining dignitaries step through the heavy brass doors.)
+Other guests are arriving. I should welcome them.
+MC
+As I approach the threshold, a hulking figure clad in a polished silver plate catches my eye. A heavy broadsword sits strapped to his waist, his hand resting on the pommel with practiced ease.
+Sir Davor.
+The Princess’s childhood companion and now her personal royal shield.
+Tales of his martial prowess on the eastern front are legendary, but around the palace, he is known for a singular, unyielding obsession: the absolute safety of Her Highness.
+He guards her not just like a knight guards a sovereign, but like a holy relic that must never be touched by common hands.
+Sir Davor (Glaring)
+Hold your step, servant.
+I freeze in place. His sharp, hazel eyes scan my uniform with intense suspicion before settling on my face.
+Sir Davor (Serious)
+Her Highness's personal dais is off-limits to secondary staff tonight. State your business in the hall.
+1. IF (“I am making sure the entry is clear for the incoming delegates, Sir Davor.”)
+Sir Davor (Nodding grimly)
+See that you do so swiftly. Keep your distance from the head table.
+2. IF (“I was just observing the guests, Sir.”) Sir Davor (Grip tightening on his sword pommel)
+Observe from the perimeter. Do not let your gaze linger on the Princess.
+3. IF (Lower your head and step aside into a bow.)
+Sir Davor (Neutral)
+…
+Good. Know your place.
+(Before Sir Davor can grill me further, the sound of smooth, cultured laughter echoes from the main courtyard doors.)
+???
+Now, now, Sir Davor. There is no need to terrify the household staff before the gathering has even officially commenced.
+(Prince Owen and Lord Robert walk into frame)
+Prince Owen.
+The foreign prince betrothed to our Princess Hailey. He possesses a calm, almost hypnotic charisma that effortlessly commands the room.
+Behind him follows Lord Robert, his secretary and cousin, carrying a leather-bound portfolio under his arm. While Prince Owen exudes warmth, Lord Robert’s sharp eyes measure every corner of the Solarium as if calculating its net worth.
+Owen(Smiling)
+We are guests in Princess Hailey’s pristine hall tonight. Let us accord her staff the grace she so effortlessly embodies.
+Sir Davor(Tense)
+My duty is her security, Prince Owen. Foreign delegations bring... unpredictability.
+Lord Robert(Neutral)
+A prudent concern, Knight. Though I assure you, my Prince's intentions are entirely aligned with the Princess’s peace.
+
+
+Lord Robert's gaze flickers past Sir Davor and falls squarely onto me.
+Lord Robert (Serious)
+You there. Servant.
+***
+   1. IF (“How may I serve you, My Lord?”)
+Robert(Neutral)
+Direct the courier carrying our realm's ceremonial gift to the private storage.
+   2. IF (“Welcome to the Solarium, Your Highness, My Lord.”)
+Owen(Smiling)
+Thank you, young one. Your hospitality does your mistress credit.
+   3. IF (Remain standing silently at attention.)
+Robert(Annoyed)
+Tsk. Lacks the crisp discipline of our northern court...
+Owen (Neutral)
+Peace, Robert. They are under enough stress tonight.
+***
+As the two foreign nobles move past, a cold draft sweeps through the corridor. A tall figure in dark, embroidered robes glides silently into the hall behind them, keeping to the deeper shadows along the wall.
+The Mage Emrys.
+Prince Owen’s private bodyguard and an infamous practitioner of the arcane.
+In our kingdom, where magic is strictly forbidden and heavily persecuted, their presence here is a walking scandal. The sheer pressure radiating off their dark cloak makes my chest feel heavy.
+Emrys(Neutral)
+...
+Emrys doesn't speak to the staff, nor do they make eye contact. Their pale hand rests lightly against a hidden pocket in their robes as their glowing eyes fixedly monitor the dais where Princess Hailey's glass cup sits.
+To think all these powerful, dangerous figures are gathered in one place...
+It’s clear this is no simple celebration. Everyone carries a heavy weight on their shoulders tonight.
+I bow deeply to the remaining guests as they take their positions across the Solarium Hall.
+If I linger any longer, I risk drawing the ire of the nobles or Lady Amelia.
+I should return to my station near the rear doors before Her Highness makes her grand entrance.
+The air in the room feels heavy, almost suffocating. Every single person here—from the foreign prince to the reclusive mage—is watching every movement with bated breath.
+Herald (Off-screen)
+Hear ye!
+All rise for the arrival of The Jewel of Aurelium!
+Her Royal Majesty, Princess Hailey!
+The grand wooden doors swing wide open. As Princess Hailey steps into the hall, a collective hush falls over the room.
+Oh.
+Uh…
+Wow. She’s…
+I can’t believe the Princess of Aurelium is right before me!
+The murals portray her semblance poorly. The air and aura she carries around her is overwhelmingly poised, elegant, and entirely commanding—yet beneath that surface, I can see the deep exhaustion etched around her eyes.
+Hailey(Worried)
+Amelia, is our staff all right?
+The atmosphere feels... tense tonight.
+Amelia (Nervous)
+E-Everything is under control, milady. Please, the court awaits your address.
+Hailey(Neutral)
+Very well.
+Princess Hailey glides gracefully up the marble steps of the dais. Lady Amelia steps forward, her hands trembling slightly as she hands Hailey the ceremonial silver goblet filled with the signature blue spiced wine.
+Amelia(Quiet)
+Your goblet, Your Highness...
+Hailey(Smiling)
+Thank you, Amelia.
+
+
+[Proceed to “Poisoning”]
+😵 Poisoning
+Princess Hailey turns to face the gathered assembly.[o]
+Her gaze sweeps over Prince [p]Owen, Lord Robert, Sir Davor, Lady Eris, and Emrys. For a split second, her eyes look tired—like someone who is finally putting down a burden she has carried for far too long.
+My breath catches in my throat.
+I am supposed to be a nobody here—a background servant who fades into the woodwork—but the sheer weight of what is happening pins me to the floor.
+
+
+Hailey (Serious)
+For years, you have built a pedestal beneath my feet... but tonight, I tear it down.
+
+
+She raises the silver goblet to her lips and takes a deep, unhesitating drink.
+Hailey (Smiling)
+Here's to more prosperity to the Kingdom. May you continue to put your faith in me, your divine Princess to service you forevermore.
+Her Highness raises the silver goblet to her lips. She drinks. Once. Deeply. For a split second, the room hangs on her every breath—until her jaw locks.
+Suddenly, her speech stutters. Her eyes widened in sharp, unfeigned shock. 
+The silver goblet slips from her fingertips, shattering against the marble floor with a deafening ring as dark blue veins instantly streak across her neck and jaw.
+
+
+Hailey (Choking)
+Ghk—!
+What…?
+Huh…?
+
+
+The silver rings against the marble floor with a deafening chime, blue spiced wine splashing across the steps like spilled blood.
+I watch in horror as dark, unnatural blue veins pulse violently beneath her pale skin, surging up her neck toward her jaw in jagged, creeping fractures.
+Davor(Panicked)
+YOUR HIGHNESS!!!
+Owen(Shocked)
+Hailey!
+Before Owen or Davor can reach the dais, the heavy iron doors slam shut on their own with a thunderous crash. Runes of light flash across the stone walls as the castle’s automated Stasis Protocol locks the room down tight, sealing our fates to be trapped in this nightmarish room.
+Sir Davor breaks first. His knightly composure vanishes into pure, unhinged instinct.
+He doesn't just run—he lunges, his heavy boots cracking against the floor tiles as he hurls himself up the steps, his cloak flaring behind him like a wounded bird's wing.[q]
+
+
+Davor(Panicked)
+
+
+Hailey! Look at me! Who did this to you?! Speak to me! Look at me!
+
+
+Owen(Panicked)
+
+
+Get back from her, Davor! Do not move her body!
+
+
+The Prince drops to his knees beside her on the cold marble. His hands hover over her face—trembling violently. 
+The icy, controlled diplomat I saw moments ago is completely gone. His face is ghost-white, his jaw trembling with a raw, desperate terror that looks far too visceral, far too ugly to be performative.
+
+
+Owen(Nervous)
+
+
+She’s breathing, but her heart... It's erratic! It’s an alchemical paralytic!
+
+
+Amelia(Panicked)
+
+
+N-No... No, no, no! I only poured what was in the official flask! I didn't—I swear by the Light, I didn't touch it!
+
+
+Lady Amelia’s voice is sharp, borderline hysterical. She clutches at her white apron, hyperventilating so hard her shoulders heave as her wide, bloodshot eyes dart frantically between the shattered goblet and the Princess.
+Is that the genuine panic of an innocent servant... or the frantic terror of someone whose calculated attempt just succeeded?
+
+
+Eris(Scared)
+
+
+Gods above... Someone help her! Davor, do something! Owen!
+
+
+
+
+Eris is crying, fat tears ruining her carefully applied cosmetics, but her gaze keeps flickering away from Hailey—toward the hearth, toward the private study door.
+She looks smaller, stripped of her haughty noble air, but there is a strange, calculating panic in the way she clutches her lace handkerchief against her lips.
+
+
+Robert(Nervous)
+
+
+Everyone, remain where you are! Owen, step away from the dais—if this is a volatile foreign alchemical agent, touching her bare skin could contaminate you as well!
+
+
+Lord Robert’s reaction chills me to the bone. He isn't crying. He isn't screaming. 
+He is already analyzing the room, his sharp eyes scanning the exits, the staff, the shattered glass, and the royal guests like a grandmaster assessing a ruined chessboard.
+
+
+Emrys(Nervous)
+...
+
+
+
+
+They don't even rush forward. They don't panic. Their glowing, inhuman eyes remain fixed entirely on the shattered glass and the pool of blue liquid, their pale hands twitching beneath their heavy robes as if channeling or suppressing a forbidden spell.
+In a room bursting with noise and grief, their total silence feels like a quiet confession.
+I take a shuddering step forward. My throat is dry as dust. Every instinct in my body tells me to run, to hide, to pretend I was never here, but before anyone can make a move toward the grand exit—
+
+
+THOOM.[r][s]
+
+
+A deafening crash echoes through the hall, shaking the dust from the chandeliers. Heavy, enchanted stone slabs slam down over the main doors and windows with absolute finality, sealing out the night.
+Golden wards flare along the walls, burning bright before settling into a sickening, rhythmic pulse.
+
+
+The Royal Stasis Protocol. The castle’s automated anti-treason ward has triggered. We are locked in.
+
+
+Davor(Panicked)
+
+
+The doors! Who locked the doors?!
+
+
+Robert(Nervous)
+
+
+It’s the automated Stasis Ward. A silent distress signal has already been broadcast to the High Inquisitor's Garrison outside... Look at the way the room lit up.
+
+
+Eris(Panicked)
+
+
+What... what does the cadence mean?! Robert, speak!
+
+
+Lord Robert(Neutral)
+
+
+It means in exactly twenty minutes... the outer barrier will shatter, and the execution squad will breach this room.
+
+
+The Royal Families’ knights have been notified that something happened in this room.
+
+
+For a kingdom that forbids magic, they sure have impressive arcane security measures.
+
+
+Lady Eris(Panicked)
+
+
+Twenty minutes?! We’ll be slaughtered! They don't take prisoners when a royal is poisoned! They'll purge the entire hall!
+
+
+Twenty minutes.
+
+
+My mind races violently against the thumping of my own heart.
+
+
+The Inquisitors won't care who is a humble servant and who is a foreign prince—if Princess Hailey dies and no proven culprit or antidote is produced when those doors shatter, everyone in this room will be put to the sword to cleanse the treason.
+
+
+I look at Princess Hailey. Her eyes peacefully closed. She is completely paralyzed, her chest barely rising, unable to speak a single word or move a single finger. 
+
+
+I can't just stand here and wait to be executed. I know this hall.
+I know where the wine was poured, who walked where, and what was hidden in her private study.
+If no one else is going to look at this logically because of their panic or their guilt... I have to.
+
+
+Owen(Serious)
+We need to move her off this cold floor! The private study—there’s a sofa inside!
+
+
+
+
+
+
+
+
+
+
+Davor(Angry)
+You step into her private quarters over my dead body, foreigner! You brought that cursed wine!
+
+
+Feeling the precious seconds ticking away , something inside me snaps.
+I step directly between the armed knight and the desperate prince, forcing my voice not to shake.
+
+
+MC
+Sir Davor! Standing here arguing will kill her faster than the poison! Help His Highness carry her to the study sofa, or her blood is on your hands!
+
+
+Sir Davor(Shocked)
+...You dare speak to me—ghk!
+Fine!
+But I am holding the threshold! No one touches her without my eyes on them!
+
+
+Owen nods at me—a brief, sharp look of genuine gratitude breaking through his panic—before carefully carrying Princess Hailey into the private study. The rest of the nobles filter inside behind him, the atmosphere thick enough to choke on.
+
+
+Twenty minutes. The blue veins on her neck are already darkening to a bruised purple.
+I have less than a third of an hour to find the antidote and name the killer... or we all die in this room.
+
+
+[Proceed to “Investigation”]
+🔎 Investigation
+I follow the panicked crowd into the Private Study as Owen gently places Princess Hailey onto the velvet sofa.
+The heavy oak door behind us remains half-ajar, guarded rigidly by Davor. The air inside the study is suffocating, smelling of old parchment, cold hearth ash, and the metallic tang of fear.
+
+
+My hands are trembling so violently I have to press them against my apron to hide it.
+
+
+Twenty minutes.
+
+
+In twenty minutes, an execution squad is going to storm that door and slaughter every single one of us if we don't find the antidote and the killer.
+
+
+My pulse is hammering in my ears…
+
+
+I can barely think—
+
+
+Amelia(Shocked)
+
+
+...
+
+
+Lady Amelia has completely shut down. Her eyes are wide, glassy, and unblinking, staring blankly at her own wine-stained fingers.
+She's rocking back and forth in absolute silence, hyperventilating so shallowly she might faint at any moment.
+
+
+Eris(Panicked)
+
+
+IT WAS THEM! IT HAD TO BE THEM!
+
+
+I flinch backward, cold sweat breaking out across my neck as everyone’s eyes snap onto me.
+
+
+Eris
+Why is a lowly servant even inside Her Highness's private quarters?!
+They were hovering near the serving table! They brought the tart! They had access to the decanters!
+Davor, execute them right now! Execute them before the Inquisitors cut us all down!
+
+
+***
+      1. IF (“I didn't touch her goblet! Lady Amelia poured the wine, and you know it!”)
+
+Eris(Angry)
+How dare you throw accusations at nobility, you worthless wretched worm—!
+
+Amelia(Crying)
+
+...I didn't... I didn't put anything in it... I swear...
+
+      2. IF (“Panicking and pointing fingers won't stop the execution squad, Lady Eris! Look at the room!”)
+
+Eris(Angry)
+
+Y-You dare raise your voice to me?!
+In the Princess's own sanctuary?!
+
+Robert(Neutral)
+
+The servant isn't wrong, Eris.
+Screaming like a hysterical child only wastes our remaining fifteen minutes.
+
+         3. IF ("If I wanted Her Highness dead, I wouldn't have stayed in this locked room to be executed with the rest of you. We are all on the same gallows right now.”)
+
+
+Owen(Serious)
+Reasonable words. Lower your hand, Eris.
+
+Davor(Serious)
+
+
+I don't care who dies first! If Her Highness doesn't open her eyes in the next ten minutes, I will butcher every single person in this room myself—starting with the foreign delegation!
+
+
+Lord Robert(Serious)
+
+
+Watch your tongue, Knight! You accuse the foreign crown without a shred of proof! My Prince came here under a treaty of peace! If you lay a single finger on Prince Owen, you will ignite an international war before the Inquisitors even breach those doors!
+
+
+Owen(Serious)
+No, Robert... stop.
+***
+
+
+Owen(Sad)
+It’s my fault... The ceremonial glass was brought from my kingdom's vault. The blue wine came from my family's estate. 
+
+
+If... if someone tampered with my shipment, then the responsibility rests on my shoulders.
+
+
+If my life is what buys the antidote from the killer... take me! Just give her the cure!
+
+
+Emrys(Serious)
+...
+
+
+Emrys says absolutely nothing. They don't defend their prince, they don't yell at Davor, and they don't cringe at Eris's screams. Their glowing eyes simply track the room like a hawk, their fingers lightly touching the edge of their dark cloak. Their utter quiet amid this chaos is terrifying.
+
+
+
+
+My heart is hammering against my ribs like a trapped bird. Everyone is losing their minds.
+Amelia is catatonic, Eris is manic, Davor is bloodthirsty, Robert is hostile, Owen is ready to martyr himself, and Emrys is a ticking time bomb.
+
+
+If I let them keep tearing each other apart, the twenty minutes will evaporate.
+I have to take control of this investigation right now.
+
+
+***
+
+
+            1. IF (“Quiet! All of you! Prince Owen, move away from the sofa so I can inspect Her Highness’s symptoms!”)
+
+Owen(Serious)
+Of course...
+Please, if you know what to look for, check her...
+
+Davor(Serious)
+
+I am watching your hands, servant. Touch anything suspicious and I sever your wrist.
+
+               2. IF (“While you all argue over who to execute, Her Highness is suffocating! Look at her desk—there are documents and vials scattered everywhere!”)
+
+Robert(Nervous)
+
+Touch those state documents at your own peril, commoner.
+
+"Her life is worth more than your political documents, Lord Robert!"
+
+               3. IF (Ignore the nobles entirely and walk directly to the private study desk to begin searching for clues.)
+
+Eris(Angry)
+
+They're ignoring us! The filthy commoner is going through Her Highness's private effects!
+
+Owen(Serious)
+
+Let them search! None of you are doing anything useful!
+***[t]
+
+
+
+I step up to Princess Hailey's private mahogany desk.
+My eyes dart across the surface—an open inkwell, a bunch of paperwork sprawled around messily.
+Such contents are definitely not for the eyes of a servant.
+
+
+But my mind drifted to the Hall as well.
+It was the very room where the poisoning happened, so maybe I could find clues there as well.
+
+
+The clock is ticking. I need to make my first move.
+
+
+
+
+***
+                  4. IF (Stay in the Study to not waste time)
+I can’t leave this room without someone being notified.
+If I don’t start to prove my innocence here, it would be most likely that Sir Davor would have my throat long before the inquisitors come barging through those doors.
+                  5. IF (Move to the Hall to start your investigation there)
+I slip past Sir Davor’s rigid form at the threshold and step back onto the marble dais of the Solarium Hall.
+The air out here is cold and stagnant, smelling sharply of spilled alcohol, faint metallic ozone, and sweet floral spices. The golden runes lining the sealed stone doors cast long, jagged shadows across the room. 
+***[u]
+📚 Study
+[IF first choice]
+I’m already here.
+I might as well start my search for answers
+
+
+[IF second choice]
+The Hall already gave a lot of what I needed to know.
+It’s time I move here to get to the bottom of this.
+
+
+
+
+Making my way to Her Highness’ own desk, I press my palm against the cool mahogany, trying to steady my breathing.
+The study smells suffocatingly of old leather, crushed lavender, and the faint metallic tang of panic.
+Next to me, Princess Hailey lies on the velvet chaise, her breathing shallow and her skin graying as dark blue veins crawl toward her collarbone.
+
+
+Eris(Nervous)
+
+
+What are you even doing over there?!
+
+
+You’re turning her sacred desk upside down like a thief!
+
+
+Davor, grab them!
+
+
+Davor(Angry)
+
+
+I told you, servant... state what you are searching for, or I will drag you away from her papers myself.
+
+
+***
+You have no right to touch Her Highness' private possessions!
+
+
+Emrys(Calm)
+
+
+Silence, Eris. Panicking will not stabilize her condition, nor will it find the missing cure.
+
+
+                  1. IF (“If there’s an antidote, it’s going to be near her private ledgers or medicine chests! Stand down, Sir Davor!”)
+Davor(Nervous)
+
+You speak to a Royal Shield with the tongue of an equal... You better find a lead, or I’ll use that tongue for practice.
+
+Owen(Angry)
+
+Let them search, Davor.
+We are wasting precious seconds here.
+
+                     2. IF (“Eris, check her pulse again! Sir Davor, if you truly serve the Crown, help us search instead of standing guard over secrets!”)
+
+Eris(Nervous)
+
+H-Her pulse is slowing down... dark spots are spreading faster!
+
+Davor(Serious)
+
+Dammit... Fine! Search the drawers, but touch nothing else!
+                     3. IF (“Look at her neck! She’s running out of time! Every second you spend threatening me is a second lost for Her Highness!”)
+
+Davor(Angry)
+
+...Tsk. 
+Make it fast.
+
+                        4. IF (Say nothing. Hold up Lady Amelia’s debt ledger firmly so everyone can see Her Highness’s seal.)
+
+Amelia(Nervous)
+
+T-That book...
+Why do you have my family’s ledger?!
+
+Robert(Serious)
+
+So... 
+The head lady-in-waiting keeps her personal affairs right alongside royal state papers. How intriguing.
+                           5. IF (“Emrys! Use your magical resonance to detect any hidden compartments in this desk!”)
+
+Emrys(Calm)
+
+A practical suggestion... standard Inquisitorial wards are masking the wood, but there is a faint aura near the lower right panel.
+
+Robert(Angry)
+
+Keep your magic away from Her Highness' desk, sorcerer!
+***[v]
+I sift through the remaining compartments on the writing desk, uncovering a hidden drawer tucked behind a row of bound legal treatises.
+
+
+ADDITIONAL EVIDENCE UNLOCKED: THE PRIVATE STUDY
+                              * Intercepted Courier Slip (Found in the Hidden Drawer)
+
+A slip of parchment bearing the emblem of the Royal Guard Garrison. It notes that a courier carrying foreign herbs was intercepted at the gate at 10:00 PM tonight under Lord Robert's personal authority.
+
+                              * Torn Pages of the Solar Calendar (Found near the Hearth)
+
+Half-singed calendar pages showing that Princess Hailey had scheduled a private meeting with Prince [w]Owen alone at midnight—a meeting that Lord Robert was explicitly excluded from attending.
+
+                              * Empty Velvet Vials Case (Found inside [x]Owen’s Diplomatic Trunk)
+
+A carved wooden box lined with velvet. It has four slots for diplomatic medicinal elixirs: three are filled with standard restorative salves, but the fourth slot—labeled "Viper's Eclipse Antidote"—is completely empty.[y]
+
+                              * Smudged Letter of Resignation (Found inside Eris’s Apron Pocket)
+
+An unsent resignation letter addressed to Princess Hailey, detailing Eris's intention to leave her position due to immense pressure and unpaid wages, signed earlier this evening.
+
+                              * Encrypted Cipher Key (Hidden behind the Portrait of the Founder)
+
+A small brass cipher wheel matching the markings on the intercepted courier slips, indicating a secret channel of communication between the study and an unknown party outside the castle walls.
+
+Robert(Serious)
+
+
+You are prying into affairs of state that do not concern a mere domestic servant.
+Put down those courier slips.
+
+
+Owen(Nervous)
+
+
+Wait... my diplomatic medical chest?
+Why is the fourth slot empty?!
+Emrys, did you open my trunk earlier tonight?!
+
+
+Emrys(Nervous)
+
+
+...The trunk was opened using your signet ring, Prince Owen. Not magic.
+
+
+Eris(Angry)
+
+
+See?! Prince Owen brought the poison AND the antidote, and now the cure is missing!
+He intended to force Hailey into a marriage contract by holding her life hostage!
+
+
+                                 1. IF (“That doesn't make sense! If Owen wanted to force her into a contract, why would he leave the empty case in his own unlocked trunk for us to find?”)
+
+Owen(Nervous)
+
+Exactly! Someone took the signet ring from my coat during the banquet!
+
+Robert(Serious)
+
+Or you simply misplaced the cure in your panic, my Lord.
+
+                                 2. IF (“Lord Robert, you intercepted a guard courier at 10:00 PM! What was in that shipment?!”)
+
+Robert(Serious)
+
+Standard diplomatic correspondence regarding grain tariffs. Nothing more.
+
+Davor(Angry)
+
+Grain tariffs don't require the personal seal of an Inquisitorial guard, Robert...
+
+                                 3. IF (“Look at these calendar pages! Her Highness was going to meet Prince Owen alone at midnight without Lord Robert present!”)
+
+Lady Eris (Gasping)
+
+To bypass Robert's influence on the treaty entirely!
+
+Lord Robert (Jaw clenching)
+
+...Her Highness was free to meet with whoever she pleased.
+
+
+My brain is burning from the sheer volume of information. The evidence in this study tells a complex story of paranoia, political maneuvers, and hidden motives. I need to synthesize these clues correctly to form a coherent timeline before moving to the Solarium Hall.
+
+
+                                    1. HARD DIFFICULTY (Complex multi-layered deduction & elimination)
+
+[ EASY DIFFICULTY QUESTION ]
+Question: According to the Empty Velvet Vials Case found in [z]Owen’s trunk and Emrys’s statement, how was the chest opened?
+
+
+                                       * Option A: Emrys used illegal transmutation magic to melt the iron lock.
+
+                                       * Option B: Sir Davor forced the lock open with his broadsword during the initial panic.
+
+                                       * Option C: The trunk was opened using Prince [aa]Owen's physical signet ring, not magic.
+
+                                       * Option D: Lady Amelia stole the key from Princess Hailey's desk.
+[ab]
+[ MEDIUM DIFFICULTY QUESTION ]
+Question: Combining the Torn Pages of the Solar Calendar with Lord Robert's Intercepted Courier Slip, what hidden conflict between Prince [ac]Owen's delegation and Lord Robert is revealed?
+
+
+                                          * Option A: Lord Robert was secretly trying to stop Prince [ad]Owen from meeting Hailey alone at midnight to prevent them from altering the diplomatic treaty without his control.
+
+                                          * Option B: Prince [ae]Owen was planning to execute Lord Robert at midnight using the herbs from the intercepted courier.
+
+                                          * Option C: Hailey hired Lord Robert to intercept Prince [af]Owen's mail because she did not trust the foreign prince.
+[ag]
+                                          * Option D: The courier slip proves that Lord Robert was working directly for Sir Davor to strip Emrys of their magic.
+
+[ HARD DIFFICULTY QUESTION ]
+Question: Analyze all gathered study evidence (Amelia's Debt Ledger, Revoked Knighthood Decree, Empty Antidote Case, and Intercepted Courier Slip). Which of the following statements represents the MOST LOGICAL explanation for why the antidote is missing from the case?
+
+
+                                             * Option A: Lady Amelia took the antidote to sell it and pay off her debt, fully aware that Hailey had already revoked her family's financial obligations.
+
+                                             * Option B: Someone used Prince [ah]Owen's signet ring to steal the antidote from his chest prior to the speech—either to ensure Hailey would die without a cure or to use the cure as ultimate leverage during the Stasis Protocol.
+
+                                             * Option C: Sir Davor found the antidote while guarding the study and destroyed it in the hearth because he wanted Hailey to die rather than marry Prince [ai]Owen.
+
+                                             * Option D: Emrys used magic to swap the antidote with the Viper's Eclipse poison so that Lord Robert would take the blame when the Inquisitors arrived.[aj]
+
+MINIGAME OUTCOME & ROUTE BRANCH
+                                                1. IF (Answer correctly)
+
+The fog in my mind clears! The timeline of events in the private study is now crystal clear. I turn toward the doorway with newfound confidence.
+
+
+MC
+I have unraveled the secrets hidden in this study! Now, I need to inspect the crime scene in the Solarium Hall!
+
+                                                   2. IF (Answer incorrectly)
+I stumble over my own logic. Panic grips my chest as the golden runes on the wall pulse faster! I lose 3 minutes off the clock trying to reorganize my thoughts.
+
+
+
+
+MC
+"N-No! I am wasting time! I need to get out to the Solarium Hall immediately!"
+
+
+☀️ Hall
+[IF first choice]
+I stand at the threshold between the dim Private Study and the echoing Solarium Hall.
+
+
+[IF second choice]
+Now that the Study is searched, I could now move on to the Hall.
+
+
+
+
+The air out here is cold and stagnant, smelling sharply of spilled alcohol, faint metallic ozone, and sweet floral spices. The golden runes lining the sealed stone doors cast long, jagged shadows across the room.
+
+
+Lord Robert
+Stepping out to the crime scene alone, servant?
+Be careful where you tread.
+A single misplaced footstep could destroy physical evidence—or make you look exceedingly guilty when the Inquisitors break through those doors.
+
+
+***
+
+
+                                                      1. IF (“I’m looking for the physical truth of how the poison reached Her Highness’s lips, Lord Robert. Stand back and let me search!”)
+
+
+
+Robert(Serious)
+"The physical truth"?
+How ambitious for a domestic staff member. Mind that you do not choke on what you uncover.
+
+
+Ellis(Serious)
+Let them search, Robert! Stop trying to intimidate everyone who moves!
+
+
+                                                      2. IF (“If you have nothing to hide, My Lord, then my presence on this dais shouldn't concern you.”)
+Lord Robert(Serious)
+Innocence is a luxury in a locked room with an Inquisitorial squad outside, servant. I am merely advising prudence.
+
+
+                                                      3. IF (Ignore Robert entirely and drop to one knee beside the shattered glass.)
+
+
+Sir Davor(Serious)
+Watch your filthy hands around her goblet…
+***[ak]
+
+
+
+
+I block out the tense chatter echoing across the hall and focus my senses entirely on the crime scene. Three primary areas in the Solarium Hall hold critical physical clues: the Shattered Goblet & Spilled Wine on the Dais, the Serving Cart & Decanters, and the Foreign Delegation Seat where Ellis and Robert were standing.
+
+
+EVIDENCE LOCATION 1: THE SHATTERED GOBLET & DAIS FLOOR
+MC
+
+
+I crouch beside the shattered silver fragments resting in a pool of deep blue liquid. The wine hasn't dried; instead, it looks thick, almost syrupy on the cold marble.
+
+
+                                                      * Scratched Goblet Rim & Metallic Residue
+The heavy silver lip of the goblet bears deep, fresh parallel scratches that cut through the gilded finish. The pattern matches the exact raised steel filigree on Sir Davor's left gauntlet. A faint, powdery blue residue clings strictly to the inner rim rather than being dissolved evenly throughout the liquid.
+
+
+                                                      * Stained Lace Handkerchief
+Snagged on the ornate brass leg of the lectern directly beside the goblet's resting place is a delicate silk handkerchief embroidered with the initials 'E.V.'—Lady Eris's private mark. The lace edge is soaked through with the same blue spiced wine.
+
+
+EVIDENCE LOCATION 2: THE SERVING CART & DECANTERS
+
+
+I move down the steps to the silver serving cart where Lady Amelia poured the drinks prior to Her Highness taking the dais.
+
+
+                                                      * Empty Glass Vial in Sewing Kit
+Tucked beneath a small bundle of velvet thread inside a dropped sewing basket on the bottom shelf of the cart lies a tiny, unlabelled glass vial. It is uncorked and retains three tiny droplets of a thick, blue, sweet-smelling liquid.
+
+
+                                                      * Tampered Wine Decanter
+The primary crystal decanter used for the toast still contains a quarter glass of blue wine. Unlike the pool on the floor, testing the liquid reveals it smells purely of sweet berries and spices, showing no signs of the pungent, metallic bitterness characteristic of alchemical paralytics.)
+
+
+EVIDENCE LOCATION 3: THE FOREIGN DELEGATION SEAT & ENTRANCE
+MC
+
+
+I inspect the corner near the entrance pillars where Prince Ellis, Lord Robert, and Emrys stood before the speech commenced.
+
+
+                                                      * Hollow Signet Ring
+Lying half-hidden under the fringe of a velvet chair cushion near Robert's position is a heavy silver signet ring. The face of the ring flips open on a tiny brass hinge, revealing a hollow inner chamber lined with faint white powder.
+
+
+                                                         * Lingering Arcane Transmutation Residue
+Hovering near the floor runes near the entrance, a faint purple luminescence glimmers in the air. It is the distinct sensory mark of a localized Transmutation spell—specifically used to alter the physical density or state of liquids without changing their color.
+
+
+
+
+Lady Eris
+
+
+(Stepping out from the study doorway, her voice trembling with rising panic as she sees me hold up the handkerchief)
+
+
+W-What are you doing with my handkerchief?! I dropped that during the initial panic when Davor rushed the stage! You're trying to frame me!
+
+
+Prince Ellis
+
+
+(Stepping into the hall, staring at the hollow signet ring in my palm)
+
+
+Robert... is that your administrative signet? Why is it lying on the floor beneath my chair?
+
+
+Lord Robert
+
+
+(Smoothly reaching into his coat pocket)
+
+
+My signet is right here, My Prince. That ring belongs to the eastern trade envoy we met at the docks yesterday—the one I confiscated and meant to submit to court security. I must have dropped it when the Stasis Protocol slammed the doors shut.
+
+
+                                                         1. IF (“A hollow ring containing alchemical powder found right where you were standing, Lord Robert? That is quite a convenient coincidence!”)
+Lord Robert (Eyes flashing dangerously)
+Coincidences are not crimes, servant. Prove it was used tonight before you throw around accusations that could cost you your head.
+
+
+                                                         2. IF (“Lady Eris, if you dropped this handkerchief during the panic, why is the wine stain on the inside folds instead of the outside?”)
+Lady Eris (Gasping, clutching her dress)
+I—I must have wiped my hands after grabbing the table! I didn't poison her! You have to believe me.
+
+
+                                                         3. IF (“Look at the decanter! The wine in the crystal jug isn't poisoned at all! The poison was added directly to Her Highness's goblet after it was poured!”)
+Amelia(Nervous)
+See?! I told you! I only poured what was in the jug! I didn't put anything in her cup!
+
+
+
+
+My heart pounds against my ribs.
+The physical clues on this dais tell a terrifyingly specific story about how the drink was handled between 10:45 PM and 11:00 PM.
+I need to process these physical observations correctly before I waste precious time.
+
+
+
+
+SELECT YOUR DEDUCTION DIFFICULTY:
+                                                         1. EASY DIFFICULTY (Direct physical observation recall)
+
+
+                                                         2. MEDIUM DIFFICULTY (Sequential crime scene reconstruction)
+                                                         3.                                                          4. HARD DIFFICULTY (Complex forensic deduction & elimination of red herrings)
+                                                         5. [ EASY DIFFICULTY QUESTION ]
+Question: Based on the examination of the Tampered Wine Decanter and the Shattered Goblet Rim, where was the poison actually introduced?
+
+
+                                                         * Option A: Directly into the large crystal decanter before Lady Amelia poured any drinks.
+
+                                                         * Option B: Into Princess Hailey's individual silver goblet after or during its delivery to the dais, since the wine remaining in the decanter showed no signs of poison.
+
+                                                         * Option C: Into the water pitcher kept in the private study by Sir Davor.
+
+                                                         * Option D: Inside the berry tarts served by Lady Eris earlier in the evening.
+[ MEDIUM DIFFICULTY QUESTION ]
+Question: Cross-referencing the Scratched Goblet Rim, Lady Eris's Stained Handkerchief, and the Empty Glass Vial, which deduction correctly identifies the logical conflict regarding who had physical access to the cup?
+
+
+                                                            * Option A: Sir Davor's gauntlet scratches prove he was the only person who touched the cup, meaning Lady Amelia's vial and Eris's handkerchief are complete fabrications.
+
+                                                            * Option B: Multiple suspects left physical traces around the lectern—Amelia brought the cart, Eris left her handkerchief, and Davor's gauntlet marked the rim—meaning physical proximity alone does not prove who actually tipped the poison into the glass.
+
+                                                            * Option C: Lady Eris used the empty glass vial to wipe Sir Davor's gauntlet, which transferred the poison onto the crystal decanter.
+                                                            * Option D: Lord Robert used his hollow signet ring to scratch the goblet rim while Lady Amelia was pouring from the decanter.
+
+
+[ HARD DIFFICULTY QUESTION ]
+Question: Synthesizing the Hollow Signet Ring, the Powdery Blue Residue on the Goblet Rim, and the Lingering Arcane Transmutation Residue, which statement represents the MOST ACCURATE physical reconstruction of the crime?
+
+
+                                                               * Option A: The killer used a solid poison tablet hidden inside the hollow signet ring, but relied on a subtle Transmutation spell (or enchanted tool) to rapidly dissolve or adhere the powder to the rim of the glass so it would instantly coat the liquid as Hailey drank.
+
+                                                               * Option B: Emrys cast a lethal Transmutation spell from across the room that transformed the silver goblet's metal directly into liquid poison without needing any physical chemical agent.
+
+                                                               * Option C: Lord Robert poured liquid poison from his hollow signet ring into the decanter, while Sir Davor used magic to remove the stain from Lady Eris's handkerchief.
+Option D: Lady Amelia used Emrys's transmutation spell to hide the empty glass vial inside Lord Robert's hollow signet ring before serving the toast.
+MINIGAME OUTCOME & NEXT ROUTE BRANCH
+                                                                  1. IF (Answer correctly)
+The physical picture becomes sharp and clear in my mind! I understand how the goblet was tampered with on the dais. Now I need to head into the Private Study to match these physical clues with personal motives!)
+
+
+
+"The physical scene in the hall is clear! Now I need to search Princess Hailey's Private Study to find out WHY this was done!"
+
+
+                                                                  2. IF (Answer incorrectly)
+My brain feels scrambled by the conflicting physical clues! Panic surges through me as the golden wall runes flare brightly, costing me 3 precious minutes as I re-read my notes.
+
+
+
+"Ghk—no! I am losing control of the clock! I have to move to the Study immediately!"
+
+
+💀 Conclusion
+
+
+[a]Poem by Arthur Rimbaud
+[b]black screen na naka center
+[c]Center
+[d]thought Box
+[e]Choice buttons
+[f]Choice Buttons
+[g]Leads to [PICK UP TART] route
+[h]Leads to [GREET GUESTS]
+[i]Choice buttons
+[j]Choices button
+[k]Choice buttons
+[l]Choice buttons
+[m]Choice Buttons
+[n]Choice buttons
+[o]Black Screen transitioning to CG
+[p]CG#1
+[q]CG#1
+[r]onomatopoeia pero may sound effect den
+[s]tsaka start ng timer
+[t]Choice Buttons
+[u]Choice Buttons
+[v]Choice Buttons
+[w]either notif/list type button for UI
+[x]either notif/list type button for UI
+[y]either notif/list type button for UI
+[z]EASY DIFFICULTY (Direct reading recall)
+[aa]EASY DIFFICULTY (Direct reading recall)
+[ab]EASY DIFFICULTY (Direct reading recall)
+[ac]MEDIUM DIFFICULTY (Contextual logic & timeline cross-referencing)
+[ad]MEDIUM DIFFICULTY (Contextual logic & timeline cross-referencing)
+[ae]MEDIUM DIFFICULTY (Contextual logic & timeline cross-referencing)
+[af]MEDIUM DIFFICULTY (Contextual logic & timeline cross-referencing)
+[ag]MEDIUM DIFFICULTY (Contextual logic & timeline cross-referencing)
+[ah]HARD DIFFICULTY (Complex multi-layered deduction & elimination)
+[ai]HARD DIFFICULTY (Complex multi-layered deduction & elimination)
+[aj]HARD DIFFICULTY (Complex multi-layered deduction & elimination)
+[ak]Choice Buttons

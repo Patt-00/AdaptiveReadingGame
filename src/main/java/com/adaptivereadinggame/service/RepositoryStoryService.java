@@ -2,6 +2,8 @@ package com.adaptivereadinggame.service;
 
 import com.adaptivereadinggame.model.GameState;
 import com.adaptivereadinggame.model.Question;
+import com.adaptivereadinggame.model.StoryCheckpoint;
+import com.adaptivereadinggame.model.StoryChoice;
 import com.adaptivereadinggame.model.StoryNode;
 import com.adaptivereadinggame.repository.ChapterRepository;
 import com.adaptivereadinggame.repository.AssessmentDraftRepository;
@@ -32,12 +34,20 @@ public final class RepositoryStoryService implements StoryService {
     }
 
     @Override public synchronized GameState startChapter(UUID studentId, UUID chapterId) {
+        var chapter = chapters.findChapter(Objects.requireNonNull(chapterId))
+                .orElseThrow(() -> new IllegalArgumentException("Unknown chapter"));
+        return startChapter(studentId, chapterId, chapter.difficulty());
+    }
+
+    @Override public synchronized GameState startChapter(UUID studentId, UUID chapterId, com.adaptivereadinggame.model.Difficulty initialDifficulty) {
         students.findById(Objects.requireNonNull(studentId)).orElseThrow(() -> new IllegalArgumentException("Unknown student"));
         chapters.findChapter(Objects.requireNonNull(chapterId)).orElseThrow(() -> new IllegalArgumentException("Unknown chapter"));
+        Objects.requireNonNull(initialDifficulty, "initialDifficulty");
         String firstNodeId = stories.firstNodeId(chapterId)
                 .orElseThrow(() -> new IllegalStateException("This chapter has no prepared story."));
         requireNode(chapterId, firstNodeId);
-        GameState started = new GameState(studentId, chapterId, firstNodeId, null, 0, Map.of());
+        GameState started = new GameState(studentId, chapterId, firstNodeId, null, 0, Map.of(),
+                "", "", initialDifficulty);
         activeStates.put(studentId, started);
         return started;
     }
@@ -49,7 +59,8 @@ public final class RepositoryStoryService implements StoryService {
         if (node.readingCheck()) throw new IllegalStateException("The story is at its reading check.");
         if (!node.storyChoices().isEmpty()) throw new IllegalStateException("Choose one of the story options to continue.");
         if (node.nextNodeId().isEmpty()) throw new IllegalStateException("This story path has ended.");
-        return moveTo(current, node.nextNodeId());
+        return moveTo(current, node.nextNodeId(), current.routeId(), current.activeDifficulty(),
+                current.lastCompletedCheckpointId());
     }
 
     @Override public synchronized GameState chooseStory(UUID studentId, String choiceId) {
@@ -57,11 +68,27 @@ public final class RepositoryStoryService implements StoryService {
         requireStoryPhase(current);
         StoryNode node = requireNode(current.chapterId(), current.storyNodeId());
         if (node.readingCheck()) throw new IllegalStateException("The story is at its reading check.");
-        String nextNodeId = node.storyChoices().stream()
+        StoryChoice selected = node.storyChoices().stream()
                 .filter(choice -> choice.choiceId().equals(Objects.requireNonNull(choiceId)))
-                .map(choice -> choice.nextNodeId()).findFirst()
+                .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("That story choice is not available here."));
-        return moveTo(current, nextNodeId);
+        String routeId = selected.routeId().isEmpty() ? current.routeId() : selected.routeId();
+        return moveTo(current, selected.nextNodeId(), routeId, current.activeDifficulty(),
+                current.lastCompletedCheckpointId());
+    }
+
+    @Override public synchronized GameState completeCheckpoint(UUID studentId, String checkpointId,
+            boolean correct, com.adaptivereadinggame.model.Difficulty nextDifficulty) {
+        GameState current = requireActive(studentId);
+        StoryCheckpoint checkpoint = chapters.findChapter(current.chapterId())
+                .flatMap(chapter -> chapter.checkpoint(checkpointId))
+                .orElseThrow(() -> new IllegalArgumentException("Unknown adaptive checkpoint."));
+        StoryNode node = requireNode(current.chapterId(), current.storyNodeId());
+        if (!node.readingCheck() || !node.storyNodeId().equals(checkpoint.nodeId()))
+            throw new IllegalStateException("The active story node does not match the completed checkpoint.");
+        Objects.requireNonNull(nextDifficulty, "nextDifficulty");
+        String destination = correct ? checkpoint.correctNextNodeId() : checkpoint.incorrectNextNodeId();
+        return moveTo(current, destination, current.routeId(), nextDifficulty, checkpointId);
     }
 
     @Override public synchronized Optional<GameState> currentState(UUID studentId) {
@@ -74,13 +101,17 @@ public final class RepositoryStoryService implements StoryService {
         var chapter = chapters.findChapter(candidate.chapterId())
                 .orElseThrow(() -> new IllegalArgumentException("Saved chapter is unavailable."));
         StoryNode node = requireNode(candidate.chapterId(), candidate.storyNodeId());
-        validateAnswers(candidate, chapter.questions());
+        validateAnswers(candidate, questionsForState(chapter, candidate));
         if (candidate.assessmentSessionId() == null) {
             if (candidate.questionIndex() != 0 || !candidate.firstAnswers().isEmpty())
                 throw new IllegalArgumentException("Story progress without an assessment cannot contain answers.");
         } else {
             if (!node.readingCheck())
                 throw new IllegalArgumentException("An unfinished reading check must be saved at its reading-check node.");
+            if (chapter.adaptive() && (candidate.activeCheckpointId().isEmpty()
+                    || candidate.activeDifficulty() == null
+                    || chapter.checkpointAtNode(node.storyNodeId()).filter(cp -> cp.id().equals(candidate.activeCheckpointId())).isEmpty()))
+                throw new IllegalArgumentException("Saved adaptive checkpoint does not match the active story node.");
             GameState storedDraft = drafts.findDraft(candidate.assessmentSessionId())
                     .orElseThrow(() -> new IllegalArgumentException("The original assessment draft is unavailable."));
             if (!storedDraft.equals(candidate))
@@ -95,9 +126,12 @@ public final class RepositoryStoryService implements StoryService {
         activeStates.remove(Objects.requireNonNull(studentId));
     }
 
-    private GameState moveTo(GameState current, String nextNodeId) {
+    private GameState moveTo(GameState current, String nextNodeId, String routeId,
+                             com.adaptivereadinggame.model.Difficulty activeDifficulty,
+                             String lastCompletedCheckpointId) {
         requireNode(current.chapterId(), nextNodeId);
-        GameState next = new GameState(current.studentId(), current.chapterId(), nextNodeId, null, 0, Map.of());
+        GameState next = new GameState(current.studentId(), current.chapterId(), nextNodeId, null, 0, Map.of(),
+                routeId, "", activeDifficulty, lastCompletedCheckpointId);
         activeStates.put(current.studentId(), next);
         return next;
     }
@@ -134,5 +168,12 @@ public final class RepositoryStoryService implements StoryService {
             if (!state.firstAnswers().containsKey(questions.get(index).id()))
                 throw new IllegalArgumentException("Saved answers must be a continuous sequence of first attempts.");
         }
+    }
+
+    private static java.util.List<Question> questionsForState(com.adaptivereadinggame.model.Chapter chapter,
+                                                               GameState state) {
+        if (!chapter.adaptive() || state.activeCheckpointId().isEmpty()) return chapter.questions();
+        if (state.activeDifficulty() == null) throw new IllegalArgumentException("Adaptive checkpoint has no selected difficulty.");
+        return chapter.questions(state.activeCheckpointId(), state.activeDifficulty());
     }
 }

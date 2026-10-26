@@ -66,21 +66,69 @@ public final class AccountGameService {
                 .orElseThrow(() -> new IllegalStateException("The active chapter is unavailable."));
         StoryNode node = nodes.findNode(currentGame.chapterId(), currentGame.storyNodeId())
                 .orElseThrow(() -> new IllegalStateException("The active story node is unavailable."));
+        String passage = chapter.adaptive() && !currentGame.activeCheckpointId().isEmpty()
+                ? chapter.checkpoint(currentGame.activeCheckpointId()).orElseThrow().passage()
+                : chapter.passage();
         return Optional.of(new GameView(currentGame,
-                new ChapterSummary(chapter.id(), chapter.title(), chapter.difficulty()), node,
-                chapter.passage(), results.findCompleted(studentId, currentGame.chapterId())));
+                new ChapterSummary(chapter.id(), chapter.title(), currentGame.activeDifficulty() == null
+                        ? chapter.difficulty() : currentGame.activeDifficulty()), node,
+                passage, completedResultForCurrentState(currentGame, chapter, node, studentId)));
     }
     public synchronized boolean hasUnsavedProgress() { studentId(); return hasUnsavedProgress; }
     public synchronized Optional<AssessmentResult> currentResult() {
         GameState state = requireGame();
-        return results.findCompleted(state.studentId(), state.chapterId());
+        Chapter chapter = chapters.findChapter(state.chapterId()).orElseThrow();
+        StoryNode node = nodes.findNode(state.chapterId(), state.storyNodeId()).orElseThrow();
+        return completedResultForCurrentState(state, chapter, node, state.studentId());
+    }
+    public synchronized List<AssessmentResult> episodeResults() {
+        GameState state = requireGame();
+        List<AssessmentResult> chapterResults = results.resultsForChapter(state.studentId(), state.chapterId());
+        if (state.routeId().isEmpty()) return chapterResults;
+        Set<String> routeCheckpoints = checkpointsOnRoute(state.chapterId(), state.routeId());
+        return chapterResults.stream().filter(result -> routeCheckpoints.contains(result.attempt().checkpointId())).toList();
+    }
+    private Set<String> checkpointsOnRoute(UUID chapterId, String routeId) {
+        Set<String> checkpoints = new HashSet<>();
+        Set<String> visited = new HashSet<>();
+        var remaining = new java.util.ArrayDeque<String>();
+        remaining.add(nodes.firstNodeId(chapterId).orElseThrow());
+        Chapter chapter = chapters.findChapter(chapterId).orElseThrow();
+        while (!remaining.isEmpty()) {
+            String nodeId = remaining.removeFirst();
+            if (!visited.add(nodeId)) continue;
+            StoryNode node = nodes.findNode(chapterId, nodeId).orElseThrow();
+            if (node.readingCheck()) {
+                var checkpoint = chapter.checkpointAtNode(nodeId).orElseThrow();
+                checkpoints.add(checkpoint.id());
+                remaining.add(checkpoint.correctNextNodeId());
+                remaining.add(checkpoint.incorrectNextNodeId());
+            } else if (!node.storyChoices().isEmpty()) {
+                node.storyChoices().stream().filter(choice -> choice.routeId().isEmpty()
+                        || choice.routeId().equals(routeId)).forEach(choice -> remaining.add(choice.nextNodeId()));
+            } else if (!node.nextNodeId().isEmpty()) remaining.add(node.nextNodeId());
+        }
+        return checkpoints;
+    }
+    public synchronized boolean checkpointEndsSection() {
+        GameState state = requireGame();
+        if (state.activeCheckpointId().isEmpty()) return false;
+        AssessmentResult result = results.findCompleted(state.studentId(), state.chapterId(), state.activeCheckpointId())
+                .orElseThrow(() -> new IllegalStateException("The checkpoint result is not stored."));
+        var chapter = chapters.findChapter(state.chapterId()).orElseThrow();
+        var checkpoint = chapter.checkpoint(state.activeCheckpointId())
+                .orElseThrow(() -> new IllegalStateException("The active checkpoint definition is unavailable."));
+        boolean correct = result.attempt().correctAnswers() == result.attempt().totalQuestions();
+        String destination = correct ? checkpoint.correctNextNodeId() : checkpoint.incorrectNextNodeId();
+        return reachesCompletionWithoutAnotherCheckpoint(state.chapterId(), destination,
+                new HashSet<>(), new HashMap<>());
     }
     public synchronized List<AssessmentResult> history() { return List.copyOf(progress.history(studentId())); }
     public synchronized List<ChapterSummary> availableChapters(Difficulty difficulty) {
         UUID learnerId = studentId();
         return chapters.findByDifficulty(Objects.requireNonNull(difficulty)).stream()
-                .filter(chapter -> results.findCompleted(learnerId, chapter.id()).isEmpty())
-                .map(chapter -> new ChapterSummary(chapter.id(), chapter.title(), chapter.difficulty())).toList();
+                .filter(chapter -> chapter.adaptive() || results.resultsForChapter(learnerId, chapter.id()).isEmpty())
+                .map(chapter -> new ChapterSummary(chapter.id(), chapter.title(), difficulty)).toList();
     }
     public synchronized List<SaveSnapshot> snapshots() {
         UUID studentId = studentId();
@@ -90,11 +138,23 @@ public final class AccountGameService {
     public synchronized boolean canContinue() { return !snapshots().isEmpty(); }
 
     public synchronized GameState startChapter(UUID chapterId, boolean discardConfirmed) {
-        UUID studentId = studentId(); requireDiscardConfirmation(discardConfirmed);
-        chapters.findChapter(Objects.requireNonNull(chapterId))
+        Chapter chapter = chapters.findChapter(Objects.requireNonNull(chapterId))
                 .orElseThrow(() -> new IllegalArgumentException("Unknown chapter"));
+        return startChapter(chapterId, chapter.difficulty(), discardConfirmed);
+    }
+
+    public synchronized GameState startChapter(UUID chapterId, Difficulty initialDifficulty, boolean discardConfirmed) {
+        UUID studentId = studentId(); requireDiscardConfirmation(discardConfirmed);
+        Objects.requireNonNull(initialDifficulty, "initialDifficulty");
+        Chapter chapter = chapters.findChapter(Objects.requireNonNull(chapterId))
+                .orElseThrow(() -> new IllegalArgumentException("Unknown chapter"));
+        if (!chapter.adaptive() && chapter.difficulty() != initialDifficulty)
+            throw new IllegalArgumentException("Selected difficulty does not match this legacy chapter.");
+        if (chapter.adaptive() && !chapter.checkpoints().stream()
+                .allMatch(checkpoint -> checkpoint.questionsByDifficulty().containsKey(initialDifficulty)))
+            throw new IllegalArgumentException("The chapter does not contain the selected initial difficulty.");
         GameState previous = currentGame;
-        GameState next = story.startChapter(studentId, chapterId);
+        GameState next = story.startChapter(studentId, chapterId, initialDifficulty);
         validateState(next, studentId);
         currentGame = next; hasUnsavedProgress = true;
         discardReplacedSession(previous, next);
@@ -121,8 +181,10 @@ public final class AccountGameService {
         if (progress.load(state.studentId(), slot).isPresent() && !overwriteConfirmed)
             throw new ConfirmationRequiredException("This slot is occupied. Overwrite it?");
         Chapter chapter = chapters.findChapter(state.chapterId()).orElseThrow();
+        Difficulty saveDifficulty = state.activeDifficulty() == null ? chapter.difficulty() : state.activeDifficulty();
         SaveSnapshot requested = new SaveSnapshot(new SaveGame(state.studentId(), slot, state.chapterId(),
-                state.storyNodeId(), chapter.difficulty(), clock.instant().truncatedTo(ChronoUnit.MICROS)), state);
+                state.storyNodeId(), saveDifficulty, clock.instant().truncatedTo(ChronoUnit.MICROS),
+                state.routeId(), state.activeCheckpointId()), state);
         // Do not announce success or clear dirty state until storage returns the written snapshot.
         SaveSnapshot stored = snapshots.saveSnapshot(requested);
         if (!requested.equals(stored)) throw new IllegalStateException("Storage did not return the requested save");
@@ -148,14 +210,16 @@ public final class AccountGameService {
     private GameState restore(SaveSnapshot snapshot, UUID studentId) {
         GameState saved = snapshot.gameState(); validateState(saved, studentId);
         Chapter chapter = chapters.findChapter(saved.chapterId()).orElseThrow();
-        if (snapshot.checkpoint().difficulty() != chapter.difficulty())
+        if (!chapter.adaptive() && snapshot.checkpoint().difficulty() != chapter.difficulty())
             throw new IllegalArgumentException("Saved chapter difficulty no longer matches");
         GameState authoritative = saved;
         boolean completedSavedAssessment = false;
         if (saved.assessmentSessionId() != null) {
-            Optional<AssessmentResult> completed = results.findCompleted(studentId, saved.chapterId());
+            Optional<AssessmentResult> completed = results.findCompleted(studentId, saved.chapterId(), saved.activeCheckpointId());
             if (completed.isPresent()) {
-                authoritative = new GameState(studentId, saved.chapterId(), saved.storyNodeId(), null, 0, Map.of());
+                authoritative = new GameState(studentId, saved.chapterId(), saved.storyNodeId(), null, 0, Map.of(),
+                        saved.routeId(), saved.activeCheckpointId(), saved.activeDifficulty(),
+                        saved.lastCompletedCheckpointId());
                 completedSavedAssessment = true;
             } else {
                 GameState draft = drafts.findDraft(saved.assessmentSessionId())
@@ -163,11 +227,17 @@ public final class AccountGameService {
                 validateState(draft, studentId);
                 if (!draft.chapterId().equals(saved.chapterId())
                         || !Objects.equals(draft.assessmentSessionId(), saved.assessmentSessionId())
-                        || !draft.storyNodeId().equals(saved.storyNodeId()))
+                        || !draft.storyNodeId().equals(saved.storyNodeId())
+                        || !draft.routeId().equals(saved.routeId())
+                        || !draft.activeCheckpointId().equals(saved.activeCheckpointId())
+                        || draft.activeDifficulty() != saved.activeDifficulty()
+                        || !draft.lastCompletedCheckpointId().equals(saved.lastCompletedCheckpointId()))
                     throw new IllegalArgumentException("Reading-check draft does not match the save");
                 // An old save cannot reset first answers. The database draft wins completely.
                 authoritative = new GameState(studentId, saved.chapterId(), saved.storyNodeId(),
-                        saved.assessmentSessionId(), draft.questionIndex(), draft.firstAnswers());
+                        saved.assessmentSessionId(), draft.questionIndex(), draft.firstAnswers(),
+                        saved.routeId(), saved.activeCheckpointId(), saved.activeDifficulty(),
+                        draft.lastCompletedCheckpointId());
             }
         }
         // The story service validates/restores game and question state before replacing it.
@@ -177,6 +247,10 @@ public final class AccountGameService {
         if (!restored.chapterId().equals(authoritative.chapterId())
                 || !restored.storyNodeId().equals(authoritative.storyNodeId())
                 || !Objects.equals(restored.assessmentSessionId(), authoritative.assessmentSessionId())
+                || !restored.routeId().equals(authoritative.routeId())
+                || !restored.activeCheckpointId().equals(authoritative.activeCheckpointId())
+                || restored.activeDifficulty() != authoritative.activeDifficulty()
+                || !restored.lastCompletedCheckpointId().equals(authoritative.lastCompletedCheckpointId())
                 || !restored.firstAnswers().entrySet().containsAll(authoritative.firstAnswers().entrySet()))
             throw new IllegalStateException("Story restore returned inconsistent state");
         currentGame = restored;
@@ -207,22 +281,37 @@ public final class AccountGameService {
     public synchronized UUID startAssessment(UUID chapterId) {
         UUID studentId = studentId();
         requireGame();
+        Chapter chapter;
+        String checkpointId;
+        Difficulty selectedDifficulty;
         {
             requireOwner(currentGame, studentId);
             if (!currentGame.chapterId().equals(chapterId)) throw new IllegalArgumentException("Reading check must match the active chapter");
+            chapter = chapters.findChapter(chapterId).orElseThrow(() -> new IllegalArgumentException("Unknown chapter"));
+            StoryNode currentNode = nodes.findNode(chapterId, currentGame.storyNodeId()).orElseThrow();
+            if (!currentNode.readingCheck())
+                throw new IllegalStateException("Finish the story before starting its reading check");
+            checkpointId = chapter.adaptive()
+                    ? chapter.checkpointAtNode(currentNode.storyNodeId()).map(StoryCheckpoint::id)
+                            .orElseThrow(() -> new IllegalStateException("The reading check has no checkpoint definition."))
+                    : "";
+            if (!currentGame.activeCheckpointId().isEmpty() && !currentGame.activeCheckpointId().equals(checkpointId))
+                throw new IllegalStateException("A different reading checkpoint is already active.");
+            selectedDifficulty = currentGame.activeDifficulty() == null ? chapter.difficulty() : currentGame.activeDifficulty();
             if (currentGame.assessmentSessionId() != null) {
                 // A port may only publish restored state after restoring this same assessment service.
                 assessments.questions(currentGame.assessmentSessionId());
                 ownedSessions.put(currentGame.assessmentSessionId(), studentId);
                 return currentGame.assessmentSessionId();
             }
-            if (!nodes.findNode(chapterId, currentGame.storyNodeId()).orElseThrow().readingCheck())
-                throw new IllegalStateException("Finish the story before starting its reading check");
-            if (results.findCompleted(studentId, chapterId).isPresent())
-                throw new IllegalStateException("This chapter is already complete. Open its reading history instead.");
+            if (results.findCompleted(studentId, chapterId, checkpointId).isPresent())
+                throw new IllegalStateException("This reading checkpoint is already complete. Open its results instead.");
         }
-        UUID sessionId = assessments.start(studentId, Objects.requireNonNull(chapterId));
-        GameState started = new GameState(studentId, chapterId, currentGame.storyNodeId(), sessionId, 0, Map.of());
+        UUID sessionId = chapter.adaptive()
+                ? assessments.start(studentId, chapterId, checkpointId, selectedDifficulty)
+                : assessments.start(studentId, Objects.requireNonNull(chapterId));
+        GameState started = new GameState(studentId, chapterId, currentGame.storyNodeId(), sessionId, 0, Map.of(),
+                currentGame.routeId(), checkpointId, selectedDifficulty, currentGame.lastCompletedCheckpointId());
         try { drafts.createDraft(started); }
         catch (RuntimeException failure) { assessments.discard(sessionId); throw failure; }
         currentGame = started;
@@ -238,7 +327,7 @@ public final class AccountGameService {
     public synchronized boolean submit(UUID sessionId, UUID questionId, int selectedIndex) {
         requireSessionOwner(sessionId);
         {
-            if (results.findCompleted(studentId(), currentGame.chapterId()).isPresent())
+            if (results.findCompleted(studentId(), currentGame.chapterId(), currentGame.activeCheckpointId()).isPresent())
                 throw new IllegalStateException("Assessment already completed");
             var prompts = assessments.questions(sessionId);
             var question = prompts.stream().filter(q -> q.id().equals(questionId)).findFirst()
@@ -257,7 +346,8 @@ public final class AccountGameService {
             Map<UUID, Integer> firstAnswers = new HashMap<>(currentGame.firstAnswers());
             firstAnswers.put(questionId, storedIndex);
             currentGame = new GameState(studentId(), currentGame.chapterId(), currentGame.storyNodeId(),
-                    sessionId, firstAnswers.size(), firstAnswers);
+                    sessionId, firstAnswers.size(), firstAnswers, currentGame.routeId(),
+                    currentGame.activeCheckpointId(), currentGame.activeDifficulty(), currentGame.lastCompletedCheckpointId());
             hasUnsavedProgress = true;
             return assessments.submit(sessionId, questionId, storedIndex);
         }
@@ -266,6 +356,51 @@ public final class AccountGameService {
         requireSessionOwner(sessionId);
         AssessmentResult result = assessments.complete(sessionId);
         hasUnsavedProgress = true; return result;
+    }
+
+    /** Continue the narrative only after the checkpoint result has been durably stored. */
+    public synchronized GameState continueAfterCheckpoint() {
+        GameState current = requireGame();
+        if (current.activeCheckpointId().isEmpty())
+            throw new IllegalStateException("There is no completed adaptive checkpoint to continue from.");
+        AssessmentResult result = results.findCompleted(current.studentId(), current.chapterId(), current.activeCheckpointId())
+                .orElseThrow(() -> new IllegalStateException("The checkpoint result has not been stored."));
+        GameState next = story.completeCheckpoint(current.studentId(), current.activeCheckpointId(),
+                result.attempt().correctAnswers() == result.attempt().totalQuestions(), result.nextDifficulty());
+        validateState(next, current.studentId());
+        currentGame = next;
+        UUID completedSession = current.assessmentSessionId();
+        if (completedSession != null) {
+            ownedSessions.remove(completedSession);
+            assessments.discard(completedSession);
+        }
+        hasUnsavedProgress = true;
+        return next;
+    }
+
+    /** Skip a checkpoint already completed in an earlier process after its result is verified. */
+    public synchronized boolean advanceCompletedCheckpointIfPresent() {
+        GameState state = requireGame();
+        if (state.assessmentSessionId() != null) return false;
+        Chapter chapter = chapters.findChapter(state.chapterId()).orElseThrow();
+        if (!chapter.adaptive()) return false;
+        StoryNode node = nodes.findNode(state.chapterId(), state.storyNodeId()).orElseThrow();
+        if (!node.readingCheck()) return false;
+        StoryCheckpoint checkpoint = chapter.checkpointAtNode(node.storyNodeId())
+                .orElseThrow(() -> new IllegalStateException("Reading-check node has no checkpoint definition."));
+        Optional<AssessmentResult> stored = results.findCompleted(state.studentId(), state.chapterId(), checkpoint.id());
+        if (stored.isEmpty()) return false;
+        GameState checkpointState = new GameState(state.studentId(), state.chapterId(), state.storyNodeId(),
+                null, 0, Map.of(), state.routeId(), checkpoint.id(), stored.get().assessedDifficulty(),
+                state.lastCompletedCheckpointId());
+        story.restoreState(checkpointState);
+        GameState advanced = story.completeCheckpoint(state.studentId(), checkpoint.id(),
+                stored.get().attempt().correctAnswers() == stored.get().attempt().totalQuestions(),
+                stored.get().nextDifficulty());
+        validateState(advanced, state.studentId());
+        currentGame = advanced;
+        hasUnsavedProgress = true;
+        return true;
     }
     private void requireSessionOwner(UUID sessionId) {
         UUID studentId = studentId();
@@ -297,21 +432,65 @@ public final class AccountGameService {
                 .orElseThrow(() -> new IllegalArgumentException("Saved chapter is unavailable"));
         StoryNode node = nodes.findNode(state.chapterId(), state.storyNodeId())
                 .orElseThrow(() -> new IllegalArgumentException("Saved story node is unavailable"));
+        if (!state.lastCompletedCheckpointId().isEmpty()
+                && results.findCompleted(studentId, state.chapterId(), state.lastCompletedCheckpointId()).isEmpty())
+            throw new IllegalArgumentException("Saved progress references a checkpoint result that is not stored.");
         if (state.assessmentSessionId() != null && !node.readingCheck())
             throw new IllegalArgumentException("Reading-check state must be at a reading-check story node");
-        if (state.questionIndex() > chapter.questions().size()
+        List<Question> activeQuestions = chapter.questions();
+        if (chapter.adaptive() && !state.activeCheckpointId().isEmpty()) {
+            if (state.activeDifficulty() == null
+                    || chapter.checkpointAtNode(state.storyNodeId())
+                            .filter(checkpoint -> checkpoint.id().equals(state.activeCheckpointId())).isEmpty())
+                throw new IllegalArgumentException("Active checkpoint metadata does not match the story node.");
+            activeQuestions = chapter.questions(state.activeCheckpointId(), state.activeDifficulty());
+        } else if (chapter.adaptive() && state.assessmentSessionId() != null) {
+            throw new IllegalArgumentException("An active adaptive assessment needs its checkpoint ID.");
+        }
+        if (state.questionIndex() > activeQuestions.size()
                 || state.questionIndex() != state.firstAnswers().size())
             throw new IllegalArgumentException("Invalid question position");
         for (var answer : state.firstAnswers().entrySet()) {
-            Question question = chapter.questions().stream().filter(q -> q.id().equals(answer.getKey())).findFirst()
+            Question question = activeQuestions.stream().filter(q -> q.id().equals(answer.getKey())).findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("Saved answer belongs to another chapter"));
             if (answer.getValue() < 0 || answer.getValue() >= question.choices().size())
                 throw new IllegalArgumentException("Invalid saved answer");
         }
         for (int index = 0; index < state.questionIndex(); index++) {
-            if (!state.firstAnswers().containsKey(chapter.questions().get(index).id()))
+            if (!state.firstAnswers().containsKey(activeQuestions.get(index).id()))
                 throw new IllegalArgumentException("Saved answers must be a continuous sequence of first attempts.");
         }
+    }
+
+    private Optional<AssessmentResult> completedResultForCurrentState(GameState state, Chapter chapter,
+            StoryNode node, UUID studentId) {
+        if (!state.activeCheckpointId().isEmpty())
+            return results.findCompleted(studentId, state.chapterId(), state.activeCheckpointId());
+        if (!chapter.adaptive()) return results.findCompleted(studentId, state.chapterId());
+        if (!node.storyComplete() || state.lastCompletedCheckpointId().isEmpty()) return Optional.empty();
+        return results.findCompleted(studentId, state.chapterId(), state.lastCompletedCheckpointId());
+    }
+
+    private boolean reachesCompletionWithoutAnotherCheckpoint(UUID chapterId, String nodeId,
+            Set<String> visiting, Map<String, Boolean> memo) {
+        Boolean known = memo.get(nodeId);
+        if (known != null) return known;
+        if (!visiting.add(nodeId)) throw new IllegalStateException("The story graph contains a loop.");
+        StoryNode node = nodes.findNode(chapterId, nodeId)
+                .orElseThrow(() -> new IllegalStateException("A checkpoint outcome node is unavailable."));
+        boolean result;
+        if (node.storyComplete()) result = true;
+        else if (node.readingCheck()) result = false;
+        else {
+            List<String> destinations = node.storyChoices().isEmpty()
+                    ? node.nextNodeId().isEmpty() ? List.of() : List.of(node.nextNodeId())
+                    : node.storyChoices().stream().map(StoryChoice::nextNodeId).toList();
+            result = !destinations.isEmpty() && destinations.stream().allMatch(destination ->
+                    reachesCompletionWithoutAnotherCheckpoint(chapterId, destination, visiting, memo));
+        }
+        visiting.remove(nodeId);
+        memo.put(nodeId, result);
+        return result;
     }
     private void requireDiscardConfirmation(boolean confirmed) {
         if (hasUnsavedProgress && !confirmed)

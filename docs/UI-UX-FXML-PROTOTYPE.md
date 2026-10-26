@@ -1,5 +1,7 @@
 # Adaptive Reading Game — JavaFX UI/UX FXML Prototype
 
+The `uiux-*.fxml` files are visual references. Their audio settings belong to that reference design. The live student game uses reading text size and character-art settings, with no audio playback.
+
 This is a visual reference for the 40 UI/UX screens in
 src/main/resources/com/adaptivereadinggame/view/. The original application
 entry point and existing menu are unchanged. Launch this separate preview from

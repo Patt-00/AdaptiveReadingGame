@@ -10,8 +10,16 @@ import java.util.Set;
 import java.util.UUID;
 
 /** Validated, code-independent story content ready for repository import. */
-public record StoryPack(List<ChapterPack> chapters) {
+public record StoryPack(int formatVersion, List<ChapterPack> chapters) {
+    public static final int CURRENT_FORMAT_VERSION = 2;
+
+    public StoryPack(List<ChapterPack> chapters) {
+        this(1, chapters);
+    }
+
     public StoryPack {
+        if (formatVersion < 1 || formatVersion > CURRENT_FORMAT_VERSION)
+            throw new IllegalArgumentException("Unsupported story-pack format version.");
         chapters = List.copyOf(chapters);
         if (chapters.isEmpty()) throw new IllegalArgumentException("A story pack must contain at least one chapter.");
         Set<String> sourceIds = new HashSet<>();
@@ -28,7 +36,8 @@ public record StoryPack(List<ChapterPack> chapters) {
             Objects.requireNonNull(chapter, "chapter");
             if (startNodeId == null || startNodeId.isBlank()) throw new IllegalArgumentException("A chapter needs a start node.");
             nodes = List.copyOf(nodes);
-            StoryGraphValidator.validate(nodes, startNodeId);
+            if (chapter.adaptive()) StoryGraphValidator.validateAdaptive(nodes, startNodeId, chapter.checkpoints());
+            else StoryGraphValidator.validate(nodes, startNodeId);
         }
     }
 }

@@ -245,11 +245,178 @@ final class MySqlGameRepositoryIntegrationTest {
         assertEquals(1, importer.importPack(pack), "loading the same content pack twice must be safe");
     }
 
+    @Test void mysql_adaptive_checkpoint_restoresRouteDifficultyAnswersAndOutcome() {
+        UUID chapterId = UUID.randomUUID();
+        Question easy = new Question(UUID.randomUUID(), "Easy checkpoint question?", List.of("Correct", "Wrong"),
+                0, "Easy evidence.", "study-first", Difficulty.EASY);
+        Question medium = new Question(UUID.randomUUID(), "Medium checkpoint question?", List.of("Wrong", "Correct"),
+                1, "Medium evidence.", "study-first", Difficulty.MEDIUM);
+        Question hard = new Question(UUID.randomUUID(), "Hard checkpoint question?", List.of("Wrong", "Correct"),
+                1, "Hard evidence.", "study-first", Difficulty.HARD);
+        Question nextEasy = new Question(UUID.randomUUID(), "Next easy question?", List.of("Correct", "Wrong"),
+                0, "Next easy evidence.", "hall-second", Difficulty.EASY);
+        Question nextMedium = new Question(UUID.randomUUID(), "Next medium question?", List.of("Wrong", "Correct"),
+                1, "Next medium evidence.", "hall-second", Difficulty.MEDIUM);
+        Question nextHard = new Question(UUID.randomUUID(), "Next hard question?", List.of("Wrong", "Correct"),
+                1, "Next hard evidence.", "hall-second", Difficulty.HARD);
+        var questions = java.util.Map.of(Difficulty.EASY, List.of(easy), Difficulty.MEDIUM, List.of(medium),
+                Difficulty.HARD, List.of(hard));
+        var nextQuestions = java.util.Map.of(Difficulty.EASY, List.of(nextEasy), Difficulty.MEDIUM, List.of(nextMedium),
+                Difficulty.HARD, List.of(nextHard));
+        StoryCheckpoint checkpoint = new StoryCheckpoint("study-first", "check", "Checkpoint evidence passage.",
+                questions, "correct-outcome", "incorrect-outcome");
+        StoryCheckpoint nextCheckpoint = new StoryCheckpoint("hall-second", "second-check", "Next checkpoint passage.",
+                nextQuestions, "draft-end-correct", "draft-end-incorrect");
+        Chapter chapter = Chapter.adaptive(chapterId, "Adaptive MySQL Fixture", "Episode passage.", Difficulty.EASY,
+                List.of(easy, medium, hard, nextEasy, nextMedium, nextHard), List.of(checkpoint, nextCheckpoint));
+        List<StoryNode> nodes = List.of(
+                new StoryNode("start", "", "Episode starts.", false, List.of(), "route", false),
+                new StoryNode("route", "", "Choose a test route.", false,
+                        List.of(new StoryChoice("study-first", "Study first", "check", "study-first")), "", false),
+                new StoryNode("check", "", "Answer the checkpoint.", false, List.of(), "", true,
+                        "", "study-first", "", "", false),
+                new StoryNode("correct-outcome", "", "Correct route.", false, List.of(), "second-check", false),
+                new StoryNode("incorrect-outcome", "", "Incorrect route.", false, List.of(), "second-check", false),
+                new StoryNode("second-check", "", "Answer the second checkpoint.", false, List.of(), "", true,
+                        "", "hall-second", "", "", false),
+                new StoryNode("draft-end-correct", "", "Draft boundary after a correct answer.", false, List.of(), "", false,
+                        "", "", "", "", true),
+                new StoryNode("draft-end-incorrect", "", "Draft boundary after an incorrect answer.", false, List.of(), "", false,
+                        "", "", "", "", true));
+        StoryPack.ChapterPack item = new StoryPack.ChapterPack("mysql-adaptive-" + shortId(), chapter,
+                "start", nodes);
+        StoryPack pack = new StoryPack(StoryPack.CURRENT_FORMAT_VERSION, List.of(item));
+        MySqlGameRepository game = new MySqlGameRepository(connections);
+        StoryPackImporter importer = new StoryPackImporter(game, game);
+        importer.importPack(pack);
+        assertEquals(chapter, game.findChapter(chapterId).orElseThrow());
+        assertEquals(chapter.checkpoints(), game.findChapter(chapterId).orElseThrow().checkpoints());
+        assertEquals(nodes.get(1), game.findNode(chapterId, "route").orElseThrow());
+
+        var player = BackendContext.mysql(connections).accountGameService();
+        Account account = player.signup("adaptive-" + shortId(), "Adaptive Reader", "test-only-passphrase".toCharArray());
+        player.login(account.username(), "test-only-passphrase".toCharArray());
+        player.startChapter(chapterId, Difficulty.EASY, false);
+        player.advanceStory();
+        player.chooseStory("study-first");
+        UUID session = player.startAssessment(chapterId);
+        assertEquals(easy.id(), player.questions(session).getFirst().id());
+        assertTrue(player.submit(session, easy.id(), 0));
+        SaveSnapshot saved = player.save(3, false);
+        assertEquals("study-first", saved.gameState().routeId());
+        assertEquals("study-first", saved.gameState().activeCheckpointId());
+        assertEquals(Difficulty.EASY, saved.gameState().activeDifficulty());
+        player.logout(false);
+
+        var resumed = BackendContext.mysql(connections).accountGameService();
+        resumed.login(account.username(), "test-only-passphrase".toCharArray());
+        GameState restored = resumed.load(3, false).orElseThrow();
+        assertEquals("study-first", restored.routeId());
+        assertEquals("study-first", restored.activeCheckpointId());
+        assertEquals(Map.of(easy.id(), 0), restored.firstAnswers());
+        assertEquals(1, resumed.complete(session).attempt().correctAnswers());
+        assertEquals("correct-outcome", resumed.continueAfterCheckpoint().storyNodeId());
+        assertEquals("second-check", resumed.advanceStory().storyNodeId());
+        UUID secondSession = resumed.startAssessment(chapterId);
+        assertEquals(nextEasy.id(), resumed.questions(secondSession).getFirst().id(),
+                "Java keeps the level during model cold start.");
+        assertTrue(resumed.submit(secondSession, nextEasy.id(), 0));
+        SaveSnapshot secondSave = resumed.save(3, true);
+        assertEquals("hall-second", secondSave.gameState().activeCheckpointId());
+        assertEquals("study-first", secondSave.gameState().lastCompletedCheckpointId());
+        resumed.logout(false);
+
+        var reopened = BackendContext.mysql(connections).accountGameService();
+        reopened.login(account.username(), "test-only-passphrase".toCharArray());
+        GameState secondRestored = reopened.load(3, false).orElseThrow();
+        assertEquals("study-first", secondRestored.routeId());
+        assertEquals("hall-second", secondRestored.activeCheckpointId());
+        assertEquals("study-first", secondRestored.lastCompletedCheckpointId());
+        assertEquals(Map.of(nextEasy.id(), 0), secondRestored.firstAnswers());
+        assertEquals(1, reopened.complete(secondSession).attempt().correctAnswers());
+        assertEquals("draft-end-correct", reopened.continueAfterCheckpoint().storyNodeId());
+        assertEquals(2, reopened.episodeResults().size());
+        assertEquals("hall-second", reopened.currentResult().orElseThrow().attempt().checkpointId());
+        reopened.logout(true);
+    }
+
     private static Student student(UUID id, String name) {
         return new Student(id, name, ReadingLevel.BEGINNER, 0, 0.0);
     }
 
     private static String shortId() { return UUID.randomUUID().toString().substring(0, 8); }
+
+    @Test void mysql_suppliedStoryRestoresFirstAnswersAndReachesBoundaryInBothOrders() throws Exception {
+        StoryPack pack = new StoryPackLoader().read(java.nio.file.Path.of("assets/content/hailey-investigation-draft.json"));
+        var item = pack.chapters().getFirst();
+        var context = BackendContext.mysql(connections);
+        context.storyPackImporter().orElseThrow().importPack(pack);
+        context.storyPackImporter().orElseThrow().importPack(pack);
+        for (String route : List.of("study-first", "hall-first")) {
+            String username = "story-" + shortId();
+            char[] passphrase = "database-story-test".toCharArray();
+            var player = BackendContext.mysql(connections).accountGameService();
+            player.signup(username, "Story Reader", passphrase);
+            player.login(username, passphrase);
+            player.startChapter(item.chapter().id(), Difficulty.EASY, false);
+            String next = route.equals("study-first") ? "hall-second" : "study-second";
+            for (String checkpoint : List.of(route, next)) {
+                reachSuppliedCheckpoint(player, checkpoint, route);
+                UUID session = player.startAssessment(item.chapter().id());
+                Difficulty level = player.currentGame().orElseThrow().activeDifficulty();
+                Question key = item.chapter().questions(checkpoint, level).getFirst();
+                var prompt = player.questions(session).getFirst();
+                int selected = route.equals("study-first") ? key.correctChoiceIndex()
+                        : (key.correctChoiceIndex() + 1) % key.choices().size();
+                boolean correct = route.equals("study-first");
+                assertEquals(correct, player.submit(session, prompt.id(), selected));
+                player.save(1, !checkpoint.equals(route));
+                player.logout(false);
+                player = BackendContext.mysql(connections).accountGameService();
+                player.login(username, passphrase);
+                GameState restored = player.continueGame(false).orElseThrow();
+                assertEquals(route, restored.routeId());
+                assertEquals(checkpoint, restored.activeCheckpointId());
+                assertEquals(level, restored.activeDifficulty());
+                assertEquals(selected, restored.firstAnswers().get(prompt.id()));
+                assertEquals(correct, player.submit(session, prompt.id(), (selected + 1) % key.choices().size()));
+                assertTrue(player.feedback(session, prompt.id()).explanation().contains("Provisional answer key"));
+                assertEquals(correct ? 1 : 0, player.complete(session).attempt().correctAnswers());
+                assertEquals(checkpoint + (correct ? "-correct" : "-incorrect"), player.continueAfterCheckpoint().storyNodeId());
+            }
+            for (int guard = 0; !player.currentGameView().orElseThrow().storyNode().storyComplete(); guard++) {
+                assertTrue(guard < 1000);
+                player.advanceStory();
+            }
+            assertEquals(2, player.episodeResults().size());
+            assertTrue(player.currentGameView().orElseThrow().storyNode().dialogueText().contains("CURRENT STORY DRAFT ENDS HERE"));
+            player.save(3, false);
+            player.logout(false);
+            var reopened = BackendContext.mysql(connections).accountGameService();
+            reopened.login(username, passphrase);
+            reopened.continueGame(false).orElseThrow();
+            assertTrue(reopened.currentGameView().orElseThrow().storyNode().storyComplete());
+            assertTrue(reopened.currentResult().isPresent());
+        }
+    }
+
+    private static void reachSuppliedCheckpoint(com.adaptivereadinggame.service.AccountGameService player,
+            String expected, String route) {
+        for (int guard = 0; guard < 1000; guard++) {
+            StoryNode node = player.currentGameView().orElseThrow().storyNode();
+            if (node.readingCheck()) {
+                assertEquals(expected, node.checkpointId());
+                return;
+            }
+            if (node.storyChoices().isEmpty()) player.advanceStory();
+            else {
+                StoryChoice choice = node.storyChoices().stream().filter(option -> option.routeId().equals(route))
+                        .findFirst().orElse(node.storyChoices().getFirst());
+                player.chooseStory(choice.choiceId());
+            }
+        }
+        fail("Supplied story did not reach checkpoint " + expected);
+    }
 
     private static void createStudentFailureTrigger() throws Exception {
         execute("DROP TRIGGER IF EXISTS arg_test_reject_student");

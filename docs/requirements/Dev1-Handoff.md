@@ -1,6 +1,8 @@
 # Dev 1: accounts, gameplay, and content integration
 
-Guys, ito yung Dev 1 workstream. The backend implementation is consolidated in this working copy: accounts, MySQL adapters, generic story transitions, content-pack loader, model helper, and live gameplay flow. The approved story, reading questions, and character art are still separate. Follow [the content-pack guide](../../assets/README.md) when they are ready. Do not add pretend story content to make the app look finished.
+Guys, ito yung Dev 1 workstream. This checkout connects accounts, MySQL, adaptive story checkpoints, the optional model helper, and the JavaFX game screens. The current story and art are a draft from the group folder, not the final story. The draft uses an unnamed servant and Prince Owen as the working name. The culprit, ending, and inferred answer keys still need confirmation. Follow [the content-pack guide](../../assets/README.md) when the group updates the content.
+
+The supplied ZIP has a separate `GameFlowController` and local save store, so that controller is not used for runtime persistence. The active account and gameplay screens remain connected to `AccountController` and `GameplayController`; those controllers keep `AccountGameService` and MySQL as the owners of account, score, and save behavior.
 
 ## What works now, and what is waiting
 
@@ -8,16 +10,17 @@ Guys, ito yung Dev 1 workstream. The backend implementation is consolidated in t
 | --- | --- | --- |
 | Signup, normalized usernames, password checks, login, logout | Implemented with account/profile IDs matched; tested with in-memory and MySQL repositories | Use the current account service from the UI |
 | Account-facing game access | `AccountGameService` uses the signed-in account; screens cannot supply a learner ID | UI/game screens call this service |
-| Story/save shared names | `RepositoryStoryService` follows validated node graphs; choices update narrative state only | Load the approved content pack and verify all authored branches |
-| Full Save, Load, Continue and cancel/overwrite protection | The live menu can save, load, continue, and return to the active story or assessment | Run the full flow with the approved story and a shared MySQL setup |
-| First submitted answer | The live reading-check screen submits in order; the first answer is stored before feedback and cannot be replaced | Review the question copy and feedback after the source is provided |
-| Reading results and next difficulty | Results display score, next level, and whether the model, Java rule, guardrail, or fallback decided it | Check the wording with the teacher or group before presentation |
-| Login/menu/gameplay/results/settings UI connections | Instructions, account, story, assessment, result, session settings, and menu navigation screens use the same visual theme | Replace synthetic test fixtures with approved story, questions, and artwork |
-| Account, chapter, answer, result, and save persistence | Implemented with MySQL adapters and an opt-in disposable-database test | Set up the database using `database/README.md` |
-| Restoring an unfinished reading check | Separate Maven processes and a fresh JavaFX process restore the first answer, continue at question two, and reach results with test-only content | Repeat GUI login and Continue with the group's authored content and MySQL setup |
-| Optional Python/Qwen model | Java policy adapter, loopback helper, and pinned LFS weight are in the local Dev1 working copy; the helper returns only a label | Start the helper separately; the model weight remains unpublished until the Dev1 changes are authorized for publication |
+| Story and checkpoint routes | `RepositoryStoryService` follows validated node graphs; narrative choices do not score, while answer correctness follows the checkpoint outcome edge | Confirm the provisional route text and replace it with the final approved script |
+| Full Save, Load, Continue and cancel/overwrite protection | The live menu can save, load, continue, and return to the active story or checkpoint result | Run the full flow with the final story and the group's MySQL setup |
+| First submitted answer | The active checkpoint stores the first answer before feedback and does not let a retry replace it | Confirm the current question wording and inferred answer keys with the group |
+| Reading results and next difficulty | Results show checkpoint score, next level, and the Java-validated decision source | Review the draft's one-question scores with the teacher before presentation |
+| Story and art | The runtime loads the current FXML flow, character sprites, backgrounds, and poisoning illustration | Review character expressions and approve the working Owen name |
+| Reading presentation | Written dialogue, questions, and supplied images; audio playback is removed | Review text wrapping and image choices |
+| Account, story, answer, result, and save persistence | MySQL migrations V001 through V004 persist the episode, checkpoint variants, results, routes, and full saves | Set up a MySQL database using `database/README.md` |
+| Restoring a checkpoint | In-memory tests and the disposable MySQL test cover route, difficulty, and first-answer restoration | Repeat the visible review flow with the group's database setup |
+| Optional Python/Qwen model | Java owns scoring and validates the model's level suggestion; a Java fallback remains available | Start the helper separately when testing model-assisted decisions |
 
-When no `ARG_DB_*` settings are present, the app starts in labeled in-memory development mode. When all three database settings are present, it uses MySQL after the migrations have run. Set `ARG_CONTENT_PACK` to import approved chapters during startup. With no pack, New Game reports that story content is not ready instead of inventing a chapter.
+When no `ARG_DB_*` settings are present, the app starts in labeled in-memory development mode. When all three database settings are present, it uses MySQL after the migrations have run. The app loads `assets/content/hailey-investigation-draft.json` by default. Set `ARG_CONTENT_PACK` to load another local pack. The bundled pack stops before a final culprit or ending.
 
 ## Run it
 
@@ -31,7 +34,7 @@ mvn javafx:run
 
 For persistent storage, use the setup and migration steps in [the MySQL guide](../../database/README.md) before `mvn javafx:run`.
 
-`Dev1Demo` demonstrates real signup/login/logout, matching account/profile IDs, account protection, and the honest no-content boundary. The older `mvn compile exec:java` remains a low-level baseline scoring demo; it is not a controller integration or player-facing game test.
+`Dev1Demo` demonstrates signup/login/logout, matching account/profile IDs, and account protection. The older `mvn compile exec:java` remains a low-level scoring demo; it is not the player-facing game flow.
 
 For the optional Qwen helper, use the setup and fallback steps in [the model-tool guide](../../model-tool/README.md). Start that Python process separately; Java remains responsible for scoring and the final difficulty.
 
@@ -55,14 +58,14 @@ Only call `BackendContext.accountGameService()` from new game/account controller
 | Login | `login(username, password)` | Returns signed-in `Account`; failed login never replaces the active account |
 | Account label | `currentAccount()` | Empty means logged out; Account has no password/verifier field |
 | Chapter selection | `availableChapters(difficulty)` | Returns `ChapterSummary(id, title, difficulty)`, never answer keys |
-| Current screen data | `currentGameView()` | Account-scoped story node, passage, chapter summary, and completed result; never question answer keys |
-| New game | `startChapter(chapterId, discardConfirmed)` | Reads signed-in learner ID internally; requires confirmation if dirty |
+| Current screen data | `currentGameView()` | Account-scoped story node, checkpoint passage, route state, chapter summary, and completed result; never question answer keys |
+| New game | `startChapter(chapterId, difficulty, discardConfirmed)` | Reads signed-in learner ID internally; requires confirmation if dirty |
 | Narrative next/choice | `advanceStory()` / `chooseStory(choiceId)` | `RepositoryStoryService` follows prepared nodes; choices do not grade anything |
-| Begin reading check | `startAssessment(chapterId)` | Requires active matching story chapter at a reading-check node; creates its stored draft before publishing the session |
+| Begin reading check | `startAssessment(chapterId)` | Requires the active checkpoint node; selects the current Java-approved level and creates its stored draft before publishing the session |
 | Unanswered questions | `questions(sessionId)` | Only the signed-in active session; public prompts exclude correct indexes and explanations |
 | Submit | `submit(sessionId, questionId, selectedIndex)` | Storage returns original first answer; only that option is graded; a write failure gives no pretend feedback |
 | Answer feedback | `feedback(sessionId, questionId)` | Available only after the first answer has been stored |
-| Results | `complete(sessionId)` | Stores the score, next difficulty, and validated decision source; history reads the stored result |
+| Results | `complete(sessionId)` / `continueAfterCheckpoint()` | Stores the score and next difficulty, then follows the correct or incorrect story outcome without changing the score |
 | Current game/dirty check | `currentGame()` / `hasUnsavedProgress()` | Requires login; UI uses these before Save/Load/navigation |
 | Save | `save(slot, overwriteConfirmed)` | Only slots 1-3; full snapshot; clear dirty flag only after the stored snapshot matches the request |
 | Load | `load(slot, discardConfirmed)` | Empty slot returns empty without changing the game; cancel preserves everything |
@@ -73,41 +76,43 @@ Only call `BackendContext.accountGameService()` from new game/account controller
 
 Use `ConfirmationRequiredException` to ask the player before retrying an overwrite/discard action with `true`. Do not blindly pass `true` from a new screen. The current menu obtains the player's confirmation first. For account tasks, clear the password field immediately, do work off the JavaFX thread, and wipe the temporary `char[]` afterward.
 
-The current menu's chapter picker uses `EASY` for a new learner and the latest stored result's `nextDifficulty` afterward. It does not let the player bypass that difficulty decision by listing every level. The live results screen lists only uncompleted chapters at that level and shows when none are loaded.
+The main menu uses `EASY` when a learner has no history and the latest stored `nextDifficulty` for a later start. The route choice selects Study-first or Hall-first. Each checkpoint uses the Java-approved difficulty and its matching question variant. The Qwen policy waits for three consecutive sections at one level before asking the model; the current draft has only two checkpoint questions in one route.
 
 ## Shared pieces: exact names
 
 | File | What belongs here |
 | --- | --- |
-| `model/StoryChoice.java` | `choiceId`, `choiceText`, `nextNodeId` |
-| `model/StoryNode.java` | `storyNodeId`, `speakerName`, `dialogueText`, `thought`, `storyChoices`, `nextNodeId`, `readingCheck`, `speakerAssetKey` |
-| `model/Question.java` | `id`, `prompt`, `choices`, `correctChoiceIndex`, `explanation` |
+| `model/StoryChoice.java` | `choiceId`, `choiceText`, `nextNodeId`, optional `routeId` |
+| `model/StoryNode.java` | `storyNodeId`, `speakerName`, `dialogueText`, `thought`, choices, `nextNodeId`, checkpoint marker, optional asset keys, `storyComplete` |
+| `model/StoryCheckpoint.java` | `id`, checkpoint node, passage, Easy/Medium/Hard question variants, correct and incorrect story destinations |
+| `model/Question.java` | `id`, `prompt`, `choices`, `correctChoiceIndex`, `explanation`, optional checkpoint ID and difficulty |
 | `model/AssessmentResult.java` | `attempt`, `assessedDifficulty`, `nextDifficulty`, `decisionSource` |
-| `model/GameState.java` | `studentId`, `chapterId`, `storyNodeId`, `assessmentSessionId`, `questionIndex`, `firstAnswers` |
+| `model/GameState.java` | learner, chapter, story node, selected route, active checkpoint and difficulty, last completed checkpoint, session, question index, first answers |
 | `model/SaveSnapshot.java` | `checkpoint`, `gameState`; learner/chapter/node must match |
 | `repository/RegistrationRepository.java` | `register(Account, String encodedVerifier, Student)` stores all three or none |
-| `repository/StoryRepository.java` | Prepared chapter/node/choice reads |
+| `repository/StoryRepository.java` | Prepared chapter/node/choice reads; checkpoint definitions live with the chapter content |
 | `repository/AssessmentDraftRepository.java` | New session draft, atomic first answer, authoritative draft read |
 | `repository/SaveSnapshotRepository.java` | Full/basic save together, occupied snapshot list, empty optional for missing slots |
 | `service/StoryService.java` | Story actions and restore boundary; `RepositoryStoryService` reads prepared nodes and includes `clearStateFor(studentId)` for logout |
-| `service/GameStateCodec.java` | `encode(GameState)` and `decode(String)`; fixed version 1 only |
+| `service/GameStateCodec.java` | `encode(GameState)` writes version 2; `decode(String)` also reads version 1 saves |
 
 All Java paths above are under `src/main/java/com/adaptivereadinggame/`. Existing Account, Student, Chapter, Question, SaveGame, Attempt, Difficulty, and ReadingLevel names were preserved. The older four-band ReadingLevel remains separate from the three-level Difficulty. Do not convert them by ordinal.
 
 ## Story content handoff
 
-The reusable story service and assessment restoration are implemented. The remaining content work does not require new story-specific Java classes.
+The runtime reads versioned story content instead of compiling authored dialogue into Java. Version 2 supports answer-specific outcomes and multiple checkpoints in one episode.
 
 1. Keep one stable ID for each chapter, question, story node, choice, and character asset key. Do not change an ID after learner records refer to that content.
-2. Use the field names and rules in [the content-pack guide](../../assets/README.md). A chapter needs one reading-check node, one or more questions, and paths that reach the reading check without a loop.
-3. Keep narrative choices separate from comprehension answers. The Java account coordinator stores the first submitted answer and does not let a later answer change the score.
-4. Add artwork under `assets/characters/` and use the filename key in the matching story node. Do not place absolute paths in the content pack.
-5. Provide the approved source document and image files when they are ready. The story can be converted into the pack and loaded through `ARG_CONTENT_PACK`; nobody needs to add story text to Java source.
-6. The live screens are `how-to-play.fxml`, `gameplay.fxml`, `results.fxml`, and `analysis.fxml`. The 40 `uiux-*.fxml` files remain static references, not functional screen routes.
+2. Use the field names and graph rules in [the content-pack guide](../../assets/README.md). Version 2 requires all three difficulty variants at each checkpoint and a finite path to a marked draft-completion node.
+3. Keep narrative choices separate from comprehension answers. The Java account coordinator stores the first submitted answer, selects the correct or incorrect route, and never lets a retry change the score.
+4. Add artwork under `assets/characters/`, `assets/scenes/`, or `assets/cg/` and use a stable filename key. Do not place absolute paths in the content pack.
+5. Keep the player flow text-only. Do not add voice fields or audio controls.
+6. The live screens are `how-to-play.fxml`, `gameplay.fxml`, `results.fxml`, and `analysis.fxml`. The 40 `uiux-*.fxml` files remain visual references, not separate runtime routes.
+7. Keep the draft ending unresolved. Confirm the Owen/Ellis naming mismatch, the hard Study question's omitted clue, and all provisional answer keys with the group.
 
 ## MySQL adapter and content validation
 
-The group has chosen **MySQL**. Core repository adapters and three additive schema migrations live in this branch under `repository/mysql/` and `database/migrations/`. The setup guide documents configuration and the disposable-database test. Do not put credentials in source control.
+The group has chosen **MySQL**. The adapters and four additive migrations live in `repository/mysql/` and `database/migrations/`. V004 stores checkpoint question variants, route state, and optional image keys. The setup guide documents configuration and the disposable-database test. Do not put credentials in source control.
 
 | Operation | MySQL behavior |
 | --- | --- |
@@ -115,16 +120,16 @@ The group has chosen **MySQL**. Core repository adapters and three additive sche
 | Duplicate registration | Throw `IllegalArgumentException` for a uniqueness rejection so Dev 1 can return the same username-unavailable message, including a racing insert |
 | Username lookup | Match Java's `trim().toLowerCase(Locale.ROOT)` naming; do not silently introduce additional accent/case equivalences through a default SQL collation |
 | Password storage | Store only the encoded verifier returned by PasswordHasher; no plaintext, no password in Account; preserve the verifier exactly |
-| First answer | Atomic insert-once per session/question; preserve original on retries/races; verify owner/chapter/option membership; refuse completed-assessment writes |
+| First answer | Atomic insert-once per learner/chapter/checkpoint/question; preserve the original on retries/races; verify owner/checkpoint/option membership; refuse completed-assessment writes |
 | Draft creation | Only new empty sessions; duplicate must not delete or reset answers |
-| Completed result | Keep the original result per learner + prepared chapter variant, including its decision source; repeating an insert returns it |
+| Completed result | Keep the original result per learner + chapter + checkpoint, including assessed level, next level, and decision source; repeating an insert returns it |
 | Full save | Update basic checkpoint columns and full JSON in ONE transaction; failure preserves old valid save; exact matching returned snapshot |
 | Save time | Dev 1 truncates `savedAt` to microseconds; store with matching precision (for example `DATETIME(6)`) under a consistent UTC conversion |
-| Stored JSON | Use GameStateCodec and the checked-in [version-1 example](../../database/examples/game-state-v1.json); UUID strings, integer option indexes, no renamed fields |
+| Stored JSON | Encode GameState version 2 with route/checkpoint state; continue reading version-1 save files and integer answer indexes |
 | Missing rows | Return empty Optional/list, not invented accounts, saves, or questions |
 | Ordering | Saves by slot; history oldest first then ID; Continue newest timestamp then lower slot |
 
-The opt-in test runs against MySQL 8.4 and covers the listed storage behavior with synthetic records. See [the MySQL verification record](Dev1-MySQL-Verification-2026-10-22.md). When the group supplies its story data, Dev 1 should compare the schema assumptions with the approved content and identify any field mismatch before changing the shared records.
+The opt-in test runs against a disposable MySQL 8.4 database. It covers version-1 content and version-2 checkpoint import, route and difficulty save/restore, and first-answer persistence. It does not certify the group's final story or shared database deployment.
 
 ## How Dev 1 connects the finished pieces
 
@@ -134,21 +139,23 @@ The application uses MySQL when all `ARG_DB_*` settings are present and otherwis
 
 ## Next integration milestone
 
-We can call the main loop integrated only after all of these work together:
+The provisional review flow uses the currently supplied scenes. The available narrative is playable through both investigations. Its terminal results screen displays the explicit draft boundary. The remaining story inputs are:
 
-1. Import the group's approved story, questions, and images through the versioned content pack.
-2. Run the complete visible flow with that content: story choices, comprehension questions, feedback, result, and next chapter.
-3. Launch the database-backed application with the group's MySQL setup, then sign up, log out, and log in again.
-4. Save a full snapshot, close the application, reopen/login, and resume the same chapter/session without resetting answers.
-5. Check overwrite, load, logout, quit, settings, and missing-next-chapter behavior with the approved screens.
+1. Confirm the main character, Owen/Ellis naming, suspect, and final ending with the story author.
+2. Confirm the six comprehension answer keys, including the Study hard question and the clue absent from its source.
+3. Append the approved conclusion as content nodes and publish a new chapter ID when learner records already refer to the draft.
+4. Run the full visible flow with the finalized story, art, and question pack.
+5. Launch the database-backed app with the group's MySQL setup and verify a full restart during an active checkpoint.
 
 Passing service tests alone is not proof of overall completion. The current policy is not evidence that the model improves reading outcomes; test the model with the approved story after the playable loop is connected.
 
 ## Verification and limits
 
-Focused tests cover authentication, account isolation, immutable story choices, pack validation, first-answer-only scoring, settings, feedback, results, save/load/resume, and next-chapter navigation. Opt-in JavaFX tests use synthetic content only; they do not certify the group's final story or question copy.
+The latest player-flow work is recorded in [gameplay repair and verification, 2026-10-27](Dev1-Gameplay-QA-2026-10-27.md). The build, automated checks, and visible Study-first desktop route passed with the provisional pack. This does not make the group's story, answer keys, ending or model quality final.
 
-The opt-in MySQL test uses a separate disposable database and synthetic records. It covers all migrations, result-source persistence, story transitions, answer persistence, save/load, and restoration after creating a new application context. The latest test record is [playable flow verification](Dev1-Playable-Flow-Verification-2026-10-22.md). The story, questions, art, parent/guardian and educator access rules, classroom review, and deployment to the group's database remain unverified. The original source ZIP and other local checkouts remain untouched. The changes in this checkout are local; no remote branch was pushed or merged.
+Focused tests cover authentication, account isolation, both adaptive route orders, difficulty variants, first-answer-only scoring, asset fallbacks, feedback, results, save/load/resume, and MySQL checkpoint persistence. Opt-in JavaFX tests still use test fixtures; they do not certify the group's final story or question copy.
+
+The opt-in MySQL test uses a separate disposable database. It covers all migrations, version-2 checkpoint variants, route persistence, first-answer storage, save/load, and restoration after creating a new application context. The original source ZIP and other project checkouts remain untouched.
 
 See [the AI verification record](Dev1-AI-Verification-2026-10-22.md) for the Java, Python, and real-model smoke-test results.
 

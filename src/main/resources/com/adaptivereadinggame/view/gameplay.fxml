@@ -8,6 +8,7 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import com.adaptivereadinggame.view.StoryArtworkPane?>
 
 <BorderPane fx:id="gameplayRoot" styleClass="gameplay-root" prefWidth="1280.0" prefHeight="720.0"
             xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
@@ -15,7 +16,7 @@
     <top>
         <HBox alignment="CENTER_LEFT" spacing="20" styleClass="gameplay-header">
             <VBox spacing="3">
-                <Label fx:id="chapterTitle" styleClass="gameplay-chapter-title" text="CHAPTER"/>
+                <Label fx:id="chapterTitle" styleClass="gameplay-chapter-title" text="CHAPTER" wrapText="true"/>
                 <Label fx:id="difficultyLabel" styleClass="gameplay-difficulty" text="EASY"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
@@ -24,44 +25,54 @@
         </HBox>
     </top>
     <center>
-        <StackPane fx:id="centerRoot" styleClass="gameplay-center">
+        <StackPane fx:id="centerRoot" minWidth="0" minHeight="0" styleClass="gameplay-center">
+            <StoryArtworkPane fx:id="artworkLayer"/>
             <ScrollPane fx:id="storyScroll" fitToWidth="true" fitToHeight="true" pannable="true"
+                        hbarPolicy="NEVER" minWidth="0" minHeight="0"
                         styleClass="gameplay-scroll" visible="false" managed="false">
               <content>
-            <VBox fx:id="storyPane" spacing="18" alignment="CENTER" maxWidth="1160">
-                <HBox spacing="24" alignment="CENTER" maxWidth="1120">
-                    <VBox alignment="CENTER" spacing="10" styleClass="portrait-column">
-                        <StackPane fx:id="portraitFrame" styleClass="portrait-frame" prefWidth="250" prefHeight="330">
+            <StackPane minWidth="0" minHeight="-Infinity">
+            <VBox fx:id="storyPane" minWidth="0" minHeight="-Infinity" spacing="18" alignment="CENTER" maxWidth="1160">
+                <Button fx:id="illustrationButton" text="VIEW ILLUSTRATION" styleClass="gold-button"
+                        visible="false" managed="false" onAction="#viewIllustration"/>
+                <StackPane fx:id="storyRow" minWidth="0" maxWidth="1120">
+                    <VBox fx:id="portraitColumn" alignment="CENTER" spacing="10" styleClass="portrait-column">
+                        <StackPane fx:id="portraitFrame" styleClass="portrait-frame" prefWidth="250" maxWidth="250" prefHeight="330">
                             <Label fx:id="speakerInitials" styleClass="speaker-initials" text=""/>
                             <ImageView fx:id="speakerImage" fitWidth="250" fitHeight="330" preserveRatio="true"
                                        smooth="true" visible="false" managed="false" accessibleText="Character artwork"/>
                         </StackPane>
                         <Label fx:id="speakerName" styleClass="speaker-name" text="" wrapText="true"/>
                     </VBox>
-                    <VBox fx:id="storyPanel" spacing="12" styleClass="story-panel" maxWidth="800" prefWidth="800">
-                        <Label fx:id="storyModeLabel" styleClass="story-mode" text="NARRATION"/>
-                        <ScrollPane fitToWidth="true" fitToHeight="true" pannable="true" styleClass="story-scroll">
+                    <VBox fx:id="storyPanel" minWidth="0" minHeight="-Infinity" spacing="12" styleClass="story-panel" maxWidth="800" prefWidth="800">
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <Label fx:id="storyModeLabel" styleClass="story-mode" text="NARRATION"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                        </HBox>
+                        <ScrollPane fx:id="dialogueScroll" fitToWidth="true" fitToHeight="false" pannable="true"
+                                    prefViewportHeight="220" maxHeight="220" styleClass="story-scroll">
                             <content>
-                                <Label fx:id="storyText" styleClass="story-text" wrapText="true" maxWidth="740"/>
+                                <Label fx:id="storyText" minWidth="0" minHeight="-Infinity" styleClass="story-text" wrapText="true" maxWidth="740"/>
                             </content>
                         </ScrollPane>
                     </VBox>
-                </HBox>
+                </StackPane>
                 <VBox fx:id="storyChoices" spacing="10" alignment="CENTER" maxWidth="850"/>
-                <Button fx:id="storyNextButton" text="NEXT" styleClass="gold-button"
-                        onAction="#advanceStory"/>
             </VBox>
+            </StackPane>
               </content>
             </ScrollPane>
-            <ScrollPane fx:id="assessmentScroll" fitToWidth="true" fitToHeight="true" pannable="true"
+            <ScrollPane fx:id="assessmentScroll" fitToWidth="true" fitToHeight="false" pannable="true"
+                        hbarPolicy="NEVER" minWidth="0" minHeight="0"
                         styleClass="gameplay-scroll" visible="false" managed="false">
               <content>
-            <VBox fx:id="assessmentPane" spacing="8" maxWidth="1100">
+            <StackPane minWidth="0" minHeight="-Infinity">
+            <VBox fx:id="assessmentPane" minWidth="0" minHeight="-Infinity" spacing="8" maxWidth="1100">
                 <VBox spacing="8" styleClass="passage-panel">
                     <Label text="READING PASSAGE" styleClass="passage-heading"/>
                     <ScrollPane fitToWidth="true" prefViewportHeight="105" maxHeight="125" styleClass="passage-scroll">
                         <content>
-                            <Label fx:id="passageText" styleClass="passage-text" wrapText="true" maxWidth="1020"/>
+                            <Label fx:id="passageText" minHeight="-Infinity" styleClass="passage-text" wrapText="true" maxWidth="1020"/>
                         </content>
                     </ScrollPane>
                 </VBox>
@@ -69,12 +80,12 @@
                     <Label fx:id="questionProgress" styleClass="question-progress" text="Question 1 of 1"/>
                     <Region HBox.hgrow="ALWAYS"/>
                 </HBox>
-                <Label fx:id="questionPrompt" styleClass="question-prompt" wrapText="true"/>
-                <VBox fx:id="answerChoices" spacing="8"/>
-                <VBox fx:id="feedbackPane" spacing="6" styleClass="feedback-panel" visible="false" managed="false">
+                <Label fx:id="questionPrompt" minHeight="-Infinity" styleClass="question-prompt" wrapText="true"/>
+                <VBox fx:id="answerChoices" minHeight="-Infinity" spacing="8"/>
+                <VBox fx:id="feedbackPane" minHeight="-Infinity" spacing="6" styleClass="feedback-panel" visible="false" managed="false">
                     <Label fx:id="feedbackHeading" styleClass="feedback-heading"/>
-                    <Label fx:id="correctAnswerText" styleClass="feedback-answer" wrapText="true"/>
-                    <Label fx:id="explanationText" styleClass="feedback-explanation" wrapText="true"/>
+                    <Label fx:id="correctAnswerText" minHeight="-Infinity" styleClass="feedback-answer" wrapText="true"/>
+                    <Label fx:id="explanationText" minHeight="-Infinity" styleClass="feedback-explanation" wrapText="true"/>
                 </VBox>
                 <HBox alignment="CENTER_RIGHT" spacing="14">
                     <Button fx:id="submitButton" text="SUBMIT" styleClass="gold-button"
@@ -83,13 +94,16 @@
                             visible="false" managed="false" onAction="#nextQuestion"/>
                 </HBox>
             </VBox>
+            </StackPane>
               </content>
             </ScrollPane>
         </StackPane>
     </center>
     <bottom>
         <VBox alignment="CENTER" spacing="4" styleClass="gameplay-footer">
-            <Label fx:id="footerText" styleClass="gameplay-footer-text"
+            <Button fx:id="storyNextButton" text="NEXT" styleClass="gold-button" visible="false" managed="false"
+                    onAction="#advanceStory"/>
+            <Label fx:id="footerText" wrapText="true" minHeight="-Infinity" styleClass="gameplay-footer-text"
                    text="Story choices change the narrative. Reading Check answers determine the score."/>
             <Label fx:id="fontNotice" styleClass="gameplay-font-notice"/>
         </VBox>

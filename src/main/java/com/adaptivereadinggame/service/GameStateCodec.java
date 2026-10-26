@@ -1,6 +1,7 @@
 package com.adaptivereadinggame.service;
 
 import com.adaptivereadinggame.model.GameState;
+import com.adaptivereadinggame.model.Difficulty;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.StreamReadConstraints;
@@ -22,12 +23,16 @@ import java.util.UUID;
  * Restore through StoryService using the authoritative stored draft answers.
  */
 public final class GameStateCodec {
-    public static final int FORMAT_VERSION = 1;
+    public static final int FORMAT_VERSION = 2;
+    public static final int LEGACY_FORMAT_VERSION = 1;
     public static final int MAX_DOCUMENT_LENGTH = 65_536;
     private static final int MAX_ANSWERS = 100; // Existing Chapter limits question count to 100.
     private static final Set<String> ENVELOPE_FIELDS = Set.of("formatVersion", "gameState");
-    private static final Set<String> STATE_FIELDS = Set.of("studentId", "chapterId", "storyNodeId",
+    private static final Set<String> LEGACY_STATE_FIELDS = Set.of("studentId", "chapterId", "storyNodeId",
             "assessmentSessionId", "questionIndex", "firstAnswers");
+    private static final Set<String> STATE_FIELDS = Set.of("studentId", "chapterId", "storyNodeId",
+            "assessmentSessionId", "questionIndex", "firstAnswers", "routeId", "activeCheckpointId",
+            "activeDifficulty", "lastCompletedCheckpointId");
     private final JsonMapper mapper;
 
     public GameStateCodec() {
@@ -52,6 +57,11 @@ public final class GameStateCodec {
         if (gameState.assessmentSessionId() == null) state.putNull("assessmentSessionId");
         else state.put("assessmentSessionId", gameState.assessmentSessionId().toString());
         state.put("questionIndex", gameState.questionIndex());
+        state.put("routeId", gameState.routeId());
+        state.put("activeCheckpointId", gameState.activeCheckpointId());
+        state.put("lastCompletedCheckpointId", gameState.lastCompletedCheckpointId());
+        if (gameState.activeDifficulty() == null) state.putNull("activeDifficulty");
+        else state.put("activeDifficulty", gameState.activeDifficulty().name());
         ObjectNode answers = mapper.createObjectNode();
         gameState.firstAnswers().entrySet().stream().sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> answers.put(entry.getKey().toString(), entry.getValue()));
@@ -68,16 +78,17 @@ public final class GameStateCodec {
         }
     }
 
-    /** Strictly read version 1. No automatic text/number coercion or ignored fields. */
+    /** Strictly read version 1 and 2 saves; version 1 is upgraded in memory on the next save. */
     public GameState decode(String document) {
         requireDocumentLength(document);
         try {
             JsonNode envelope = mapper.readTree(document);
             requireFields(envelope, ENVELOPE_FIELDS, "save envelope");
-            if (requireInt(envelope.get("formatVersion"), "formatVersion") != FORMAT_VERSION)
+            int version = requireInt(envelope.get("formatVersion"), "formatVersion");
+            if (version != FORMAT_VERSION && version != LEGACY_FORMAT_VERSION)
                 throw new IllegalArgumentException("Unsupported save format version");
             JsonNode state = envelope.get("gameState");
-            requireFields(state, STATE_FIELDS, "gameState");
+            requireFields(state, version == LEGACY_FORMAT_VERSION ? LEGACY_STATE_FIELDS : STATE_FIELDS, "gameState");
             UUID studentId = requireUuid(state.get("studentId"), "studentId");
             UUID chapterId = requireUuid(state.get("chapterId"), "chapterId");
             String storyNodeId = requireText(state.get("storyNodeId"), "storyNodeId");
@@ -96,10 +107,26 @@ public final class GameStateCodec {
                 if (firstAnswers.putIfAbsent(questionId, selectedIndex) != null)
                     throw new IllegalArgumentException("Question IDs must not occur twice");
             }
-            return new GameState(studentId, chapterId, storyNodeId, sessionId, questionIndex, firstAnswers);
+            if (version == LEGACY_FORMAT_VERSION)
+                return new GameState(studentId, chapterId, storyNodeId, sessionId, questionIndex, firstAnswers);
+            String routeId = requireText(state.get("routeId"), "routeId");
+            String checkpointId = requireText(state.get("activeCheckpointId"), "activeCheckpointId");
+            String lastCompletedCheckpointId = requireText(state.get("lastCompletedCheckpointId"), "lastCompletedCheckpointId");
+            JsonNode difficultyNode = state.get("activeDifficulty");
+            Difficulty difficulty = difficultyNode == null || difficultyNode.isNull()
+                    ? null : parseDifficulty(requireText(difficultyNode, "activeDifficulty"));
+            return new GameState(studentId, chapterId, storyNodeId, sessionId, questionIndex,
+                    firstAnswers, routeId, checkpointId, difficulty, lastCompletedCheckpointId);
         } catch (JsonProcessingException exception) {
             // Never include source JSON: it can contain learner progress or malicious text.
             throw new IllegalArgumentException("Save JSON is malformed or exceeds parsing limits");
+        }
+    }
+
+    private static Difficulty parseDifficulty(String value) {
+        try { return Difficulty.valueOf(value); }
+        catch (IllegalArgumentException invalid) {
+            throw new IllegalArgumentException("activeDifficulty must be EASY, MEDIUM, or HARD.");
         }
     }
 

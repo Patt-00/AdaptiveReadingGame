@@ -94,12 +94,26 @@ class SharedContractsTest {
         assertThrows(IllegalArgumentException.class, () -> new SaveSnapshot(differentNode, state));
     }
 
-    @Test void versionOneJsonRoundTripsAllFields() {
+    @Test void versionTwoJsonRoundTripsAllFields() {
         GameState state = assessmentState();
         String json = codec.encode(state);
-        assertTrue(json.startsWith("{\"formatVersion\":1,\"gameState\":{"));
+        assertTrue(json.startsWith("{\"formatVersion\":2,\"gameState\":{"));
         assertTrue(json.contains("\"" + questionId + "\":1"));
         assertEquals(state, codec.decode(json));
+    }
+
+    @Test void versionTwoJsonPersistsRouteAndCheckpointDifficulty() {
+        GameState state = new GameState(studentId, chapterId, "hall-check", sessionId, 0, Map.of(),
+                "study-first", "hall-second", Difficulty.MEDIUM, "study-first");
+        assertEquals(state, codec.decode(codec.encode(state)));
+    }
+
+    @Test void versionOneSaveJsonRemainsReadable() {
+        String legacy = "{\"formatVersion\":1,\"gameState\":{\"studentId\":\"" + studentId
+                + "\",\"chapterId\":\"" + chapterId + "\",\"storyNodeId\":\"reading-check\","
+                + "\"assessmentSessionId\":\"" + sessionId + "\",\"questionIndex\":1,"
+                + "\"firstAnswers\":{\"" + questionId + "\":1}}}";
+        assertEquals(assessmentState(), codec.decode(legacy));
     }
 
     @Test void emptyStoryStateRoundTripsNullSessionAndEmptyAnswers() {
@@ -117,10 +131,10 @@ class SharedContractsTest {
 
     @Test void wrongVersionDuplicateOrUnknownFieldsAreRejected() {
         String valid = codec.encode(assessmentState());
-        assertThrows(IllegalArgumentException.class, () -> codec.decode(valid.replace("\"formatVersion\":1", "\"formatVersion\":2")));
-        assertThrows(IllegalArgumentException.class, () -> codec.decode(valid.replace("\"formatVersion\":1", "\"formatVersion\":1,\"formatVersion\":1")));
+        assertThrows(IllegalArgumentException.class, () -> codec.decode(valid.replace("\"formatVersion\":2", "\"formatVersion\":3")));
+        assertThrows(IllegalArgumentException.class, () -> codec.decode(valid.replace("\"formatVersion\":2", "\"formatVersion\":2,\"formatVersion\":2")));
         assertThrows(IllegalArgumentException.class, () -> codec.decode(valid.replace("\"questionIndex\":1", "\"questionIndex\":1,\"extra\":true")));
-        assertThrows(IllegalArgumentException.class, () -> codec.decode(valid.replace("\"formatVersion\":1", "\"formatVersion\":1,\"extra\":true")));
+        assertThrows(IllegalArgumentException.class, () -> codec.decode(valid.replace("\"formatVersion\":2", "\"formatVersion\":2,\"extra\":true")));
         assertThrows(IllegalArgumentException.class, () -> codec.decode(valid.replace("\"questionIndex\":1,", "")));
     }
 

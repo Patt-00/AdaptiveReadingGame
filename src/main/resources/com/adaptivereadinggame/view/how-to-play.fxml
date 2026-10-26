@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
@@ -16,8 +18,11 @@
         </VBox>
     </top>
     <center>
+        <ScrollPane fitToWidth="true" fitToHeight="true" minHeight="0" hbarPolicy="NEVER" styleClass="instructions-scroll">
+        <content>
+        <StackPane minWidth="0" minHeight="-Infinity">
         <VBox alignment="CENTER_LEFT" spacing="17" styleClass="instructions-card" maxWidth="850"
-              prefHeight="480" maxHeight="520">
+              minWidth="0" minHeight="-Infinity" maxHeight="-Infinity">
             <Label text="READ THE STORY" styleClass="instructions-heading"/>
             <Label text="Use Next to move through narration, dialogue, and thoughts. A story choice changes what happens in the narrative." styleClass="instructions-text" wrapText="true"/>
             <Label text="ANSWER THE READING CHECK" styleClass="instructions-heading"/>
@@ -27,6 +32,9 @@
             <Label text="SAVE YOUR PROGRESS" styleClass="instructions-heading"/>
             <Label text="Open Menu at any time to save, load, adjust reading settings, or return to the main menu." styleClass="instructions-text" wrapText="true"/>
         </VBox>
+        </StackPane>
+        </content>
+        </ScrollPane>
     </center>
     <bottom>
         <HBox alignment="CENTER" spacing="22" styleClass="instructions-actions">

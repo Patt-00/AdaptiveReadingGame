@@ -41,9 +41,10 @@ public final class InMemoryAssessmentDraftRepository implements AssessmentDraftR
         var node = stories.findNode(gameState.chapterId(), gameState.storyNodeId())
                 .orElseThrow(() -> new IllegalArgumentException("Unknown story node."));
         if (!node.readingCheck()) throw new IllegalArgumentException("An assessment draft must reference the reading-check node.");
-        if (assessments.findCompleted(gameState.studentId(), gameState.chapterId()).isPresent())
-            throw new IllegalStateException("This chapter already has a completed reading check.");
-        if (chapter.questions().isEmpty()) throw new IllegalStateException("The chapter has no reading-check questions.");
+        if (assessments.findCompleted(gameState.studentId(), gameState.chapterId(), gameState.activeCheckpointId()).isPresent())
+            throw new IllegalStateException("This reading checkpoint already has a completed result.");
+        if (questionsForState(chapter, gameState).isEmpty())
+            throw new IllegalStateException("The reading checkpoint has no questions.");
         if (drafts.putIfAbsent(sessionId, gameState) != null)
             throw new IllegalStateException("An assessment draft already exists for this session.");
     }
@@ -56,24 +57,34 @@ public final class InMemoryAssessmentDraftRepository implements AssessmentDraftR
         GameState current = drafts.get(sessionId);
         if (current == null) throw new IllegalStateException("The assessment draft is unavailable.");
         if (!current.studentId().equals(studentId)) throw new SecurityException("Assessment draft belongs to another learner.");
-        if (assessments.findCompleted(studentId, current.chapterId()).isPresent())
+        if (assessments.findCompleted(studentId, current.chapterId(), current.activeCheckpointId()).isPresent())
             throw new IllegalStateException("This assessment is already complete.");
         var chapter = chapters.findChapter(current.chapterId())
                 .orElseThrow(() -> new IllegalStateException("The prepared chapter is unavailable."));
-        Question question = chapter.questions().stream().filter(item -> item.id().equals(questionId)).findFirst()
+        var questions = questionsForState(chapter, current);
+        Question question = questions.stream().filter(item -> item.id().equals(questionId)).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Question does not belong to this chapter."));
         if (selectedIndex < 0 || selectedIndex >= question.choices().size())
             throw new IllegalArgumentException("Invalid answer choice.");
         Integer first = current.firstAnswers().get(questionId);
         if (first != null) return first;
-        if (current.questionIndex() >= chapter.questions().size()
-                || !chapter.questions().get(current.questionIndex()).id().equals(questionId))
+        if (current.questionIndex() >= questions.size()
+                || !questions.get(current.questionIndex()).id().equals(questionId))
             throw new IllegalStateException("Answer the current reading-check question first.");
         Map<UUID, Integer> answers = new HashMap<>(current.firstAnswers());
         answers.put(questionId, selectedIndex);
         drafts.put(sessionId, new GameState(current.studentId(), current.chapterId(), current.storyNodeId(),
-                sessionId, answers.size(), answers));
+                sessionId, answers.size(), answers, current.routeId(), current.activeCheckpointId(),
+                current.activeDifficulty(), current.lastCompletedCheckpointId()));
         return selectedIndex;
+    }
+
+    private static java.util.List<Question> questionsForState(com.adaptivereadinggame.model.Chapter chapter,
+                                                               GameState state) {
+        if (!chapter.adaptive()) return chapter.questions();
+        if (state.activeCheckpointId().isEmpty() || state.activeDifficulty() == null)
+            throw new IllegalArgumentException("Adaptive checkpoint metadata is required.");
+        return chapter.questions(state.activeCheckpointId(), state.activeDifficulty());
     }
 
     @Override public Optional<GameState> findDraft(UUID sessionId) {

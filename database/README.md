@@ -1,6 +1,6 @@
 # MySQL setup and verification
 
-The Dev1 app can store accounts, prepared chapters, story nodes, first answers, results with the difficulty decision source, and three full-save slots in MySQL. Generic story transitions and unfinished-assessment restoration are implemented; approved story content is loaded from a local pack. This guide covers the repository at `src/main/java/com/adaptivereadinggame/repository/mysql/` and the schema at `database/migrations/`.
+The JavaFX app stores accounts, story episodes, route choices, adaptive checkpoints, first answers, results, and three full-save slots in MySQL. This guide covers `src/main/java/com/adaptivereadinggame/repository/mysql/` and the migrations in `database/migrations/`.
 
 ## Requirements
 
@@ -23,7 +23,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, REFERENCES
 
 The application does not create the database or MySQL user. The migration command creates the project tables inside the database.
 
-The integration test creates and removes temporary triggers to force rollback cases. Give `TRIGGER` permission only to the disposable test user, not to a shared application user.
+The integration test creates and removes temporary triggers to force rollback cases. Give `TRIGGER` permission only to the disposable test user, not to a shared application user. On MySQL installations with binary logging enabled, the disposable test instance may also need `log_bin_trust_function_creators=1` so the test user can create its temporary triggers.
 
 ## Set the connection variables
 
@@ -65,9 +65,11 @@ mvn -Dexec.cleanupDaemonThreads=false -Dexec.mainClass=com.adaptivereadinggame.r
 mvn javafx:run
 ```
 
-The migration creates `schema_migrations` and applies the numbered migration files, including `V001__initial_schema.sql`, `V002__content_feedback_and_assets.sql`, and `V003__difficulty_decision_source.sql`. Versions recorded as applied are skipped on later runs. Future schema changes need a new numbered file. Back up a database before running any later migration that changes existing records. If a migration fails partway through, inspect the schema before retrying because MySQL DDL may already have taken effect.
+The migration creates `schema_migrations` and applies V001 through V004. V004 adds checkpoint-specific question variants and outcomes, route IDs, scene asset keys, and checkpoint progress fields. Versions recorded as applied are skipped on later runs. Future schema changes need a new numbered file. Back up a database before running any later migration that changes existing records. If a migration fails partway through, inspect the schema before retrying because MySQL DDL may already have taken effect.
 
-The application expects three save slots. The migration stores a full version-1 `GameState` JSON snapshot with its checkpoint in one row. A basic checkpoint overwrite clears an older full snapshot in that slot. To import approved content at startup, set `ARG_CONTENT_PACK` to its local JSON path. See [the content-pack guide](../assets/README.md).
+V004 retains a default-empty `voice_asset_key` column for schema compatibility. The text-only application does not read or write it.
+
+The application expects three save slots. Full saves store a version-2 `GameState` JSON snapshot with its current route, checkpoint, difficulty, prior checkpoint result ID, and first answers. The codec still reads version-1 saves. See the [version-2 save example](examples/game-state-v2.json) and the [version-1 save example](examples/game-state-v1.json). A basic checkpoint overwrite clears an older full snapshot in that slot. The app loads the provisional story pack at `assets/content/hailey-investigation-draft.json` by default. Set `ARG_CONTENT_PACK` to select another local JSON file. See [the content-pack guide](../assets/README.md).
 
 ## Run the MySQL integration test
 
@@ -84,12 +86,12 @@ Run the focused test with:
 mvn -B -Darg.mysqlTests=true -Dtest=MySqlGameRepositoryIntegrationTest test
 ```
 
-The test applies the migrations twice, checks registration rollback, first-answer ordering and locking, account isolation, save rollback, result idempotency and decision-source persistence, story transitions, and unfinished-assessment restoration after constructing a new application context. JavaFX player-flow coverage uses in-memory synthetic content; the MySQL test verifies the backend contract rather than a production deployment.
+The test applies the migrations twice. It checks account isolation, first-answer locking, full-save rollback, result idempotency, version-1 content, adaptive question variants, route persistence, and checkpoint restoration after creating a new application context. JavaFX player-flow coverage uses in-memory content; this test verifies the MySQL adapter against a disposable database rather than a production deployment.
 
 ## Stored data and remaining boundary
 
-The schema contains accounts, credentials, students, chapters, questions, answer choices, story nodes, story choices, first-answer drafts, completed assessments with a decision source, and three save slots. Java stores only password verifiers in `credentials`; public `Account` records contain no verifier.
+The schema contains accounts, credentials, students, chapters, questions, answer choices, story nodes, route choices, checkpoint outcome definitions, first-answer drafts, checkpoint assessments with a decision source, and three save slots. Java stores only password verifiers in `credentials`; public `Account` records contain no verifier.
 
-`MySqlGameRepository.saveStoryNodes` stores a validated, immutable scene graph with stable node and choice IDs. The application can import a validated pack at startup. Chapter and question UUIDs are derived from stable pack IDs; keep those source IDs stable once learner data refers to them. Do not publish randomized test IDs as permanent content. The database stores the question explanation, speaker asset key, and difficulty decision source with the relevant result or content record.
+`MySqlGameRepository.saveStoryNodes` stores a validated, immutable scene graph with stable node and choice IDs. The application imports a validated version-1 or version-2 pack at startup. Chapter and question UUIDs are derived from stable pack IDs; keep those source IDs stable once learner data refers to them. Do not publish randomized test IDs as permanent content. The database stores checkpoint passages, question difficulty variants, answer explanations, asset keys, route IDs, and the validated source of each difficulty decision.
 
-The current MySQL and player-flow results are recorded in [playable-flow verification](../docs/requirements/Dev1-Playable-Flow-Verification-2026-10-22.md). The earlier [MySQL adapter record](../docs/requirements/Dev1-MySQL-Verification-2026-10-22.md) documents the initial storage test scope.
+The current MySQL and player-flow results are recorded in [playable-flow verification](../docs/requirements/Dev1-Reading-Draft-Verification-2026-10-26.md). The earlier [MySQL adapter record](../docs/requirements/Dev1-MySQL-Verification-2026-10-22.md) documents the initial storage test scope.

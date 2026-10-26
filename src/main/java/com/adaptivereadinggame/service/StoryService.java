@@ -1,16 +1,26 @@
 package com.adaptivereadinggame.service;
 
 import com.adaptivereadinggame.model.GameState;
+import com.adaptivereadinggame.model.Difficulty;
 import java.util.Optional;
 import java.util.UUID;
 
 /** Narrative actions implemented from prepared chapter nodes. */
 public interface StoryService {
     GameState startChapter(UUID studentId, UUID chapterId);
+    /** Start with the learner's Java-approved level; legacy implementations may ignore it. */
+    default GameState startChapter(UUID studentId, UUID chapterId, Difficulty initialDifficulty) {
+        return startChapter(studentId, chapterId);
+    }
     /** Advance only an automatic next node; do not skip a choice or reading check. */
     GameState advanceStory(UUID studentId);
     /** Follow a valid narrative choice without changing comprehension scores. */
     GameState chooseStory(UUID studentId, String choiceId);
+    /** Move from a completed adaptive checkpoint along the answer-specific story edge. */
+    default GameState completeCheckpoint(UUID studentId, String checkpointId, boolean correct,
+                                         Difficulty nextDifficulty) {
+        throw new UnsupportedOperationException("Adaptive checkpoints are not supported by this story service.");
+    }
     Optional<GameState> currentState(UUID studentId);
 
     /**

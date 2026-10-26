@@ -1,21 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.StackPane?>
 
 <BorderPane fx:id="resultsRoot" styleClass="results-root" prefWidth="1280.0" prefHeight="720.0"
             xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.adaptivereadinggame.controller.ResultsController">
     <center>
-        <VBox alignment="CENTER" spacing="18" styleClass="results-card" prefWidth="760" maxWidth="760"
-              prefHeight="510" maxHeight="540">
-            <Label text="CHAPTER RESULTS" styleClass="results-heading"/>
+        <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" minWidth="0" minHeight="0" styleClass="results-scroll">
+        <content>
+        <StackPane styleClass="results-stage" minHeight="-Infinity">
+        <VBox alignment="CENTER" spacing="12" styleClass="results-card" prefWidth="760" maxWidth="760"
+              minHeight="-Infinity" maxHeight="-Infinity" minWidth="0">
+            <Label fx:id="resultsHeading" text="CHAPTER RESULTS" wrapText="true" minHeight="-Infinity" styleClass="results-heading"/>
             <Label fx:id="chapterTitle" styleClass="results-chapter" wrapText="true"/>
-            <Label fx:id="scoreLabel" styleClass="results-score"/>
-            <Label fx:id="answerCountLabel" styleClass="results-answer-count"/>
+            <Label fx:id="scoreLabel" wrapText="true" minHeight="-Infinity" styleClass="results-score"/>
+            <Label fx:id="answerCountLabel" wrapText="true" minHeight="-Infinity" styleClass="results-answer-count"/>
+            <Label fx:id="episodeProgressLabel" styleClass="results-answer-count" wrapText="true"/>
             <Label fx:id="nextDifficultyLabel" styleClass="results-difficulty"/>
             <Label fx:id="decisionSourceLabel" styleClass="results-note" wrapText="true"/>
             <Label fx:id="nextChapterStatus" styleClass="results-status" wrapText="true"/>
@@ -26,5 +32,8 @@
             </HBox>
             <Region minHeight="4"/>
         </VBox>
+        </StackPane>
+        </content>
+        </ScrollPane>
     </center>
 </BorderPane>
