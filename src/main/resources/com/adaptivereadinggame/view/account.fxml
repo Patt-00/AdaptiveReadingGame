@@ -25,11 +25,11 @@
             </VBox>
             <VBox fx:id="formBox" alignment="CENTER" spacing="8" maxWidth="580" minHeight="-Infinity" visible="false" managed="false">
                 <Label fx:id="formTitle" text="LOG IN" styleClass="auth-heading"/>
-                <Label text="Username" styleClass="auth-body"/>
+                <Label fx:id="usernameLabel" text="Username" styleClass="auth-body"/>
                 <TextField fx:id="usernameField" promptText="Username" accessibleText="Username" styleClass="auth-input"/>
                 <Label fx:id="displayNameLabel" text="Display name" styleClass="auth-body"/>
                 <TextField fx:id="displayNameField" promptText="Name shown in the game" accessibleText="Display name" styleClass="auth-input"/>
-                <Label text="Password" styleClass="auth-body"/>
+                <Label fx:id="passwordLabel" text="Password" styleClass="auth-body"/>
                 <PasswordField fx:id="passwordField" promptText="Password" accessibleText="Password" onAction="#submit" styleClass="auth-input"/>
                 <Label fx:id="statusLabel" alignment="CENTER" wrapText="true" maxWidth="580" minHeight="-Infinity" styleClass="auth-status"/>
                 <Button fx:id="submitButton" text="LOG IN" onAction="#submit" defaultButton="true" styleClass="auth-action" prefWidth="350"/>

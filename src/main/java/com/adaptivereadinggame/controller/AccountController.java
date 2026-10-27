@@ -24,8 +24,10 @@ public final class AccountController {
     @FXML private VBox formBox;
     @FXML private TextField usernameField;
     @FXML private TextField displayNameField;
+    @FXML private Label usernameLabel;
     @FXML private Label displayNameLabel;
     @FXML private PasswordField passwordField;
+    @FXML private Label passwordLabel;
     @FXML private Label statusLabel;
     @FXML private Label storageLabel;
     @FXML private Label fontLabel;
@@ -35,6 +37,9 @@ public final class AccountController {
     public AccountController(AppNavigator navigator) { this.navigator = Objects.requireNonNull(navigator); }
 
     @FXML private void initialize() {
+        usernameLabel.setLabelFor(usernameField);
+        displayNameLabel.setLabelFor(displayNameField);
+        passwordLabel.setLabelFor(passwordField);
         storageLabel.setText(navigator.storageDescription());
         fontLabel.setText(navigator.fontNotice());
         showSelection();

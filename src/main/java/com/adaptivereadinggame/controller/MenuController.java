@@ -42,6 +42,7 @@ public final class MenuController {
     @FXML private HBox accountActions;
     @FXML private Button continueButton;
     @FXML private Label accountLabel;
+    @FXML private Label continueStatusLabel;
     @FXML private Label runtimeLabel;
     @FXML private Label fontLabel;
 
@@ -65,8 +66,13 @@ public final class MenuController {
             history = List.copyOf(state.history());
             continueButton.setText(state.activeGame() ? "RETURN TO GAME" : "CONTINUE");
             continueButton.setDisable(!state.activeGame() && slots.isEmpty());
+            continueStatusLabel.setText(state.activeGame()
+                    ? "Return to your active story, reading check, or results."
+                    : slots.isEmpty() ? "Save progress in Save/Load to enable Continue."
+                            : "Continue resumes your most recently saved progress.");
             continueButton.setAccessibleHelp(state.activeGame() ? "Return to the active story or results."
-                    : slots.isEmpty() ? "No saved game is available." : "Resume the most recently saved checkpoint.");
+                    : slots.isEmpty() ? "Open Save/Load and save progress to enable Continue."
+                            : "Resume the most recently saved checkpoint.");
         });
     }
 
@@ -122,7 +128,7 @@ public final class MenuController {
             Optional<SaveSnapshot> snapshot = slots.stream().filter(item -> item.checkpoint().slot() == chosenSlot).findFirst();
             Label details = new Label(snapshot.map(item -> "Slot " + chosenSlot + " — " + item.checkpoint().difficulty()
                     + "\nSaved " + TIME.format(item.checkpoint().savedAt())
-                    + "\nStory node: " + item.checkpoint().storyNodeId()).orElse("Slot " + chosenSlot + " — Empty"));
+                    + "\nStory progress saved").orElse("Slot " + chosenSlot + " — Empty"));
             details.setWrapText(true);
             details.setId("slotDetails" + chosenSlot);
             details.setPrefWidth(400);
@@ -131,6 +137,7 @@ public final class MenuController {
             HBox.setHgrow(details, Priority.ALWAYS);
             Button save = new Button("SAVE");
             save.setId("saveSlot" + chosenSlot);
+            save.setAccessibleText("Save progress to slot " + chosenSlot);
             save.setDisable(!hasGame);
             save.setAccessibleHelp(hasGame ? "Save current progress to slot " + chosenSlot
                     : "Start a playable chapter before saving.");
@@ -146,7 +153,10 @@ public final class MenuController {
             });
             Button load = new Button("LOAD");
             load.setId("loadSlot" + chosenSlot);
+            load.setAccessibleText("Load progress from slot " + chosenSlot);
             load.setDisable(snapshot.isEmpty());
+            load.setAccessibleHelp(snapshot.isPresent() ? "Load the saved progress in slot " + chosenSlot + "."
+                    : "Slot " + chosenSlot + " is empty.");
             load.setOnAction(event -> {
                 if (!allowDiscard("Load slot " + chosenSlot + "?")) return;
                 dialog.close();
@@ -241,10 +251,14 @@ public final class MenuController {
         textSize.setMajorTickUnit(0.2);
         textSize.setBlockIncrement(0.1);
         textSize.setAccessibleText("Reading text size");
+        textSize.setAccessibleHelp("Adjust the size of story, passage, and answer text.");
         CheckBox artwork = new CheckBox("Show character artwork when available");
         artwork.setId("showCharacterArtwork");
         artwork.setSelected(navigator.characterArtworkEnabled());
-        VBox content = new VBox(14, new Label("Reading text size"), textSize, artwork);
+        artwork.setAccessibleHelp("Turn this off to show character initials instead of character artwork.");
+        Label textSizeLabel = new Label("Reading text size");
+        textSizeLabel.setLabelFor(textSize);
+        VBox content = new VBox(14, textSizeLabel, textSize, artwork);
         content.setPadding(new Insets(8));
         dialog.getDialogPane().setContent(content);
         navigator.styleDialog(dialog);

@@ -46,6 +46,9 @@ import javafx.scene.robot.Robot;
 import javafx.geometry.Bounds;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
@@ -101,6 +104,20 @@ class Dev1UiTest {
         BackendContext backend = launch();
         fx(() -> {
             click("SIGN UP");
+            Label usernameLabel = root().lookupAll(".label").stream().filter(Label.class::isInstance)
+                    .map(Label.class::cast).filter(item -> "Username".equals(item.getText())).findFirst().orElseThrow();
+            Label displayNameLabel = label("displayNameLabel");
+            Label passwordLabel = root().lookupAll(".label").stream().filter(Label.class::isInstance)
+                    .map(Label.class::cast).filter(item -> "Password".equals(item.getText())).findFirst().orElseThrow();
+            assertSame(field("usernameField"), usernameLabel.getLabelFor());
+            assertSame(field("displayNameField"), displayNameLabel.getLabelFor());
+            assertSame(password(), passwordLabel.getLabelFor());
+            Button submitButton = (Button) root().lookup("#submitButton");
+            submitButton.requestFocus();
+            root().applyCss();
+            assertTrue(submitButton.isFocused());
+            assertVisibleFocusRing(submitButton, Color.web("#655438"));
+            field("usernameField").requestFocus();
             capture(root(), "signup-form");
             field("usernameField").setText("ReaderOne");
             field("displayNameField").setText("Reader One");
@@ -127,11 +144,29 @@ class Dev1UiTest {
         fx(() -> {
             assertEquals("readerone", backend.accountGameService().currentAccount().orElseThrow().username());
             assertEquals("Welcome, Reader One", label("accountLabel").getText());
-            assertTrue(((Button) root().lookup("#continueButton")).isDisabled());
+            Button continueButton = (Button) root().lookup("#continueButton");
+            assertTrue(continueButton.isDisabled());
+            assertReadableDisabledButton(continueButton);
+            assertTrue(label("continueStatusLabel").isVisible());
+            assertTrue(label("continueStatusLabel").getText().contains("Save progress"));
+            assertTrue(continueButton.getAccessibleHelp().contains("Open Save/Load"));
             assertTrue(label("runtimeLabel").getText().contains("Temporary storage"));
             assertNotNull(button("LOG OUT").getOnAction());
             assertNotNull(button("READING HISTORY").getOnAction());
+            Button historyButton = button("READING HISTORY");
+            historyButton.requestFocus();
+            root().applyCss();
+            assertTrue(historyButton.isFocused());
+            assertVisibleFocusRing(historyButton, Color.web("#655438"));
+            capture(root(), "accessibility-menu-continue");
             capture(root(), "main-menu");
+            new Robot().keyPress(KeyCode.TAB);
+            new Robot().keyRelease(KeyCode.TAB);
+            return null;
+        });
+        await(() -> button("LOG OUT").isFocused());
+        fx(() -> {
+            assertVisibleFocusRing(button("LOG OUT"), Color.web("#655438"));
             return null;
         });
     }
@@ -330,10 +365,31 @@ class Dev1UiTest {
         await(() -> !navigator.workInProgress());
         robotClick(() -> button("SETTINGS"));
         awaitDialog("Adjust the reading view");
+        fx(() -> {
+            DialogPane pane = dialogPane();
+            Label textSizeLabel = pane.lookupAll(".label").stream().filter(Label.class::isInstance)
+                    .map(Label.class::cast).filter(item -> "Reading text size".equals(item.getText()))
+                    .findFirst().orElseThrow();
+            assertSame(pane.lookup("#readingTextSize"), textSizeLabel.getLabelFor());
+            assertNotNull(((Slider) pane.lookup("#readingTextSize")).getAccessibleHelp());
+            return null;
+        });
         robotClick(() -> dialogPane().lookup("#showCharacterArtwork"));
+        fx(() -> {
+            CheckBox artwork = (CheckBox) dialogPane().lookup("#showCharacterArtwork");
+            assertTrue(artwork.isFocused());
+            assertVisibleFocusRing(artwork.lookup(".box"), Color.web("#6e1428"));
+            return null;
+        });
         fx(() -> { new Robot().keyPress(KeyCode.SHIFT); new Robot().keyPress(KeyCode.TAB);
             new Robot().keyRelease(KeyCode.TAB); new Robot().keyRelease(KeyCode.SHIFT); return null; });
         await(() -> dialogPane().getScene().getFocusOwner() instanceof Slider);
+        fx(() -> {
+            Slider textSize = (Slider) dialogPane().lookup("#readingTextSize");
+            assertVisibleFocusRing(textSize.lookup(".thumb"), Color.web("#6e1428"));
+            capture(dialogPane(), "accessibility-settings-slider");
+            return null;
+        });
         fx(() -> { new Robot().keyPress(KeyCode.END); new Robot().keyRelease(KeyCode.END); return null; });
         await(() -> ((Slider) dialogPane().lookup("#readingTextSize")).getValue() > 1.59);
         robotClick(() -> dialogPane().lookupButton(ButtonType.APPLY));
@@ -408,6 +464,30 @@ class Dev1UiTest {
                 await(() -> root().lookup("#assessmentScroll") != null && root().lookup("#assessmentScroll").isVisible()
                         && !navigator.workInProgress());
                 Thread.sleep(100);
+                if (scale == 0.8 && size[0] == 1280) {
+                    Node firstAnswer = fx(() -> root().lookup("#answer-0"));
+                    for (int attempt = 0; attempt < 20
+                            && fx(() -> root().getScene().getFocusOwner()) != firstAnswer; attempt++) {
+                        fx(() -> {
+                            Robot robot = new Robot();
+                            robot.keyPress(KeyCode.TAB);
+                            robot.keyRelease(KeyCode.TAB);
+                            return null;
+                        });
+                        Thread.sleep(40);
+                    }
+                    assertSame(firstAnswer, fx(() -> root().getScene().getFocusOwner()),
+                            "Tab navigation must reach the first reading-check answer.");
+                    fx(() -> {
+                        root().applyCss();
+                        assertVisibleFocusRing(firstAnswer, Color.web("#6e1428"));
+                        Button submit = (Button) root().lookup("#submitButton");
+                        assertReadableDisabledButton(submit);
+                        assertTrue(submit.getAccessibleHelp().contains("Choose an answer"));
+                        capture(root(), "accessibility-reading-choice");
+                        return null;
+                    });
+                }
                 fx(() -> {
                     ScrollPane scroll = (ScrollPane) root().lookup("#assessmentScroll");
                     assertTrue(scroll.getContent().getLayoutBounds().getWidth() <= scroll.getViewportBounds().getWidth() + 1);
@@ -422,7 +502,9 @@ class Dev1UiTest {
                 Thread.sleep(100);
                 fx(() -> {
                     ScrollPane scroll = (ScrollPane) root().lookup("#assessmentScroll");
-                    assertEquals(scroll.getVmax(), scroll.getVvalue(), 0.01, "Feedback scrolls after content layout");
+                    Label explanation = label("explanationText");
+                    assertTrue(explanation.getHeight() >= explanation.prefHeight(explanation.getWidth()) - 1,
+                            "Feedback text must remain fully readable after submission.");
                     Bounds viewport = scroll.lookup(".viewport").localToScene(scroll.lookup(".viewport").getLayoutBounds());
                     Bounds action = button("VIEW RESULTS").localToScene(button("VIEW RESULTS").getBoundsInLocal());
                     assertTrue(viewport.contains(action.getCenterX(), action.getCenterY()), "Results action is reachable");
@@ -1143,6 +1225,11 @@ class Dev1UiTest {
         backend.accountGameService().login("reader", "StrongPass1!".toCharArray());
         fx(() -> { navigator.showMenu(); return null; });
         await(() -> !navigator.workInProgress());
+        fx(() -> {
+            assertTrue(label("continueStatusLabel").getText().contains("Save progress"));
+            assertReadableDisabledButton((Button) root().lookup("#continueButton"));
+            return null;
+        });
         Platform.runLater(() -> click("SAVE/LOAD"));
         await(() -> Window.getWindows().stream().anyMatch(window -> window != stage && window.isShowing()));
         fx(() -> {
@@ -1153,6 +1240,15 @@ class Dev1UiTest {
                     && button.getText().equals("LOAD") && button.isDisabled()).count();
             assertEquals(3, saveButtons);
             assertEquals(3, loadButtons);
+            for (int slot = 1; slot <= 3; slot++) {
+                Button save = (Button) pane.lookup("#saveSlot" + slot);
+                Button load = (Button) pane.lookup("#loadSlot" + slot);
+                assertEquals("Save progress to slot " + slot, save.getAccessibleText());
+                assertEquals("Load progress from slot " + slot, load.getAccessibleText());
+                assertTrue(load.getAccessibleHelp().contains("is empty"));
+                assertReadableDisabledButton(save);
+                assertReadableDisabledButton(load);
+            }
             capture(pane, "empty-save-slots");
             Label explanation = (Label) pane.lookup("#saveExplanation");
             assertTrue(explanation.getHeight() >= explanation.prefHeight(explanation.getWidth()) - 1,
@@ -1215,7 +1311,9 @@ class Dev1UiTest {
         fx(() -> { navigator.showMenu(); return null; });
         await(() -> root().lookup("#continueButton") != null && !navigator.workInProgress());
         fx(() -> {
-            assertFalse(((Button) root().lookup("#continueButton")).isDisabled());
+            Button continueButton = (Button) root().lookup("#continueButton");
+            assertFalse(continueButton.isDisabled());
+            assertTrue(label("continueStatusLabel").getText().contains("most recently saved progress"));
             capture(root(), "main-menu-with-continue");
             return null;
         });
@@ -1226,10 +1324,19 @@ class Dev1UiTest {
             long availableLoadButtons = pane.lookupAll(".button").stream().filter(node -> node instanceof Button button
                     && button.getText().equals("LOAD") && !button.isDisabled()).count();
             assertEquals(1, availableLoadButtons);
+            Button load = (Button) pane.lookup("#loadSlot1");
+            assertEquals("Load progress from slot 1", load.getAccessibleText());
+            load.requestFocus();
+            pane.applyCss();
+            assertTrue(load.isFocused());
+            assertVisibleFocusRing(load, Color.web("#6e1428"));
+            capture(pane, "accessibility-save-load");
             capture(pane, "populated-save-slots");
             Label details = (Label) pane.lookup("#slotDetails1");
             assertTrue(details.getHeight() >= details.prefHeight(details.getWidth()) - 1,
                     "All populated-slot details must be visible without truncation.");
+            assertTrue(details.getText().contains("Story progress saved"));
+            assertFalse(details.getText().contains("chapter-introduction"));
             ((Button) pane.lookupButton(ButtonType.CLOSE)).fire();
             return null;
         });
@@ -1388,6 +1495,41 @@ class Dev1UiTest {
         root().layout();
         return root().lookupAll(".button").stream().filter(node -> node instanceof Button button
                 && button.getText().equals(text) && visible(node)).map(Button.class::cast).findFirst().orElseThrow();
+    }
+
+    private static void assertVisibleFocusRing(Node node, Color expectedColor) {
+        assertTrue(node instanceof Region, "A focusable control must expose a visible border region.");
+        Border border = ((Region) node).getBorder();
+        assertNotNull(border, "The focused control must have a CSS border.");
+        assertTrue(border.getStrokes().stream().anyMatch(stroke -> expectedColor.equals(stroke.getTopStroke())
+                        && stroke.getWidths().getTop() >= 2),
+                "The focused control must have the expected high-contrast outline.");
+    }
+
+    private static void assertReadableDisabledButton(Button button) {
+        button.applyCss();
+        assertTrue(button.isDisabled(), "The action must stay disabled until it is available.");
+        assertEquals(1.0, button.getOpacity(), 0.001, "Disabled actions must not be faded into low contrast.");
+        Color foreground = (Color) button.getTextFill();
+        Color background = (Color) button.getBackground().getFills().getFirst().getFill();
+        assertTrue(contrastRatio(foreground, background) >= 4.5,
+                "Disabled action text must remain readable against its background.");
+    }
+
+    private static double contrastRatio(Color first, Color second) {
+        double firstLuminance = relativeLuminance(first);
+        double secondLuminance = relativeLuminance(second);
+        return (Math.max(firstLuminance, secondLuminance) + 0.05)
+                / (Math.min(firstLuminance, secondLuminance) + 0.05);
+    }
+
+    private static double relativeLuminance(Color color) {
+        return 0.2126 * linear(color.getRed()) + 0.7152 * linear(color.getGreen())
+                + 0.0722 * linear(color.getBlue());
+    }
+
+    private static double linear(double channel) {
+        return channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
     }
 
     private boolean visible(Node node) {

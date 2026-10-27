@@ -411,10 +411,17 @@ public final class GameplayController {
             choice.setUserData(option);
             choice.setToggleGroup(answerGroup);
             choice.getStyleClass().add("quiz-option");
-            choice.setOnAction(event -> submitButton.setDisable(answerGroup.getSelectedToggle() == null));
+            choice.setOnAction(event -> {
+                boolean unanswered = answerGroup.getSelectedToggle() == null;
+                submitButton.setDisable(unanswered);
+                submitButton.setAccessibleHelp(unanswered
+                        ? "Choose an answer before submitting. Only your first submission counts."
+                        : "Submit this answer to receive feedback. Only the first submission counts.");
+            });
             answerChoices.getChildren().add(choice);
         }
         submitButton.setDisable(true);
+        submitButton.setAccessibleHelp("Choose an answer before submitting. Only your first submission counts.");
         submitButton.setVisible(true);
         submitButton.setManaged(true);
         nextQuestionButton.setText("NEXT QUESTION");

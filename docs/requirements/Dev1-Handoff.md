@@ -155,6 +155,8 @@ The latest player-flow work is recorded in [gameplay repair and verification, 20
 
 The current visual update is recorded in [gameplay visual polish and verification, 2026-10-27](Dev1-Visual-Polish-Verification-2026-10-27.md). It preserves the existing burgundy, gold, white, and serif direction, uses the mapped group art on a more cinematic story stage, and leaves the draft boundary unchanged.
 
+The runtime UI accessibility checks are recorded in [runtime UI accessibility and consistency QA, 2026-10-27](Dev1-UI-Accessibility-QA-2026-10-27.md). The report covers disabled-button readability, keyboard focus, accessible labels, save-slot descriptions, and the desktop-test limits.
+
 Focused tests cover authentication, account isolation, both adaptive route orders, difficulty variants, first-answer-only scoring, asset fallbacks, feedback, results, save/load/resume, and MySQL checkpoint persistence. Opt-in JavaFX tests still use test fixtures; they do not certify the group's final story or question copy.
 
 The opt-in MySQL test uses a separate disposable database. It covers all migrations, version-2 checkpoint variants, route persistence, first-answer storage, save/load, and restoration after creating a new application context. The original source ZIP and other project checkouts remain untouched.
