@@ -113,7 +113,7 @@ public final class MenuController {
         if (!allowDiscard("Continue saved progress?")) return;
         run("Continue", () -> navigator.backend().accountGameService().continueGame(true), state -> {
             if (state.isEmpty()) navigator.notice("No saved progress", "Create a checkpoint in Save/Load first.");
-            else showGameplay();
+            else { navigator.clearStoryLog(); showGameplay(); }
         });
     }
 
@@ -162,7 +162,7 @@ public final class MenuController {
                 dialog.close();
                 run("Load", () -> navigator.backend().accountGameService().load(chosenSlot, true), state -> {
                     if (state.isEmpty()) navigator.notice("Empty slot", "There is no checkpoint in this slot.");
-                    else showGameplay();
+                    else { navigator.clearStoryLog(); showGameplay(); }
                 });
             });
             HBox row = new HBox(12, details, save, load);
@@ -256,15 +256,32 @@ public final class MenuController {
         artwork.setId("showCharacterArtwork");
         artwork.setSelected(navigator.characterArtworkEnabled());
         artwork.setAccessibleHelp("Turn this off to show character initials instead of character artwork.");
+        CheckBox reducedMotion = new CheckBox("Reduce story animations");
+        reducedMotion.setId("reducedMotion");
+        reducedMotion.setSelected(navigator.reducedMotion());
+        reducedMotion.setAccessibleHelp("Show story artwork and dialogue without animated transitions.");
         Label textSizeLabel = new Label("Reading text size");
         textSizeLabel.setLabelFor(textSize);
-        VBox content = new VBox(14, textSizeLabel, textSize, artwork);
+        VBox content = new VBox(14, textSizeLabel, textSize, artwork, reducedMotion);
+        if (!navigator.fontNotice().isEmpty()) {
+            Label fontNotice = new Label(navigator.fontNotice());
+            fontNotice.setWrapText(true);
+            fontNotice.getStyleClass().add("dialog-note");
+            content.getChildren().add(fontNotice);
+        }
+        if (!navigator.stageDirectionsNotice().isEmpty()) {
+            Label stageNotice = new Label(navigator.stageDirectionsNotice());
+            stageNotice.setWrapText(true);
+            stageNotice.getStyleClass().add("dialog-note");
+            content.getChildren().add(stageNotice);
+        }
         content.setPadding(new Insets(8));
         dialog.getDialogPane().setContent(content);
         navigator.styleDialog(dialog);
         if (dialog.showAndWait().filter(ButtonType.APPLY::equals).isPresent()) {
             navigator.setReadingFontScale(textSize.getValue());
             navigator.setCharacterArtworkEnabled(artwork.isSelected());
+            navigator.setReducedMotion(reducedMotion.isSelected());
         }
     }
 

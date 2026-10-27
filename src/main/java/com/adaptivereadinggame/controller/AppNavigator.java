@@ -2,6 +2,8 @@ package com.adaptivereadinggame.controller;
 
 import com.adaptivereadinggame.AdaptiveReadingGameApp;
 import com.adaptivereadinggame.backend.BackendContext;
+import com.adaptivereadinggame.content.StoryStageDirections;
+import com.adaptivereadinggame.model.StoryNode;
 import com.adaptivereadinggame.service.AccountGameService.ChapterSummary;
 import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
@@ -14,16 +16,26 @@ import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /** One application context and navigation boundary shared by all Dev 1 screens. */
 public final class AppNavigator {
+    public record StoryLogEntry(String nodeId, String speaker, String text, boolean thought) {}
+    record StageDirectionsLoad(StoryStageDirections directions, String notice) {}
+    private static final int STORY_LOG_LIMIT = 500;
     private final Stage stage;
     private final BackendContext backend;
     private final String storageDescription;
+    private final StoryStageDirections stageDirections;
+    private final String stageDirectionsNotice;
     private final boolean georgiaMissing = Font.getFamilies().stream()
             .noneMatch(family -> family.equalsIgnoreCase("Georgia"));
     private final boolean timesMissing = Font.getFamilies().stream()
@@ -32,17 +44,35 @@ public final class AppNavigator {
     private boolean workInProgress;
     private double readingFontScale = 1.0;
     private boolean characterArtworkEnabled = true;
+    private boolean reducedMotion;
+    private final List<StoryLogEntry> storyLog = new ArrayList<>();
+    private UUID storyLogAccount;
+    private UUID storyLogChapter;
     private ChapterSummary pendingChapter;
 
     public AppNavigator(Stage stage, BackendContext backend, String storageDescription) {
+        this(stage, backend, storageDescription, loadStageDirections());
+    }
+
+    public AppNavigator(Stage stage, BackendContext backend, String storageDescription,
+                        StoryStageDirections stageDirections) {
+        this(stage, backend, storageDescription, new StageDirectionsLoad(Objects.requireNonNull(stageDirections), ""));
+    }
+
+    private AppNavigator(Stage stage, BackendContext backend, String storageDescription,
+                         StageDirectionsLoad stageLoad) {
         this.stage = Objects.requireNonNull(stage);
         this.backend = Objects.requireNonNull(backend);
         this.storageDescription = Objects.requireNonNull(storageDescription);
+        this.stageDirections = stageLoad.directions();
+        this.stageDirectionsNotice = stageLoad.notice();
     }
 
     public BackendContext backend() { return backend; }
     public Stage stage() { return stage; }
     public String storageDescription() { return storageDescription; }
+    public StoryStageDirections stageDirections() { return stageDirections; }
+    public String stageDirectionsNotice() { return stageDirectionsNotice; }
     public boolean workInProgress() { return workInProgress; }
     public void setWorkInProgress(boolean busy) { workInProgress = busy; }
     public double readingFontScale() { return readingFontScale; }
@@ -52,7 +82,32 @@ public final class AppNavigator {
     }
     public boolean characterArtworkEnabled() { return characterArtworkEnabled; }
     public void setCharacterArtworkEnabled(boolean enabled) { characterArtworkEnabled = enabled; }
+    public boolean reducedMotion() { return reducedMotion; }
+    public void setReducedMotion(boolean reduced) { reducedMotion = reduced; }
     public Optional<ChapterSummary> pendingChapter() { return Optional.ofNullable(pendingChapter); }
+
+    public void clearStoryLog() {
+        storyLog.clear();
+        storyLogAccount = null;
+        storyLogChapter = null;
+    }
+
+    public void recordStoryLine(UUID accountId, UUID chapterId, StoryNode node) {
+        Objects.requireNonNull(accountId);
+        Objects.requireNonNull(chapterId);
+        Objects.requireNonNull(node);
+        if (!accountId.equals(storyLogAccount) || !chapterId.equals(storyLogChapter)) {
+            clearStoryLog();
+            storyLogAccount = accountId;
+            storyLogChapter = chapterId;
+        }
+        if (node.readingCheck() || node.storyComplete()) return;
+        if (!storyLog.isEmpty() && storyLog.getLast().nodeId().equals(node.storyNodeId())) return;
+        if (storyLog.size() == STORY_LOG_LIMIT) storyLog.removeFirst();
+        storyLog.add(new StoryLogEntry(node.storyNodeId(), node.speakerName(), node.dialogueText(), node.thought()));
+    }
+
+    public List<StoryLogEntry> storyLog() { return List.copyOf(storyLog); }
 
     public String fontNotice() {
         if (timesMissing) return "Reference fonts unavailable: using system Serif.";
@@ -74,7 +129,7 @@ public final class AppNavigator {
         if (!fontNotice().isEmpty()) System.err.println(fontNotice());
     }
 
-    public void showAccount() throws IOException { show("account.fxml"); }
+    public void showAccount() throws IOException { clearStoryLog(); show("account.fxml"); }
     public void showMenu() throws IOException { show("main-menu.fxml"); }
     public void showGameplay() throws IOException { show("gameplay.fxml"); }
     public void showCurrentGame() throws IOException { showGameplay(); }
@@ -180,5 +235,22 @@ public final class AppNavigator {
     private String stylesheet() {
         return AdaptiveReadingGameApp.class.getResource(
                 "/com/adaptivereadinggame/style/application.css").toExternalForm();
+    }
+
+    private static StageDirectionsLoad loadStageDirections() {
+        return loadStageDirections(System.getenv("ARG_STAGE_DIRECTIONS"), Path.of("assets/content/stage-directions.json"));
+    }
+
+    static StageDirectionsLoad loadStageDirections(String configured, Path defaultPath) {
+        boolean explicit = configured != null && !configured.isBlank();
+        try {
+            Path path = explicit ? Path.of(configured) : defaultPath;
+            if (!Files.exists(path) && !explicit) return new StageDirectionsLoad(StoryStageDirections.empty(), "");
+            return new StageDirectionsLoad(StoryStageDirections.read(path), "");
+        } catch (IOException | RuntimeException unavailable) {
+            System.err.println("Optional character staging could not be loaded; story dialogue remains available.");
+            return new StageDirectionsLoad(StoryStageDirections.empty(),
+                    "Character staging could not be loaded. The story remains available.");
+        }
     }
 }

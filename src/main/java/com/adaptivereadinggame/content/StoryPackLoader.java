@@ -283,7 +283,7 @@ public final class StoryPackLoader {
         return node.booleanValue();
     }
 
-    private static UUID stableId(String type, String sourceId) {
+    static UUID stableId(String type, String sourceId) {
         return UUID.nameUUIDFromBytes(("AdaptiveReadingGame:" + type + ":" + sourceId)
                 .getBytes(StandardCharsets.UTF_8));
     }

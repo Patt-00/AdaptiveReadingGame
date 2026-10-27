@@ -42,6 +42,7 @@ public final class InstructionsController {
                 () -> navigator.backend().accountGameService().startChapter(chapter.id(), chapter.difficulty(), confirmed),
                 ignored -> {
                     navigator.clearPendingChapter();
+                    navigator.clearStoryLog();
                     try { navigator.showGameplay(); }
                     catch (IOException failure) {
                         navigator.notice("Game screen unavailable", "The chapter started, but its screen could not open.");

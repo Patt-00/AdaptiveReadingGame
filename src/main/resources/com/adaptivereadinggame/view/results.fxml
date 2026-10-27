@@ -22,6 +22,7 @@
             <Label fx:id="scoreLabel" wrapText="true" minHeight="-Infinity" styleClass="results-score"/>
             <Label fx:id="answerCountLabel" wrapText="true" minHeight="-Infinity" styleClass="results-answer-count"/>
             <Label fx:id="episodeProgressLabel" styleClass="results-answer-count" wrapText="true"/>
+            <Region styleClass="results-divider" minHeight="1" prefHeight="1" maxHeight="1" maxWidth="520"/>
             <Label fx:id="nextDifficultyLabel" styleClass="results-difficulty"/>
             <Label fx:id="decisionSourceLabel" styleClass="results-note" wrapText="true"/>
             <Label fx:id="nextChapterStatus" styleClass="results-status" wrapText="true"/>

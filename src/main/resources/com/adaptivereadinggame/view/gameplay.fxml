@@ -10,35 +10,41 @@
 <?import javafx.scene.layout.VBox?>
 <?import com.adaptivereadinggame.view.StoryArtworkPane?>
 
-<BorderPane fx:id="gameplayRoot" styleClass="gameplay-root" prefWidth="1280.0" prefHeight="720.0"
-            xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.adaptivereadinggame.controller.GameplayController">
+<StackPane fx:id="gameplayRoot" styleClass="gameplay-root" prefWidth="1280.0" prefHeight="720.0"
+           minWidth="0" minHeight="0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.adaptivereadinggame.controller.GameplayController">
+    <StoryArtworkPane fx:id="artworkLayer"/>
+    <BorderPane fx:id="gameplayLayout" minWidth="0" minHeight="0">
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="20" styleClass="gameplay-header">
-            <VBox spacing="3">
+        <HBox fx:id="gameplayHeader" alignment="CENTER_LEFT" spacing="12" styleClass="gameplay-header">
+            <VBox spacing="3" minWidth="0" HBox.hgrow="ALWAYS">
                 <Label fx:id="chapterTitle" styleClass="gameplay-chapter-title" text="CHAPTER" wrapText="true"/>
                 <Label fx:id="difficultyLabel" styleClass="gameplay-difficulty" text="EASY"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button fx:id="menuButton" text="MENU" accessibleText="Open game menu"
+            <Button fx:id="illustrationButton" text="VIEW ILLUSTRATION" minWidth="-Infinity" styleClass="gameplay-menu-button"
+                    visible="false" managed="false" onAction="#viewIllustration"/>
+            <Button fx:id="storyLogButton" text="STORY LOG" minWidth="-Infinity" accessibleText="Open the story log"
+                    styleClass="gameplay-menu-button" visible="false" managed="false" onAction="#openStoryLog"/>
+            <Button fx:id="menuButton" text="MENU" minWidth="-Infinity" accessibleText="Open game menu"
                     styleClass="gameplay-menu-button" onAction="#openMenu"/>
         </HBox>
     </top>
     <center>
         <StackPane fx:id="centerRoot" minWidth="0" minHeight="0" styleClass="gameplay-center">
-            <StoryArtworkPane fx:id="artworkLayer"/>
             <ScrollPane fx:id="storyScroll" fitToWidth="true" fitToHeight="true" pannable="true"
                         hbarPolicy="NEVER" minWidth="0" minHeight="0"
                         styleClass="gameplay-scroll" visible="false" managed="false">
               <content>
             <StackPane minWidth="0" minHeight="-Infinity">
             <VBox fx:id="storyPane" minWidth="0" minHeight="-Infinity" spacing="18" alignment="CENTER" maxWidth="1160">
-                <Button fx:id="illustrationButton" text="VIEW ILLUSTRATION" styleClass="gold-button"
-                        visible="false" managed="false" onAction="#viewIllustration"/>
                 <StackPane fx:id="storyRow" minWidth="0" maxWidth="1120">
                     <VBox fx:id="portraitColumn" alignment="CENTER" spacing="10" styleClass="portrait-column">
                         <StackPane fx:id="portraitFrame" styleClass="portrait-frame" prefWidth="320" maxWidth="320" prefHeight="460">
                             <Label fx:id="speakerInitials" styleClass="speaker-initials" text=""/>
+                            <ImageView fx:id="supportingImage" fitWidth="220" fitHeight="430" preserveRatio="true"
+                                       smooth="true" styleClass="speaker-image" visible="false" managed="false"
+                                       opacity="0.65" accessibleText="Supporting character artwork"/>
                             <ImageView fx:id="speakerImage" fitWidth="320" fitHeight="460" preserveRatio="true"
                                        smooth="true" styleClass="speaker-image" visible="false" managed="false"
                                        accessibleText="Character artwork"/>
@@ -102,7 +108,7 @@
         </StackPane>
     </center>
     <bottom>
-        <VBox alignment="CENTER" spacing="4" styleClass="gameplay-footer">
+        <VBox fx:id="gameplayFooter" alignment="CENTER" spacing="4" styleClass="gameplay-footer">
             <Button fx:id="storyNextButton" text="NEXT" styleClass="gold-button" visible="false" managed="false"
                     onAction="#advanceStory"/>
             <Label fx:id="footerText" wrapText="true" minHeight="-Infinity" styleClass="gameplay-footer-text"
@@ -110,4 +116,5 @@
             <Label fx:id="fontNotice" styleClass="gameplay-font-notice"/>
         </VBox>
     </bottom>
-</BorderPane>
+    </BorderPane>
+</StackPane>

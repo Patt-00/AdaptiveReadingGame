@@ -72,8 +72,8 @@ public final class ResultsController {
                 : data.totalCorrect() + " of " + data.totalQuestions() + " first answers correct");
         episodeProgressLabel.setVisible(data.adaptive());
         episodeProgressLabel.setManaged(data.adaptive());
-        if (data.adaptive()) episodeProgressLabel.setText("Checkpoint results stored: " + data.checkpointCount()
-                + "  ·  Story choices do not affect comprehension scores.");
+        if (data.adaptive()) episodeProgressLabel.setText("Reading checks completed: " + data.checkpointCount()
+                + "  ·  Story choices do not affect your score.");
         nextDifficultyLabel.setText("Next difficulty: " + titleCase(result.nextDifficulty().name()));
         decisionSourceLabel.setText(sourceMessage(result.decisionSource()));
         nextChapters = List.copyOf(data.nextChapters());
@@ -133,7 +133,7 @@ public final class ResultsController {
                 "Your result is saved. Starting a new chapter replaces any remaining unsaved story state.")) return;
         navigator.runAsync("Start next chapter",
                 () -> navigator.backend().accountGameService().startChapter(selected.id(), true),
-                ignored -> showGameplay(), failure -> {
+                ignored -> { navigator.clearStoryLog(); showGameplay(); }, failure -> {
                     navigator.notice("Chapter unavailable", "The selected chapter could not be started.");
                 });
     }
@@ -150,10 +150,10 @@ public final class ResultsController {
 
     private static String sourceMessage(DifficultyDecisionSource source) {
         return switch (source) {
-            case MODEL -> "The model suggested this level. Java checked the recommendation before applying it.";
-            case JAVA_FALLBACK -> "The model was unavailable. Java used its fallback rule to select this level.";
-            case JAVA_GUARDRAIL -> "Java kept this level because the model suggestion did not pass its accuracy checks.";
-            case JAVA_RULES -> "Java selected this level from the completed reading results.";
+            case MODEL -> "The game checked a reading helper's suggestion before choosing this level.";
+            case JAVA_FALLBACK -> "The reading helper was unavailable, so the game used its usual rule.";
+            case JAVA_GUARDRAIL -> "Your level stayed the same after the game checked the suggestion.";
+            case JAVA_RULES -> "Your next reading level is based on your reading-check results.";
         };
     }
 

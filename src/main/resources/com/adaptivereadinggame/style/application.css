@@ -30,9 +30,14 @@
     -fx-border-radius: 3px;
 }
 .menu-option:hover { -fx-text-fill: #655438; -fx-background-color: #f8f5ef; }
+.main-menu .menu-flourish { -fx-stroke: #b89845; }
+.main-menu .menu-primary { -fx-text-fill: #fff1bd; -fx-background-color: #73121f; -fx-border-color: #b89845; -fx-background-radius: 4px; -fx-padding: 6px 36px; }
+.main-menu .menu-primary:hover { -fx-text-fill: white; -fx-background-color: #98243a; }
+.main-menu .menu-primary:focused { -fx-border-color: #fff1bd; -fx-border-width: 3px; }
 .menu-option:focused { -fx-border-color: #655438; }
 .menu-option:pressed { -fx-background-color: #eee7db; }
 .menu-option:disabled { -fx-opacity: 1; -fx-text-fill: #6b6259; -fx-background-color: #f7f4ed; -fx-border-color: #d1c6b2; -fx-cursor: default; }
+.main-menu .menu-primary:disabled { -fx-opacity: 1; -fx-text-fill: #6b6259; -fx-background-color: #f7f4ed; -fx-border-color: #d1c6b2; }
 
 /* Dev 1 account screens retain the groupmate's white / serif reference style. */
 .account-screen { -fx-background-color: white; }
@@ -64,13 +69,21 @@
 .dialog-note { -fx-text-fill: #5b5147; -fx-font-size: 14px; }
 
 .gameplay-root { -fx-background-color: white; }
+.gameplay-root.story-screen { -fx-background-color: linear-gradient(to bottom right, #28121c, #4d1827); }
 .gameplay-header { -fx-padding: 14px 32px; -fx-background-color: white; -fx-border-color: #d6c89f; -fx-border-width: 0 0 1px 0; }
+.gameplay-header.story-header { -fx-padding: 8px 20px; -fx-background-color: linear-gradient(to bottom, rgba(39, 12, 24, 0.93), rgba(39, 12, 24, 0.65)); -fx-border-color: transparent transparent rgba(212, 175, 55, 0.65) transparent; }
 .gameplay-chapter-title { -fx-font-family: "Times New Roman"; -fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #73121f; }
 .gameplay-difficulty, .question-progress { -fx-font-family: "Georgia"; -fx-font-size: 17px; -fx-text-fill: #5b5147; }
+.story-header .gameplay-chapter-title { -fx-font-size: 21px; -fx-text-fill: #fff1bd; }
+.story-header .gameplay-difficulty { -fx-font-size: 15px; -fx-text-fill: #fff1bd; }
 .gameplay-menu-button { -fx-font-family: "Times New Roman"; -fx-font-size: 20px; -fx-text-fill: #4b1221; -fx-background-color: white; -fx-border-color: #8c7d68; -fx-border-radius: 3px; -fx-padding: 8px 22px; -fx-cursor: hand; }
 .gameplay-menu-button:hover { -fx-background-color: #f8f5ef; -fx-text-fill: #655438; }
 .gameplay-menu-button:focused { -fx-border-color: #6e1428; -fx-border-width: 2px; }
+.story-header .gameplay-menu-button { -fx-font-size: 17px; -fx-text-fill: #fff1bd; -fx-background-color: rgba(73, 20, 38, 0.9); -fx-border-color: #c7a444; -fx-padding: 7px 16px; }
+.story-header .gameplay-menu-button:hover { -fx-background-color: #842033; -fx-text-fill: white; }
+.story-header .gameplay-menu-button:focused { -fx-border-color: #fff1bd; -fx-border-width: 2px; }
 .gameplay-center { -fx-background-color: white; }
+.gameplay-center.story-stage { -fx-background-color: transparent; }
 .gameplay-scroll { -fx-padding: 12px 30px; }
 .gameplay-scroll, .gameplay-scroll .viewport { -fx-background-color: transparent; }
 .scene-dimmer { -fx-background-color: rgba(0, 0, 0, 0.20); }
@@ -95,25 +108,31 @@
 .gold-button:hover { -fx-background-color: #e3c96b; }
 .gold-button:focused { -fx-border-color: #73121f; -fx-border-width: 2px; }
 .gold-button:disabled { -fx-opacity: 1; -fx-text-fill: #6b6259; -fx-background-color: #eee8dc; -fx-border-color: #b9aa8b; }
-.passage-panel { -fx-background-color: white; -fx-border-color: #73121f; -fx-border-width: 2px; -fx-border-radius: 14px; -fx-background-radius: 14px; -fx-padding: 13px 20px; }
+.passage-panel { -fx-background-color: #faf7ef; -fx-border-color: #b89845; -fx-border-width: 2px; -fx-border-radius: 14px; -fx-background-radius: 14px; -fx-padding: 13px 20px; }
 .passage-heading { -fx-font-family: "Times New Roman"; -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #73121f; }
-.passage-scroll, .passage-scroll .viewport { -fx-background-color: white; }
+.passage-scroll, .passage-scroll .viewport { -fx-background-color: #faf7ef; }
 .passage-text { -fx-font-family: "Times New Roman"; -fx-font-size: 20px; -fx-text-fill: #262626; }
 .question-prompt { -fx-font-family: "Times New Roman"; -fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #73121f; }
-.quiz-option { -fx-font-family: "Times New Roman"; -fx-font-size: 21px; -fx-text-fill: #262626; -fx-padding: 7px 10px; -fx-border-color: transparent; -fx-border-width: 2px; -fx-border-radius: 4px; -fx-background-radius: 4px; -fx-cursor: hand; }
+.quiz-option { -fx-font-family: "Times New Roman"; -fx-font-size: 21px; -fx-text-fill: #262626; -fx-padding: 9px 12px; -fx-background-color: #faf7ef; -fx-border-color: #d6c89f; -fx-border-width: 2px; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-cursor: hand; }
 .quiz-option .radio { -fx-border-color: #73121f; -fx-border-radius: 20px; }
-.quiz-option:selected { -fx-text-fill: #73121f; -fx-font-weight: bold; }
+.quiz-option:hover { -fx-background-color: #f5ede0; }
+.quiz-option:selected { -fx-text-fill: #73121f; -fx-font-weight: bold; -fx-background-color: #f6ead3; -fx-border-color: #a67f29; }
 .quiz-option:focused { -fx-background-color: #f8f5ef; -fx-border-color: #6e1428; -fx-border-width: 2px; }
 .feedback-panel { -fx-background-color: #73121f; -fx-border-color: #d4af37; -fx-border-width: 2px; -fx-border-radius: 12px; -fx-background-radius: 12px; -fx-padding: 12px 18px; }
 .feedback-heading { -fx-font-family: "Times New Roman"; -fx-font-size: 23px; -fx-font-weight: bold; -fx-text-fill: #fff1bd; }
 .feedback-answer, .feedback-explanation { -fx-font-family: "Times New Roman"; -fx-font-size: 18px; -fx-text-fill: white; }
 .gameplay-footer { -fx-padding: 7px 16px 10px 16px; -fx-background-color: white; }
+.gameplay-footer.story-footer { -fx-padding: 6px 16px; -fx-background-color: rgba(39, 12, 24, 0.72); -fx-border-color: rgba(212, 175, 55, 0.55) transparent transparent transparent; -fx-border-width: 1px 0 0 0; }
+.story-footer .gold-button { -fx-padding: 7px 26px; -fx-font-size: 19px; }
 .gameplay-footer-text, .gameplay-font-notice { -fx-font-family: "Times New Roman"; -fx-font-size: 15px; -fx-text-fill: #555555; }
+.story-log-speaker { -fx-font-family: "Times New Roman"; -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #73121f; }
+.story-log-text { -fx-font-family: "Times New Roman"; -fx-font-size: 18px; -fx-text-fill: #262626; }
 .results-root { -fx-background-color: linear-gradient(to bottom right, #28121c, #4d1827 52%, #261421); }
 .results-card { -fx-background-color: linear-gradient(to bottom, #a82234, #73121f); -fx-border-color: #d4af37; -fx-border-width: 3px; -fx-border-radius: 30px; -fx-background-radius: 30px; -fx-padding: 30px 45px; }
 .results-heading { -fx-font-family: "Times New Roman"; -fx-font-size: 34px; -fx-font-weight: bold; -fx-text-fill: #fff1bd; }
 .results-chapter { -fx-font-family: "Times New Roman"; -fx-font-size: 21px; -fx-text-fill: white; }
-.results-score { -fx-font-family: "Times New Roman"; -fx-font-size: 31px; -fx-text-fill: white; }
+.results-score { -fx-font-family: "Times New Roman"; -fx-font-size: 31px; -fx-text-fill: #fff1bd; }
+.results-divider { -fx-background-color: rgba(212, 175, 55, 0.7); }
 .results-answer-count { -fx-font-family: "Times New Roman"; -fx-font-size: 22px; -fx-text-fill: white; }
 .results-difficulty { -fx-font-family: "Times New Roman"; -fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #fff1bd; }
 .results-note, .results-status { -fx-font-family: "Times New Roman"; -fx-font-size: 18px; -fx-text-fill: white; -fx-text-alignment: center; }

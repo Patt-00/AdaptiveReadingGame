@@ -22,7 +22,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.event.EventHandler;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
@@ -51,6 +50,8 @@ public final class GameplayController {
     private final CharacterAssetResolver assets = new CharacterAssetResolver();
     private final StoryAssetResolver storyAssets = new StoryAssetResolver();
     private final Map<Path, Image> characterImageCache = new HashMap<>();
+    private final Map<Path, Image> sceneImageCache = new HashMap<>();
+    private final Map<Path, Image> illustrationImageCache = new HashMap<>();
     private final ToggleGroup answerGroup = new ToggleGroup();
     private LoadedGame loaded;
     private AssessmentService.QuestionPrompt activeQuestion;
@@ -59,10 +60,14 @@ public final class GameplayController {
     private Boolean narrowStoryLayout;
     private FadeTransition storyPanelFade;
     private FadeTransition portraitFade;
+    private FadeTransition sceneFade;
     private TranslateTransition portraitSlide;
+    private Path currentScenePath;
 
-    @FXML private BorderPane gameplayRoot;
+    @FXML private StackPane gameplayRoot;
     @FXML private StackPane centerRoot;
+    @FXML private HBox gameplayHeader;
+    @FXML private VBox gameplayFooter;
     @FXML private StoryArtworkPane artworkLayer;
     @FXML private StackPane storyRow;
     @FXML private StackPane portraitFrame;
@@ -89,15 +94,23 @@ public final class GameplayController {
     @FXML private Label footerText;
     @FXML private Label fontNotice;
     @FXML private ImageView speakerImage;
+    @FXML private ImageView supportingImage;
     @FXML private Button storyNextButton;
     @FXML private Button submitButton;
     @FXML private Button nextQuestionButton;
     @FXML private Button illustrationButton;
+    @FXML private Button storyLogButton;
 
     public GameplayController(AppNavigator navigator) { this.navigator = Objects.requireNonNull(navigator); }
 
     @FXML private void initialize() {
         storyScroll.viewportBoundsProperty().addListener((observable, before, after) -> updateStoryLayout(after.getWidth()));
+        gameplayRoot.heightProperty().addListener((observable, before, after) -> {
+            if (Boolean.TRUE.equals(narrowStoryLayout)) updatePortraitImageSizes();
+        });
+        storyPanel.widthProperty().addListener((observable, before, after) -> {
+            if (storyScroll.isVisible() && after.doubleValue() > 0) sizeDialogueViewport();
+        });
         updateStoryLayout(1280);
         gameplayRoot.setFocusTraversable(true);
         gameplayRoot.setOnKeyPressed(event -> {
@@ -147,13 +160,23 @@ public final class GameplayController {
         }
         row.setMinWidth(0);
         storyRow.getChildren().setAll(row);
+        updatePortraitImageSizes();
+    }
+
+    private void updatePortraitImageSizes() {
+        boolean narrow = Boolean.TRUE.equals(narrowStoryLayout);
         double portraitWidth = narrow ? 240 : 320;
-        double portraitHeight = narrow ? 220 : 460;
+        double portraitHeight = narrow ? Math.clamp(gameplayRoot.getHeight() * 0.29, 140, 220) : 460;
         portraitFrame.setPrefWidth(portraitWidth);
         portraitFrame.setMaxWidth(portraitWidth);
         portraitFrame.setPrefHeight(portraitHeight);
-        speakerImage.setFitWidth(portraitWidth);
+        boolean twoCharacters = supportingImage.isVisible() && speakerImage.isVisible();
+        speakerImage.setFitWidth(twoCharacters ? portraitWidth * 0.68 : portraitWidth);
         speakerImage.setFitHeight(portraitHeight);
+        supportingImage.setFitWidth(portraitWidth * 0.68);
+        supportingImage.setFitHeight(portraitHeight * 0.94);
+        StackPane.setAlignment(speakerImage, twoCharacters ? Pos.BOTTOM_RIGHT : Pos.CENTER);
+        StackPane.setAlignment(supportingImage, Pos.BOTTOM_LEFT);
     }
 
     private LoadedGame loadGame() {
@@ -197,6 +220,7 @@ public final class GameplayController {
     }
 
     private void showStory(StoryNode node) {
+        setStoryPresentation(true);
         storyScroll.setVisible(true);
         storyScroll.setManaged(true);
         assessmentScroll.setVisible(false);
@@ -223,7 +247,7 @@ public final class GameplayController {
         showSceneAssets(node);
         showCharacterImage(node);
         storyText.setText(node.dialogueText());
-        footerText.setText("Story choices change the narrative. They do not affect your reading score.");
+        navigator.recordStoryLine(loaded.view().state().studentId(), loaded.view().state().chapterId(), node);
         applyReadingFontScale();
         sizeDialogueViewport();
         animateStoryPanelEntrance();
@@ -231,6 +255,8 @@ public final class GameplayController {
         if (!node.storyChoices().isEmpty()) {
             storyNextButton.setVisible(false);
             storyNextButton.setManaged(false);
+            gameplayFooter.setVisible(false);
+            gameplayFooter.setManaged(false);
             for (StoryChoice choice : node.storyChoices()) {
                 Button button = new Button(choice.choiceText());
                 button.setId("story-choice-" + choice.choiceId());
@@ -243,6 +269,8 @@ public final class GameplayController {
                 storyChoices.getChildren().add(button);
             }
         } else {
+            gameplayFooter.setVisible(true);
+            gameplayFooter.setManaged(true);
             storyNextButton.setText("NEXT");
             storyNextButton.setVisible(true);
             storyNextButton.setManaged(true);
@@ -252,40 +280,60 @@ public final class GameplayController {
     }
 
     private void showCharacterImage(StoryNode node) {
-        speakerImage.setImage(null);
-        speakerImage.setVisible(false);
-        speakerImage.setManaged(false);
-        speakerImage.setOpacity(1);
-        speakerImage.setTranslateX(0);
-        if (!navigator.characterArtworkEnabled() || node.speakerAssetKey().isBlank() || !node.cgAssetKey().isBlank()) {
-            speakerInitials.setVisible(!node.speakerName().isBlank());
-            speakerInitials.setManaged(!node.speakerName().isBlank());
-            return;
-        }
+        Image previous = speakerImage.getImage();
+        Image active = null;
+        Image supporting = null;
+        String supportingName = "";
         try {
-            String configuredRoot = System.getenv().getOrDefault("ARG_ASSET_DIR", "assets");
-            assets.findCharacterImage(node.speakerAssetKey(), Path.of(configuredRoot)).ifPresent(path -> {
-                Image image = characterImageCache.computeIfAbsent(path,
-                        imagePath -> new Image(imagePath.toUri().toString(), 640, 900, true, true, false));
-                if (!image.isError()) {
-                    speakerImage.setImage(image);
-                    speakerImage.setAccessibleText(node.speakerName());
-                    speakerImage.setVisible(true);
-                    speakerImage.setManaged(true);
-                    speakerInitials.setVisible(false);
-                    speakerInitials.setManaged(false);
-                    animatePortraitEntrance();
+            if (navigator.characterArtworkEnabled() && node.cgAssetKey().isBlank()) {
+                Path root = Path.of(System.getenv().getOrDefault("ARG_ASSET_DIR", "assets"));
+                active = characterImage(node.speakerAssetKey(), root);
+                var direction = navigator.stageDirections().forNode(loaded.view().state().chapterId(), node.storyNodeId());
+                if (active != null && !node.speakerName().isBlank() && direction.isPresent()) {
+                    supporting = characterImage(direction.get().assetKey(), root);
+                    supportingName = direction.get().name();
                 }
-            });
+            }
         } catch (RuntimeException invalidAssetDirectory) {
-            speakerInitials.setVisible(!node.speakerName().isBlank());
-            speakerInitials.setManaged(!node.speakerName().isBlank());
+            // Missing or invalid optional artwork falls back to the speaker's initials.
         }
+        if (supporting == active) supporting = null;
+        speakerImage.setImage(active);
+        speakerImage.setAccessibleText(node.speakerName());
+        speakerImage.setVisible(active != null);
+        speakerImage.setManaged(active != null);
+        supportingImage.setImage(supporting);
+        supportingImage.setAccessibleText(supporting == null ? "" : "Supporting character: " + supportingName);
+        supportingImage.setVisible(supporting != null);
+        supportingImage.setManaged(supporting != null);
+        speakerInitials.setVisible(active == null && !node.speakerName().isBlank());
+        speakerInitials.setManaged(active == null && !node.speakerName().isBlank());
+        updatePortraitImageSizes();
+        if (active != null && active != previous) animatePortraitEntrance();
+        else if (active == null) {
+            if (portraitFade != null) portraitFade.stop();
+            if (portraitSlide != null) portraitSlide.stop();
+            speakerImage.setOpacity(1);
+            speakerImage.setTranslateX(0);
+        }
+    }
+
+    private Image characterImage(String key, Path root) {
+        return assets.findCharacterImage(key, root).map(path -> {
+            Image image = characterImageCache.computeIfAbsent(path,
+                    item -> new Image(item.toUri().toString(), 640, 900, true, true, false));
+            return image.isError() ? null : image;
+        }).orElse(null);
     }
 
     private void animatePortraitEntrance() {
         if (portraitFade != null) portraitFade.stop();
         if (portraitSlide != null) portraitSlide.stop();
+        if (navigator.reducedMotion()) {
+            speakerImage.setOpacity(1);
+            speakerImage.setTranslateX(0);
+            return;
+        }
         speakerImage.setOpacity(0.72);
         speakerImage.setTranslateX(14);
         portraitFade = new FadeTransition(Duration.millis(180), speakerImage);
@@ -300,6 +348,10 @@ public final class GameplayController {
 
     private void animateStoryPanelEntrance() {
         if (storyPanelFade != null) storyPanelFade.stop();
+        if (navigator.reducedMotion()) {
+            storyPanel.setOpacity(1);
+            return;
+        }
         storyPanel.setOpacity(0.88);
         storyPanelFade = new FadeTransition(Duration.millis(150), storyPanel);
         storyPanelFade.setFromValue(0.88);
@@ -319,32 +371,60 @@ public final class GameplayController {
     }
 
     private void showSceneAssets(StoryNode node) {
-        artworkLayer.clear();
-        illustrationButton.setVisible(false);
-        illustrationButton.setManaged(false);
+        Path scenePath = null;
+        Path illustrationPath = null;
         try {
             Path root = Path.of(System.getenv().getOrDefault("ARG_ASSET_DIR", "assets"));
             if (!node.sceneAssetKey().isBlank()) {
-                storyAssets.findSceneImage(node.sceneAssetKey(), root).ifPresent(path -> {
-                    Image image = new Image(path.toUri().toString(), 1280, 720, false, true, false);
-                    if (!image.isError()) {
-                        artworkLayer.setSceneImage(image);
-                    }
-                });
+                scenePath = storyAssets.findSceneImage(node.sceneAssetKey(), root).orElse(null);
             }
             if (!node.cgAssetKey().isBlank()) {
-                storyAssets.findCgImage(node.cgAssetKey(), root).ifPresent(path -> {
-                    Image image = new Image(path.toUri().toString(), 1280, 720, true, true, false);
-                    if (!image.isError()) {
-                        artworkLayer.setIllustration(image);
-                        illustrationButton.setVisible(true);
-                        illustrationButton.setManaged(true);
-                    }
-                });
+                illustrationPath = storyAssets.findCgImage(node.cgAssetKey(), root).orElse(null);
             }
         } catch (RuntimeException invalidAssetDirectory) {
             // Optional art never prevents the story text from being displayed.
         }
+        Image scene = loadOptionalStoryImage(sceneImageCache, scenePath);
+        Path nextScenePath = scene == null ? null : scenePath;
+        if (!Objects.equals(currentScenePath, nextScenePath)) {
+            artworkLayer.setSceneImage(scene);
+            currentScenePath = nextScenePath;
+            animateSceneEntrance(scene != null);
+        }
+        Image illustration = loadOptionalStoryImage(illustrationImageCache, illustrationPath);
+        artworkLayer.setIllustration(illustration);
+        illustrationButton.setVisible(illustration != null);
+        illustrationButton.setManaged(illustration != null);
+    }
+
+    private Image loadOptionalStoryImage(Map<Path, Image> cache, Path path) {
+        if (path == null) return null;
+        try {
+            Image image = cache.computeIfAbsent(path,
+                    item -> new Image(item.toUri().toString(), 1280, 720, true, true, false));
+            return image.isError() ? null : image;
+        } catch (RuntimeException unavailable) {
+            return null;
+        }
+    }
+
+    private void animateSceneEntrance(boolean hasScene) {
+        if (sceneFade != null) sceneFade.stop();
+        artworkLayer.setOpacity(1);
+        if (!hasScene || navigator.reducedMotion()) return;
+        sceneFade = new FadeTransition(Duration.millis(180), artworkLayer);
+        sceneFade.setFromValue(0.82);
+        sceneFade.setToValue(1.0);
+        sceneFade.play();
+    }
+
+    private void clearSceneAssets() {
+        if (sceneFade != null) sceneFade.stop();
+        artworkLayer.setOpacity(1);
+        artworkLayer.clear();
+        illustrationButton.setVisible(false);
+        illustrationButton.setManaged(false);
+        currentScenePath = null;
     }
 
     @FXML private void viewIllustration() {
@@ -363,9 +443,75 @@ public final class GameplayController {
         dialog.showAndWait();
     }
 
+    @FXML private void openStoryLog() {
+        if (navigator.workInProgress()) return;
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Story log");
+        dialog.setHeaderText("Lines read in this session");
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.getDialogPane().setPrefWidth(700);
+        VBox entries = new VBox(12);
+        Label note = new Label("The latest 500 story lines read in this session appear here. Loading a save starts a new log.");
+        note.setWrapText(true);
+        note.getStyleClass().add("dialog-note");
+        note.setStyle("-fx-font-size: " + (14 * navigator.readingFontScale()) + "px;");
+        entries.getChildren().add(note);
+        if (navigator.storyLog().isEmpty()) {
+            Label empty = new Label("No story lines have been read in this session yet.");
+            empty.setWrapText(true);
+            entries.getChildren().add(empty);
+        }
+        for (AppNavigator.StoryLogEntry entry : navigator.storyLog()) {
+            String speaker = entry.speaker().isBlank() ? "NARRATION" : entry.speaker();
+            if (entry.thought()) speaker += " - THOUGHT";
+            Label heading = new Label(speaker);
+            heading.getStyleClass().add("story-log-speaker");
+            heading.setStyle("-fx-font-size: " + (16 * navigator.readingFontScale()) + "px;");
+            Label text = new Label(entry.text());
+            text.setWrapText(true);
+            text.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+            text.getStyleClass().add("story-log-text");
+            text.setStyle("-fx-font-size: " + (18 * navigator.readingFontScale()) + "px;");
+            VBox row = new VBox(5, heading, text);
+            row.getStyleClass().add("history-record");
+            entries.getChildren().add(row);
+        }
+        ScrollPane scroll = new ScrollPane(entries);
+        scroll.setFitToWidth(true);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scroll.setPrefViewportHeight(Math.min(380, navigator.stage().getHeight() * 0.55));
+        scroll.setAccessibleText("Story lines read in this session");
+        dialog.getDialogPane().setContent(scroll);
+        navigator.styleDialog(dialog);
+        dialog.setOnShown(event -> javafx.application.Platform.runLater(() -> scroll.setVvalue(scroll.getVmax())));
+        dialog.showAndWait();
+    }
+
+    private void setStoryPresentation(boolean story) {
+        setStyleClass(gameplayRoot, "story-screen", story);
+        setStyleClass(centerRoot, "story-stage", story);
+        setStyleClass(gameplayHeader, "story-header", story);
+        setStyleClass(gameplayFooter, "story-footer", story);
+        storyLogButton.setVisible(true);
+        storyLogButton.setManaged(true);
+        footerText.setVisible(!story);
+        footerText.setManaged(!story);
+        fontNotice.setVisible(!story && !fontNotice.getText().isEmpty());
+        fontNotice.setManaged(!story && !fontNotice.getText().isEmpty());
+        gameplayFooter.setAlignment(story ? Pos.CENTER_RIGHT : Pos.CENTER);
+        gameplayFooter.setVisible(true);
+        gameplayFooter.setManaged(true);
+    }
+
+    private static void setStyleClass(javafx.scene.Node node, String style, boolean enabled) {
+        node.getStyleClass().remove(style);
+        if (enabled) node.getStyleClass().add(style);
+    }
+
     private void showAssessment(AccountGameService.GameView view,
                                 List<AssessmentService.QuestionPrompt> questions) {
-        artworkLayer.clear();
+        setStoryPresentation(false);
+        clearSceneAssets();
         storyScroll.setVisible(false);
         storyScroll.setManaged(false);
         storyNextButton.setVisible(false);

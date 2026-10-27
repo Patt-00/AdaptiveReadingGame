@@ -72,6 +72,30 @@ Set `ARG_ASSET_DIR` only when the `characters`, `scenes`, and `cg` folders are i
 
 The artwork paths have Git LFS rules in `.gitattributes`. Git LFS handles those files when they are added and committed. Keep the source files from the shared Drive folder unchanged. `Emrys_Angry.png` and the second file with the same source name are kept under distinct keys. The `Robert_Serious` source file is saved with a `.png` extension.
 
+## Optional supporting characters
+
+An optional stage-directions file can show one supporting character beside the named speaker. The app looks for `assets/content/stage-directions.json` at startup. Set `ARG_STAGE_DIRECTIONS` to another local JSON file to use a different set of cues. Restart the app after changing the file.
+
+Each cue identifies the story pack's chapter `id` and node `id`, then names the supporting character and an asset key from `assets/characters/`. The example below uses placeholder IDs and does not describe the current story.
+
+```json
+{
+  "formatVersion": 1,
+  "directions": [
+    {
+      "chapter": "chapter-source-id",
+      "node": "story-node-id",
+      "name": "Companion",
+      "assetKey": "Companion_Neutral"
+    }
+  ]
+}
+```
+
+Use at most 1,000 cues in a file no larger than 1 MiB. Each chapter and node pair must appear once. Chapter IDs, node IDs, and asset keys start with a letter or number and may also contain dots, underscores, and hyphens. Chapter and node IDs are limited to 100 characters; asset keys are limited to 80 characters. The supporting name must be nonempty, at most 80 characters, and contain no control characters. The loader rejects unknown or missing fields.
+
+A supporting image appears only when the node has a named speaker with available character artwork, no CG illustration, and character artwork is enabled in Settings. If the cue file is absent, the app uses the existing single-speaker layout. If the file is invalid or an image is missing, dialogue remains available; an invalid file also produces a notice in Settings. Cues affect presentation only and are not stored in saves or used for scoring.
+
 ## Draft content gaps
 
 The source snapshot and the mapping to playable node IDs are in [the source guide](content/source/README.md). The current chapter ID is `hailey-investigation-reading-draft`. The opening notice, checkpoint passages, and answer explanations identify the provisional answer keys.

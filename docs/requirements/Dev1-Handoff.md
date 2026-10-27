@@ -109,6 +109,7 @@ The runtime reads versioned story content instead of compiling authored dialogue
 5. Keep the player flow text-only. Do not add voice fields or audio controls.
 6. The live screens are `how-to-play.fxml`, `gameplay.fxml`, `results.fxml`, and `analysis.fxml`. The 40 `uiux-*.fxml` files remain visual references, not separate runtime routes.
 7. Keep the draft ending unresolved. Confirm the Owen/Ellis naming mismatch, the hard Study question's omitted clue, and all provisional answer keys with the group.
+8. Add supporting-character cues only when the story author confirms who is present. Use the optional stage-directions file in [the content-pack guide](../../assets/README.md); cues change presentation and are not stored in saves.
 
 ## MySQL adapter and content validation
 
@@ -156,6 +157,8 @@ The latest player-flow work is recorded in [gameplay repair and verification, 20
 The current visual update is recorded in [gameplay visual polish and verification, 2026-10-27](Dev1-Visual-Polish-Verification-2026-10-27.md). It preserves the existing burgundy, gold, white, and serif direction, uses the mapped group art on a more cinematic story stage, and leaves the draft boundary unchanged.
 
 The runtime UI accessibility checks are recorded in [runtime UI accessibility and consistency QA, 2026-10-27](Dev1-UI-Accessibility-QA-2026-10-27.md). The report covers disabled-button readability, keyboard focus, accessible labels, save-slot descriptions, and the desktop-test limits.
+
+The latest story presentation, Story Log, reduced motion, optional character staging, and verification are recorded in [visual-novel player experience QA, 2026-10-27](Dev1-Visual-Novel-QA-2026-10-27.md).
 
 Focused tests cover authentication, account isolation, both adaptive route orders, difficulty variants, first-answer-only scoring, asset fallbacks, feedback, results, save/load/resume, and MySQL checkpoint persistence. Opt-in JavaFX tests still use test fixtures; they do not certify the group's final story or question copy.
 
