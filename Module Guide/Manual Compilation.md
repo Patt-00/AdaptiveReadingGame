@@ -70,10 +70,10 @@ $javafxLib = (Resolve-Path ".\Modules\javafx-sdk-21.0.5\lib").Path
 $javaSources = @(Get-ChildItem ".\src\main\java" -Recurse -Filter *.java | ForEach-Object { $_.FullName })
 
 # Compile into bin. Run the next command only if this succeeds.
-javac --release 21 --module-path "$javafxLib" --add-modules javafx.controls,javafx.fxml -cp ".\Modules\dependencies\*" -encoding UTF-8 -d .\bin @javaSources
+javac --release 21 --module-path "$javafxLib" --add-modules javafx.controls,javafx.fxml,javafx.media -cp ".\Modules\dependencies\*" -encoding UTF-8 -d .\bin @javaSources
 
 # Run the JavaFX application.
-java --enable-native-access=javafx.graphics --module-path "$javafxLib" --add-modules javafx.controls,javafx.fxml -cp "bin;src/main/resources;Modules/dependencies/*" com.adaptivereadinggame.AdaptiveReadingGameApp
+java --enable-native-access=javafx.graphics,javafx.media --module-path "$javafxLib" --add-modules javafx.controls,javafx.fxml,javafx.media -cp "bin;src/main/resources;Modules/dependencies/*" com.adaptivereadinggame.AdaptiveReadingGameApp
 ```
 
 These commands are for **PowerShell**, not Windows Command Prompt. Keep using the same terminal so `$javafxLib` remains available.
@@ -95,10 +95,10 @@ javafx_lib="$PWD/Modules/javafx-sdk-21.0.5/lib"
 mapfile -d '' -t java_sources < <(find src/main/java -type f -name '*.java' -print0)
 
 # Compile into bin. Run the next command only if this succeeds.
-javac --release 21 --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml -cp "Modules/dependencies/*" -encoding UTF-8 -d bin "${java_sources[@]}"
+javac --release 21 --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml,javafx.media -cp "Modules/dependencies/*" -encoding UTF-8 -d bin "${java_sources[@]}"
 
 # Run the JavaFX application.
-java --enable-native-access=javafx.graphics --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml -cp "bin:src/main/resources:Modules/dependencies/*" com.adaptivereadinggame.AdaptiveReadingGameApp
+java --enable-native-access=javafx.graphics,javafx.media --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml,javafx.media -cp "bin:src/main/resources:Modules/dependencies/*" com.adaptivereadinggame.AdaptiveReadingGameApp
 ```
 
 These source-collection commands require Bash. Keep using the same terminal so the variables remain available.
@@ -120,10 +120,10 @@ javafx_lib="$PWD/Modules/javafx-sdk-21.0.5/lib"
 java_sources=(src/main/java/**/*.java(N))
 
 # Compile into bin. Run the next command only if this succeeds.
-javac --release 21 --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml -cp "Modules/dependencies/*" -encoding UTF-8 -d bin "${java_sources[@]}"
+javac --release 21 --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml,javafx.media -cp "Modules/dependencies/*" -encoding UTF-8 -d bin "${java_sources[@]}"
 
 # Run the JavaFX application.
-java --enable-native-access=javafx.graphics --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml -cp "bin:src/main/resources:Modules/dependencies/*" com.adaptivereadinggame.AdaptiveReadingGameApp
+java --enable-native-access=javafx.graphics,javafx.media --module-path "$javafx_lib" --add-modules javafx.controls,javafx.fxml,javafx.media -cp "bin:src/main/resources:Modules/dependencies/*" com.adaptivereadinggame.AdaptiveReadingGameApp
 ```
 
 The source-collection syntax above is for **zsh**, the default shell on modern macOS. Keep using the same terminal so the variables remain available.
@@ -134,11 +134,11 @@ The source-collection syntax above is for **zsh**, the default shell on modern m
 |---|---|
 | `--release 21` | Compile for Java 21, matching the project's Maven configuration. |
 | `--module-path` | Tell Java where to find JavaFX modules. |
-| `--add-modules javafx.controls,javafx.fxml` | Enable JavaFX controls and FXML loading. |
+| `--add-modules javafx.controls,javafx.fxml,javafx.media` | Enable JavaFX controls, FXML loading, and audio playback. |
 | `-encoding UTF-8` | Read source files using UTF-8. |
 | `-d bin` | Put compiled classes in the project-root `bin` directory. |
 | `-cp` | Locate compiled classes and resources when running. |
-| `--enable-native-access=javafx.graphics` | Allow JavaFX graphics to access native platform libraries. |
+| `--enable-native-access=javafx.graphics,javafx.media` | Allow JavaFX graphics and media to access native platform libraries. |
 
 Windows separates classpath entries with `;`. Linux and macOS use `:`. The resource folder is included so CSS, FXML, and images placed there can be loaded from the classpath without copying them into `bin`.
 

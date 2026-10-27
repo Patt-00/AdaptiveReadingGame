@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import com.adaptivereadinggame.view.StoryArtworkPane?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane fx:id="splashRoot" minWidth="0" minHeight="0" styleClass="splash-root"
+           xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.adaptivereadinggame.controller.SplashController">
+    <StoryArtworkPane fx:id="splashArtwork"/>
+    <Pane styleClass="splash-vignette" mouseTransparent="true"/>
+    <Pane fx:id="portraitLayer" minWidth="0" minHeight="0" mouseTransparent="true">
+        <ImageView fx:id="heroPortrait" managed="false" preserveRatio="true" smooth="true"
+                   accessibleText="Illustration of Hailey"/>
+    </Pane>
+    <BorderPane minWidth="0" minHeight="0" styleClass="splash-layout" pickOnBounds="false">
+        <top>
+            <Label text="A STORY-DRIVEN READING GAME" styleClass="splash-eyebrow"/>
+        </top>
+        <center>
+            <VBox fx:id="titleCard" alignment="CENTER_LEFT" spacing="10" minWidth="0" maxWidth="620"
+                  styleClass="splash-card" BorderPane.alignment="CENTER_LEFT">
+                <Label text="ADAPTIVE" styleClass="splash-title"/>
+                <Label text="READING GAME" styleClass="splash-title"/>
+                <Pane prefHeight="2" maxWidth="300" styleClass="splash-rule"/>
+                <Label text="Read carefully. Follow the clues." wrapText="true" minHeight="-Infinity"
+                       styleClass="splash-subtitle"/>
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <Button fx:id="beginButton" text="BEGIN" defaultButton="true" onAction="#begin"
+                            accessibleText="Begin and open the welcome screen" styleClass="splash-begin"/>
+                    <Button text="AUDIO SETTINGS" onAction="#audioSettings" styleClass="splash-audio"/>
+                </HBox>
+                <Label text="Press Enter or select Begin" styleClass="splash-hint"/>
+            </VBox>
+        </center>
+    </BorderPane>
+</StackPane>

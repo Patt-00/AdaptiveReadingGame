@@ -285,6 +285,8 @@ public final class MenuController {
         }
     }
 
+    @FXML private void audioSettings() { navigator.showAudioSettings(); }
+
     @FXML private void quit() { navigator.requestQuit(); }
 
     private boolean allowDiscard(String title) {

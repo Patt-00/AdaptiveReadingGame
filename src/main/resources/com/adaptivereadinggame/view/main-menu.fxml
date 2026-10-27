@@ -22,18 +22,20 @@
                 <SVGPath styleClass="menu-flourish" content="M 316 88 C 291 22 233 26 206 63 C 164 119 82 92 71 55 C 61 19 102 6 115 29 C 129 53 97 49 105 34 M 316 88 C 275 49 232 61 190 78 C 149 95 122 80 150 54 C 177 31 239 36 259 65 C 284 99 248 104 237 88 M 316 88 C 277 18 219 18 171 44 C 120 70 66 116 21 75 C -18 39 7 -10 37 0 C 69 10 45 35 42 20 M 316 88 C 302 52 228 61 176 30 C 118 -5 138 48 230 64"/>
                 <SVGPath layoutX="324" scaleX="-1" styleClass="menu-flourish" content="M 316 88 C 291 22 233 26 206 63 C 164 119 82 92 71 55 C 61 19 102 6 115 29 C 129 53 97 49 105 34 M 316 88 C 275 49 232 61 190 78 C 149 95 122 80 150 54 C 177 31 239 36 259 65 C 284 99 248 104 237 88 M 316 88 C 277 18 219 18 171 44 C 120 70 66 116 21 75 C -18 39 7 -10 37 0 C 69 10 45 35 42 20 M 316 88 C 302 52 228 61 176 30 C 118 -5 138 48 230 64"/>
             </Group>
+            <Label text="YOUR ADVENTURE" styleClass="menu-section-label"/>
             <VBox fx:id="menuOptions" alignment="CENTER" spacing="6" maxWidth="660">
-                <Button text="NEW GAME" onAction="#newGame" styleClass="menu-option,menu-primary"/>
-                <Button fx:id="continueButton" text="CONTINUE" onAction="#continueGame" disable="true" accessibleHelp="No saved game is available." styleClass="menu-option"/>
-                <Button text="SAVE/LOAD" onAction="#saveLoad" styleClass="menu-option"/>
-                <Button text="SETTINGS" onAction="#settings" styleClass="menu-option"/>
-                <Button text="QUIT" onAction="#quit" styleClass="menu-option"/>
+                <Button text="NEW GAME" onAction="#newGame" prefWidth="350" maxWidth="350" styleClass="menu-option,menu-primary"/>
+                <Button fx:id="continueButton" text="CONTINUE" onAction="#continueGame" prefWidth="350" maxWidth="350" disable="true" accessibleHelp="No saved game is available." styleClass="menu-option,menu-secondary"/>
+                <Button text="SAVE/LOAD" onAction="#saveLoad" prefWidth="350" maxWidth="350" styleClass="menu-option,menu-secondary"/>
+                <Button text="SETTINGS" onAction="#settings" prefWidth="350" maxWidth="350" styleClass="menu-option,menu-secondary"/>
+                <Button text="QUIT" onAction="#quit" prefWidth="350" maxWidth="350" styleClass="menu-option,menu-secondary"/>
             </VBox>
             <Label fx:id="continueStatusLabel" alignment="CENTER" wrapText="true" minHeight="-Infinity"
                    maxWidth="660" styleClass="account-note"/>
             <Label fx:id="accountLabel" alignment="CENTER" wrapText="true" minHeight="-Infinity" styleClass="account-note"/>
             <HBox fx:id="accountActions" alignment="CENTER" spacing="24">
                 <Button text="READING HISTORY" onAction="#history" styleClass="account-link"/>
+                <Button text="AUDIO SETTINGS" onAction="#audioSettings" styleClass="account-link"/>
                 <Button text="LOG OUT" onAction="#logout" styleClass="account-link"/>
             </HBox>
             <Label fx:id="runtimeLabel" alignment="CENTER" wrapText="true" minHeight="-Infinity" styleClass="runtime-note"/>

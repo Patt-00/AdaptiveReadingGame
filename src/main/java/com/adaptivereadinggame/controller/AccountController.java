@@ -47,6 +47,7 @@ public final class AccountController {
 
     @FXML private void chooseLogin() { showForm(false); }
     @FXML private void chooseSignup() { showForm(true); }
+    @FXML private void audioSettings() { navigator.showAudioSettings(); }
 
     @FXML private void showSelection() {
         if (navigator.workInProgress()) return;

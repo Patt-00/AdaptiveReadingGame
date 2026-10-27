@@ -9,6 +9,7 @@ This version connects account services, adaptive story checkpoints, MySQL reposi
 - JDK 21 or newer; the project compiles for Java 21.
 - Maven available on the terminal PATH.
 - JavaFX 21.0.5 dependencies are managed by Maven.
+- Git LFS is needed to download the bundled music, large artwork, and optional model weights when cloning the repository.
 
 Run these commands from the project root:
 
@@ -17,7 +18,7 @@ mvn -B -DskipTests compile
 mvn javafx:run
 ```
 
-The launch class is `com.adaptivereadinggame.AdaptiveReadingGameApp`. It opens authentication, then the main menu after a successful login.
+The launch class is `com.adaptivereadinggame.AdaptiveReadingGameApp`. It opens a title screen with a Begin button, then authentication and the main menu after a successful login.
 
 With no database settings, the app uses visibly labeled in-memory development storage. To use MySQL, set `ARG_DB_URL`, `ARG_DB_USER`, and `ARG_DB_PASSWORD`, then apply the schema described in [database setup](database/README.md).
 
@@ -31,6 +32,7 @@ For commands without Maven, see [Manual Compilation](Module%20Guide/Manual%20Com
 
 ## Current status
 
+- The title screen uses the available palace and character artwork. Begin immediately opens the welcome screen, and Audio Settings is available before login.
 - Main menu layout: title, decorative divider, New Game, Continue, Save/Load, Settings, and Quit.
 - Menus keep readable text as the window changes size and scroll when needed. Hover and keyboard focus states remain available.
 - Working signup/login/logout with normalized usernames, protected password verifiers, and matching account/student IDs.
@@ -47,13 +49,14 @@ For commands without Maven, see [Manual Compilation](Module%20Guide/Manual%20Com
 - MySQL adapters persist accounts, episodes, route choices, checkpoints, first-answer drafts, checkpoint results, decision sources, and three full-save slots. The schema migrations V001 through V004 are in `database/migrations/`.
 - Generic story transitions keep narrative choices separate from comprehension scoring. MySQL and in-memory adapters store chapter graphs and first-answer drafts; unfinished assessments can restore from their stored first answers.
 - The live app uses `how-to-play.fxml`, `gameplay.fxml`, `results.fxml`, and `analysis.fxml` for the adaptive story and checkpoint flow. The 40 `uiux-*.fxml` files remain visual references. The player can make story choices and answer the separate checkpoint question.
-- Settings provide session-only reading text-size, character-art, and reduced-motion controls. The reading flow uses text and images, with no audio control or media dependency.
+- Settings provide session-only reading text-size, character-art, and reduced-motion controls. Audio Settings provides separate session-only volume controls for music and sound effects.
+- The title, welcome, login, and main menu play optional background music. Button actions can play a click sound. Story and reading screens remain free of background music.
 - Story Log shows up to 500 previously viewed story lines in the current session. Starting a chapter, loading saved progress, or signing out starts a fresh log. Reading questions and answers are not added.
 - Optional author-supplied stage directions can show a supporting character beside the current speaker. The [story content and art guide](assets/README.md) describes the cue file and fallback behavior.
 - Java integrates an optional local Qwen recommendation behind `DifficultyPolicy`. Java scores first answers, summarizes stored history, validates the recommendation, and applies the fallback. The Python helper returns one label and receives no account IDs or raw answers.
 - Qwen stays experimental and is not a trained reading-level classifier. Java holds the current level until three consecutive sections at the same difficulty exist, checks model suggestions, and applies its fallback. The pinned weight uses Git LFS, and the supplied image paths have Git LFS rules.
 
-Backend tests, JavaFX UI tests, a disposable-MySQL integration test, Python helper contract tests, and an opt-in real-model smoke test cover their respective code paths. The version-2 draft pack has in-memory route and difficulty coverage plus MySQL save and restore coverage. The group has not approved its answer keys, main character, suspect, or ending. The model quality remains unverified. Teacher and parent reporting are outside the student-game scope. See the [visual-novel player experience QA](docs/requirements/Dev1-Visual-Novel-QA-2026-10-27.md) for the latest visual and interaction checks. Earlier gameplay repair, visual polish, and accessibility reports remain historical records.
+Backend tests, JavaFX UI tests, a disposable-MySQL integration test, Python helper contract tests, and an opt-in real-model smoke test cover their respective code paths. The version-2 draft pack has in-memory route and difficulty coverage plus MySQL save and restore coverage. The group has not approved its answer keys, main character, suspect, or ending. The model quality remains unverified. Teacher and parent reporting are outside the student-game scope. See the [title screen and sound QA](docs/requirements/Dev1-Splash-Audio-QA-2026-10-27.md) and the [visual-novel player experience QA](docs/requirements/Dev1-Visual-Novel-QA-2026-10-27.md). Earlier gameplay repair, visual polish, and accessibility reports remain historical records.
 
 ## Current implementation ownership
 
@@ -99,10 +102,12 @@ AdaptiveReadingGame/
 |   |   |-- MainController.java     Deprecated launcher forwarding to the main app
 |   |   `-- com/adaptivereadinggame/
 |   |       |-- ai/                 Java model client and recommendation service
+|   |       |-- audio/              Music and click sound playback
 |   |       |-- content/            Versioned story packs and safe asset lookup
 |   |       |-- AdaptiveReadingGameApp.java
 |   |       |-- backend/             BackendContext composition and console demo
 |   |       |-- controller/
+|   |       |   |-- SplashController.java
 |   |       |   |-- MenuController.java
 |   |       |   |-- GameplayController.java
 |   |       |   |-- ResultsController.java
@@ -142,7 +147,9 @@ AdaptiveReadingGame/
 |   |           |-- memory/         Development-only storage adapters
 |   |           `-- mysql/          MySQL adapters and migration runner
 |   `-- resources/com/adaptivereadinggame/
+|       |-- audio/                  Music and generated click sound
 |       |-- view/
+|       |   |-- splash.fxml
 |       |   |-- account.fxml
 |       |   |-- main-menu.fxml
 |       |   |-- gameplay.fxml
@@ -181,6 +188,7 @@ Current account, content, storage, and gameplay connection:
 ```text
 AdaptiveReadingGameApp
     -> AppNavigator (one BackendContext)
+    -> splash.fxml -> SplashController -> welcome screen
     -> account.fxml -> AccountController -> AccountGameService
     -> main-menu.fxml -> MenuController -> AccountGameService
     -> gameplay.fxml -> GameplayController -> AccountGameService

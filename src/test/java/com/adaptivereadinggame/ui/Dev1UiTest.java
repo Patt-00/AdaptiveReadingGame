@@ -165,11 +165,103 @@ class Dev1UiTest {
             new Robot().keyRelease(KeyCode.TAB);
             return null;
         });
+        await(() -> button("AUDIO SETTINGS").isFocused());
+        fx(() -> {
+            assertVisibleFocusRing(button("AUDIO SETTINGS"), Color.web("#655438"));
+            new Robot().keyPress(KeyCode.TAB);
+            new Robot().keyRelease(KeyCode.TAB);
+            return null;
+        });
         await(() -> button("LOG OUT").isFocused());
         fx(() -> {
             assertVisibleFocusRing(button("LOG OUT"), Color.web("#655438"));
             return null;
         });
+    }
+
+    @Test void splashUsesTheAvailableArtworkAndLetsThePlayerBegin() throws Exception {
+        fx(() -> {
+            stage = new Stage();
+            navigator = new AppNavigator(stage, BackendContext.inMemory(), "Temporary storage");
+            navigator.audio().setVolumes(0, 0);
+            stage.setWidth(760);
+            stage.setHeight(520);
+            navigator.start();
+            stage.toFront();
+            stage.requestFocus();
+            return null;
+        });
+        await(() -> root().lookup("#splashRoot") != null);
+        for (int[] size : new int[][]{{760, 520}, {800, 600}, {1280, 720}, {1366, 768}}) {
+            fx(() -> { stage.setWidth(size[0]); stage.setHeight(size[1]); return null; });
+            Thread.sleep(180);
+            fx(() -> {
+                for (String action : List.of("BEGIN", "AUDIO SETTINGS")) {
+                    Button control = button(action);
+                    Bounds bounds = control.localToScene(control.getBoundsInLocal());
+                    assertTrue(root().getLayoutBounds().contains(bounds.getMinX(), bounds.getMinY())
+                            && root().getLayoutBounds().contains(bounds.getMaxX(), bounds.getMaxY()), action);
+                    assertTrue(control.getWidth() >= control.prefWidth(-1) - 1, action + " must show its label");
+                }
+                ImageView portrait = (ImageView) root().lookup("#heroPortrait");
+                if (Boolean.getBoolean("arg.ui.expectMissingSplashArt")) {
+                    assertNull(portrait.getImage(), "Unreadable optional portrait must fall back safely.");
+                    assertNull(((ImageView) root().lookup("#sceneImage")).getImage(),
+                            "Unreadable optional background must fall back safely.");
+                }
+                if (portrait.getImage() != null) {
+                    Bounds bounds = portrait.localToScene(portrait.getBoundsInLocal());
+                    assertTrue(bounds.getMaxX() > stage.getScene().getWidth() * 0.8,
+                            "The splash portrait must remain on the right after resizing.");
+                    assertTrue(bounds.getMaxY() <= stage.getScene().getHeight() + 1);
+                }
+                if (size[0] == 760) capture(root(), "splash-small");
+                if (size[0] == 1280) capture(root(), "splash-default");
+                return null;
+            });
+        }
+        robotClick(() -> button("AUDIO SETTINGS"));
+        awaitDialog("Adjust the sound");
+        robotClick(() -> dialogPane().lookupButton(ButtonType.CANCEL));
+        fx(() -> { button("BEGIN").requestFocus(); return null; });
+        fx(() -> { new Robot().keyPress(KeyCode.ENTER); new Robot().keyRelease(KeyCode.ENTER); return null; });
+        await(() -> root().lookup("#accountRoot") != null);
+    }
+
+    @Test void audioSettingsCanBeAppliedAndCanceledBeforeAndAfterLogin() throws Exception {
+        BackendContext backend = launch();
+        fx(() -> { stage.setWidth(760); stage.setHeight(520); return null; });
+        robotClick(() -> button("AUDIO SETTINGS"));
+        awaitDialog("Adjust the sound");
+        Thread.sleep(150);
+        fx(() -> {
+            assertTrue(dialogPane().getWidth() <= stage.getWidth(), "Audio settings must fit the minimum window width.");
+            Label credit = (Label) dialogPane().lookup("#musicCredit");
+            assertTrue(credit.getHeight() >= credit.prefHeight(credit.getWidth()) - 1,
+                    "The complete music credit must remain visible.");
+            capture(dialogPane(), "audio-settings-small");
+            ((Slider) dialogPane().lookup("#musicVolume")).setValue(0);
+            ((Slider) dialogPane().lookup("#effectsVolume")).setValue(0.6);
+            return null;
+        });
+        robotClick(() -> dialogPane().lookupButton(ButtonType.APPLY));
+        assertEquals(0, fx(() -> navigator.audio().musicVolume()), 0.001);
+        assertEquals(0.6, fx(() -> navigator.audio().effectsVolume()), 0.001);
+        robotClick(() -> button("AUDIO SETTINGS"));
+        awaitDialog("Adjust the sound");
+        fx(() -> { ((Slider) dialogPane().lookup("#effectsVolume")).setValue(0); return null; });
+        robotClick(() -> dialogPane().lookupButton(ButtonType.CANCEL));
+        assertEquals(0.6, fx(() -> navigator.audio().effectsVolume()), 0.001);
+        var game = backend.accountGameService();
+        game.signup("audio-reader", "Audio Reader", "StrongPass1!".toCharArray());
+        game.login("audio-reader", "StrongPass1!".toCharArray());
+        fx(() -> { navigator.showMenu(); return null; });
+        await(() -> root().lookup("#menuRoot") != null);
+        robotClick(() -> button("AUDIO SETTINGS"));
+        awaitDialog("Adjust the sound");
+        assertEquals(0, fx(() -> ((Slider) dialogPane().lookup("#musicVolume")).getValue()), 0.001);
+        assertEquals(0.6, fx(() -> ((Slider) dialogPane().lookup("#effectsVolume")).getValue()), 0.001);
+        robotClick(() -> dialogPane().lookupButton(ButtonType.CANCEL));
     }
 
     @Test void illustratedViewportStaysBoundedAcrossWindowSizesAndReadingScales() throws Exception {
@@ -1655,7 +1747,9 @@ class Dev1UiTest {
         fx(() -> {
             stage = new Stage();
             navigator = new AppNavigator(stage, backend, storageDescription, stageDirections);
+            navigator.audio().setVolumes(0, 0);
             navigator.start();
+            navigator.showAccount();
             stage.toFront();
             stage.requestFocus();
             capture(root(), "welcome");

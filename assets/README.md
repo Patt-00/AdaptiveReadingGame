@@ -66,7 +66,13 @@ Keep only the key in the story pack. Do not store absolute paths. Keys use lette
 | `sceneAssetKey` | `assets/scenes/` | `.png`, `.jpg`, `.jpeg` |
 | `cgAssetKey` | `assets/cg/` | `.png`, `.jpg`, `.jpeg` |
 
-The game displays written dialogue, questions, and images. It has no audio control or JavaFX media dependency. Missing images leave the text available.
+The game displays written dialogue, questions, and images. Missing images leave the text available.
+
+## Music and sound effects
+
+The title, welcome, login, and main menu use [Comfortable Mystery by Kevin MacLeod](https://incompetech.com/music/royalty-free/index.html?Search=Search&isrc=USUAN1100287), licensed under [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/). The track was converted from MP3 to PCM WAV for JavaFX playback and is bundled at `src/main/resources/com/adaptivereadinggame/audio/comfortable-mystery.wav`. The WAV is tracked with Git LFS. The game uses an original generated click tone at `src/main/resources/com/adaptivereadinggame/audio/click.wav`.
+
+Audio Settings is available on the title screen, welcome screen, and main menu. Music and effects have separate session-only volume sliders; setting a slider to zero mutes that sound. Music pauses during story and reading screens. The game remains usable if audio playback is unavailable.
 
 Set `ARG_ASSET_DIR` only when the `characters`, `scenes`, and `cg` folders are inside another trusted asset root. The default root is `assets/` in the project directory.
 

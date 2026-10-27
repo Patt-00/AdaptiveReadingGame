@@ -1,6 +1,8 @@
 package com.adaptivereadinggame.controller;
 
 import com.adaptivereadinggame.AdaptiveReadingGameApp;
+import com.adaptivereadinggame.audio.GameAudio;
+import com.adaptivereadinggame.audio.JavaFxAudioOutput;
 import com.adaptivereadinggame.backend.BackendContext;
 import com.adaptivereadinggame.content.StoryStageDirections;
 import com.adaptivereadinggame.model.StoryNode;
@@ -11,7 +13,13 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ButtonBase;
 import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
+import javafx.scene.layout.VBox;
+import javafx.geometry.Insets;
+import javafx.event.ActionEvent;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
@@ -35,6 +43,7 @@ public final class AppNavigator {
     private final BackendContext backend;
     private final String storageDescription;
     private final StoryStageDirections stageDirections;
+    private final GameAudio audio = new GameAudio(new JavaFxAudioOutput());
     private final String stageDirectionsNotice;
     private final boolean georgiaMissing = Font.getFamilies().stream()
             .noneMatch(family -> family.equalsIgnoreCase("Georgia"));
@@ -84,6 +93,7 @@ public final class AppNavigator {
     public void setCharacterArtworkEnabled(boolean enabled) { characterArtworkEnabled = enabled; }
     public boolean reducedMotion() { return reducedMotion; }
     public void setReducedMotion(boolean reduced) { reducedMotion = reduced; }
+    public GameAudio audio() { return audio; }
     public Optional<ChapterSummary> pendingChapter() { return Optional.ofNullable(pendingChapter); }
 
     public void clearStoryLog() {
@@ -118,13 +128,14 @@ public final class AppNavigator {
         stage.setTitle("Adaptive Reading Game");
         stage.setMinWidth(760);
         stage.setMinHeight(520);
+        stage.addEventHandler(javafx.stage.WindowEvent.WINDOW_HIDDEN, event -> audio.close());
         stage.setOnCloseRequest(event -> {
             if (!closing) {
                 event.consume();
                 requestQuit();
             }
         });
-        showAccount();
+        show("splash.fxml");
         stage.show();
         if (!fontNotice().isEmpty()) System.err.println(fontNotice());
     }
@@ -166,6 +177,7 @@ public final class AppNavigator {
                 "/com/adaptivereadinggame/view/" + resource));
         loader.setControllerFactory(type -> {
             if (type == AccountController.class) return new AccountController(this);
+            if (type == SplashController.class) return new SplashController(this);
             if (type == MenuController.class) return new MenuController(this);
             if (type == GameplayController.class) return new GameplayController(this);
             if (type == ResultsController.class) return new ResultsController(this);
@@ -178,15 +190,58 @@ public final class AppNavigator {
         if (stage.getScene() == null) {
             Scene scene = new Scene(root, 1280, 720);
             scene.getStylesheets().add(stylesheet());
+            scene.addEventFilter(ActionEvent.ACTION, event -> {
+                if (event.getTarget() instanceof ButtonBase) audio.click();
+            });
             stage.setScene(scene);
         } else stage.getScene().setRoot(root);
+        audio.setMenuScene(resource.equals("splash.fxml") || resource.equals("account.fxml") || resource.equals("main-menu.fxml"));
     }
 
     public void styleDialog(Dialog<?> dialog) {
         dialog.initOwner(stage);
         dialog.getDialogPane().getStylesheets().add(stylesheet());
         dialog.getDialogPane().getStyleClass().add("reference-dialog");
+        dialog.getDialogPane().addEventFilter(ActionEvent.ACTION, event -> {
+            if (event.getTarget() instanceof ButtonBase) audio.click();
+        });
         applyFontFallback(dialog.getDialogPane());
+    }
+
+    public void showAudioSettings() {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Audio settings");
+        dialog.setHeaderText("Adjust the sound");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
+        Slider music = new Slider(0, 1, audio.musicVolume());
+        music.setId("musicVolume");
+        music.setAccessibleText("Music volume");
+        music.setBlockIncrement(0.1);
+        Slider effects = new Slider(0, 1, audio.effectsVolume());
+        effects.setId("effectsVolume");
+        effects.setAccessibleText("Sound effects volume");
+        effects.setBlockIncrement(0.1);
+        Label musicLabel = new Label("Music volume (zero mutes music)");
+        musicLabel.setLabelFor(music);
+        Label effectsLabel = new Label("Sound effects volume (zero mutes effects)");
+        effectsLabel.setLabelFor(effects);
+        Label credit = new Label("Music: Comfortable Mystery by Kevin MacLeod (incompetech.com), "
+                + "licensed under Creative Commons Attribution 4.0 (creativecommons.org/licenses/by/4.0/). "
+                + "Converted to WAV.");
+        credit.setId("musicCredit");
+        credit.setWrapText(true);
+        credit.setMinWidth(0);
+        credit.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+        credit.setMaxWidth(500);
+        credit.getStyleClass().add("dialog-note");
+        VBox content = new VBox(10, musicLabel, music, effectsLabel, effects, credit);
+        content.setPrefWidth(500);
+        content.setMaxWidth(500);
+        content.setPadding(new Insets(8));
+        dialog.getDialogPane().setContent(content);
+        styleDialog(dialog);
+        if (dialog.showAndWait().filter(ButtonType.APPLY::equals).isPresent())
+            audio.setVolumes(music.getValue(), effects.getValue());
     }
 
     public boolean confirm(String title, String message) {
