@@ -101,5 +101,6 @@ exec proot-distro login debian --shared-tmp \
     --env TMPDIR=/tmp \
     --env XDG_RUNTIME_DIR=/tmp \
     --env PULSE_SERVER=127.0.0.1 \
+    --env ARG_FULL_SCREEN=true \
     --env "MAVEN_OPTS=-Dprism.order=$prism_order" \
     debian -- /bin/bash -lc 'cd /workspace/AdaptiveReadingGame && exec mvn javafx:run'

@@ -113,6 +113,10 @@ public final class OpeningScreen {
         stage.setScene(scene);
         stage.addEventHandler(javafx.stage.WindowEvent.WINDOW_HIDDEN, event -> close());
         stage.show();
+        if (Boolean.parseBoolean(System.getenv("ARG_FULL_SCREEN"))) {
+            stage.setFullScreenExitHint("Press Esc to leave full screen.");
+            stage.setFullScreen(true);
+        }
         audio.setMenuScene(true);
         startLoading();
         playOpening();

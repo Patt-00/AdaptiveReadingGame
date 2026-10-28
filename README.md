@@ -74,7 +74,7 @@ Launch the game from the same project root:
 ./scripts/termux-run-x11.sh
 ```
 
-The launcher opens the Termux:X11 app and uses an existing `:0` or `:1` display socket. If neither exists, it starts display `:0`. Set `ARG_TERMUX_X11_DISPLAY=:1` to choose another display. JavaFX uses software rendering by default; set `ARG_TERMUX_PRISM_ORDER=es2` to request its accelerated pipeline.
+The launcher opens the Termux:X11 app, uses an existing `:0` or `:1` display socket, and starts the JavaFX stage in full-screen mode. If neither display socket exists, it starts display `:0`. Set `ARG_TERMUX_X11_DISPLAY=:1` to choose another display. JavaFX uses software rendering by default; set `ARG_TERMUX_PRISM_ORDER=es2` to request its accelerated pipeline.
 
 The game uses temporary in-memory storage when MySQL settings are absent. The Java difficulty fallback works when the optional Python model helper is not running.
 
