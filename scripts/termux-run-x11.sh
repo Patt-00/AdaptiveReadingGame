@@ -17,6 +17,7 @@ command -v pm >/dev/null 2>&1 \
     || fail 'Install the separate Termux:X11 Android app before launching the game: https://github.com/termux/termux-x11/releases'
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$script_dir/termux-audio-bridge.sh"
 project_root="$(cd -- "$script_dir/.." && pwd)"
 [[ -f "$project_root/pom.xml" && -d "$project_root/src/main/java" ]] \
     || fail "Run this script from a complete project checkout. Expected pom.xml under $project_root."
@@ -74,6 +75,12 @@ if command -v am >/dev/null 2>&1; then
     am start --user 0 -n com.termux.x11/com.termux.x11.MainActivity >/dev/null 2>&1 || true
 fi
 
+if prepare_termux_audio_bridge; then
+    printf 'Termux PulseAudio output is ready.\n'
+else
+    printf 'Warning: Termux PulseAudio has no usable Android sink; the game will run without sound.\n' >&2
+fi
+
 if [[ ! -f "$PREFIX/var/lib/proot-distro/containers/debian/rootfs/etc/debian_version" ]]; then
     fail 'The Debian PRoot environment is missing. Run scripts/termux-setup-x11.sh first.'
 fi
@@ -93,5 +100,6 @@ exec proot-distro login debian --shared-tmp \
     --env "DISPLAY=$display" \
     --env TMPDIR=/tmp \
     --env XDG_RUNTIME_DIR=/tmp \
+    --env PULSE_SERVER=127.0.0.1 \
     --env "MAVEN_OPTS=-Dprism.order=$prism_order" \
     debian -- /bin/bash -lc 'cd /workspace/AdaptiveReadingGame && exec mvn javafx:run'

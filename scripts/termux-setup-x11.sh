@@ -64,6 +64,7 @@ elif [[ -n "${ARG_PROJECT_DIR:-}" && "$project_dir" != /* ]]; then
 fi
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$script_dir/termux-audio-bridge.sh"
 if [[ "$project_dir_explicit" == true || -n "${ARG_PROJECT_DIR:-}" ]]; then
     if is_project_root "$project_dir"; then
         project_root="$(cd -- "$project_dir" && pwd)"
@@ -107,7 +108,7 @@ if ! package_installed x11-repo; then
 fi
 
 host_packages=()
-for package in git git-lfs proot-distro procps termux-x11-nightly; do
+for package in git git-lfs proot-distro procps pulseaudio termux-x11-nightly; do
     package_installed "$package" || host_packages+=("$package")
 done
 if ((${#host_packages[@]} > 0)); then
@@ -119,6 +120,11 @@ fi
 
 command -v proot-distro >/dev/null 2>&1 || fail 'proot-distro is unavailable after installation.'
 command -v termux-x11 >/dev/null 2>&1 || fail 'termux-x11 is unavailable after installation.'
+if prepare_termux_audio_bridge; then
+    printf 'Termux PulseAudio output is ready for Debian PRoot.\n'
+else
+    printf 'Warning: Termux PulseAudio has no usable Android sink; the game will run without sound.\n' >&2
+fi
 
 x11_app_path=""
 if command -v pm >/dev/null 2>&1; then
@@ -133,6 +139,7 @@ fi
 printf 'Checking Debian packages and preparing JavaFX for Linux ARM64.\n'
 proot-distro login debian --shared-tmp \
     --bind "$project_root:/workspace/AdaptiveReadingGame" \
+    --env PULSE_SERVER=127.0.0.1 \
     -- /bin/bash -s <<'DEBIAN_SETUP'
 set -euo pipefail
 
@@ -153,6 +160,7 @@ packages=(
     libfontconfig1 libgl1 libegl1 libxtst6 libxi6 libxrender1
     libxrandr2 libxinerama1 libxxf86vm1
     gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+    gstreamer1.0-pulseaudio pulseaudio-utils
 )
 missing_packages=()
 for package in "${packages[@]}"; do
@@ -176,6 +184,12 @@ command -v git-lfs >/dev/null 2>&1 \
 git -C /workspace/AdaptiveReadingGame lfs install --local
 git -C /workspace/AdaptiveReadingGame lfs pull \
     --include='assets/**,src/main/resources/com/adaptivereadinggame/audio/comfortable-mystery.wav'
+
+if pactl info >/dev/null 2>&1; then
+    printf 'Debian can reach the Termux PulseAudio server.\n'
+else
+    printf 'Warning: Debian cannot reach Termux PulseAudio; the game will run without sound.\n' >&2
+fi
 
 cd /workspace/AdaptiveReadingGame
 mvn -B -DskipTests compile
