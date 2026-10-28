@@ -2,7 +2,7 @@
 
 A school project for a story-driven reading game for elementary students. Players read stories, make story decisions, and answer comprehension questions. The application saves progress per account and adjusts reading difficulty after a completed checkpoint.
 
-This version connects account services, adaptive story checkpoints, MySQL repositories, the optional difficulty helper, and live JavaFX screens. It includes a provisional story pack and the character and scene artwork shared by the group. The draft uses an unnamed servant and Prince Owen as the working name. The culprit and final ending remain pending. The student game uses written dialogue and images. See [story content and art](assets/README.md) and the [Dev 1 handoff](docs/requirements/Dev1-Handoff.md).
+This version connects account services, adaptive story checkpoints, MySQL repositories, the optional difficulty helper, and live JavaFX screens. It includes the supplied investigations and a team-authored continuation with four outcomes. The player is an unnamed servant, and Prince Owen is used consistently. The continuation identifies Lord Robert based on the supplied clues; this creative decision and its answer keys still need group and teacher review. The student game uses written dialogue and images. See [story content and art](assets/README.md) and the [Dev 1 handoff](docs/requirements/Dev1-Handoff.md).
 
 ## Requirements and running the app
 
@@ -11,18 +11,54 @@ This version connects account services, adaptive story checkpoints, MySQL reposi
 - JavaFX 21.0.5 dependencies are managed by Maven.
 - Git LFS is needed to download the bundled music, large artwork, and optional model weights when cloning the repository.
 
-Run these commands from the project root:
+For one-command setup and launch, use the setup script for your operating system. It installs JDK 21 or newer and Maven through the available package manager when either is missing, then checks the project and starts the game. Package installation may ask for administrator permission.
+
+Linux or macOS, from the project root:
+
+```sh
+./scripts/setup-and-run.sh
+```
+
+Windows PowerShell, from the project root:
+
+```powershell
+.\scripts\Setup-And-Run.ps1
+```
+
+To install missing tools and run the check without launching the game, add `--install-only` on Linux or macOS, or `-InstallOnly` in PowerShell. Automatic installation requires Homebrew on macOS and WinGet on Windows. On Linux the script supports DNF and APT.
+
+The setup script does not install or create a MySQL server, database, or user. Without MySQL variables the game runs with temporary in-memory storage. To use persistent storage, configure MySQL and apply the migrations in [database setup](database/README.md); the preflight script checks that the three connection variables are all set.
+
+You can also run the preflight check by itself to confirm Java 21 or newer, Maven, the selected story-pack file, and complete MySQL settings without changing the database. If the check passes, use the launch script:
+
+Linux or macOS, from the project root:
+
+```sh
+./scripts/check-prerequisites.sh --check-only
+./scripts/run-game.sh
+```
+
+Windows PowerShell, from the project root:
+
+```powershell
+.\scripts\Check-Prerequisites.ps1 -CheckOnly
+.\scripts\Run-Game.ps1
+```
+
+You can still start the app directly with `mvn javafx:run`. The Java startup screen then checks and loads the story pack and provides Retry when startup fails. The preflight scripts check that the selected pack file exists; the Java loader validates its contents.
+
+To compile manually before launch, run these commands from the project root:
 
 ```sh
 mvn -B -DskipTests compile
 mvn javafx:run
 ```
 
-The launch class is `com.adaptivereadinggame.AdaptiveReadingGameApp`. It opens a title screen with a Begin button, then authentication and the main menu after a successful login.
+The launch class is `com.adaptivereadinggame.AdaptiveReadingGameApp`. It opens an animated text introduction and a loading screen. Once startup finishes, press Space or select Enter to open authentication. A new account selects a servant appearance before reaching the main menu.
 
 With no database settings, the app uses visibly labeled in-memory development storage. To use MySQL, set `ARG_DB_URL`, `ARG_DB_USER`, and `ARG_DB_PASSWORD`, then apply the schema described in [database setup](database/README.md).
 
-The app loads `assets/content/hailey-investigation-draft.json` when `ARG_CONTENT_PACK` is not set. Set `ARG_CONTENT_PACK` to a local version-1 or version-2 JSON pack to use other content. The bundled episode is a review draft and ends before a culprit or final ending is chosen. See [the content-pack guide](assets/README.md).
+The app loads `assets/content/hailey-investigation-complete.json` when `ARG_CONTENT_PACK` is not set. That pack contains the unchanged draft chapter and a completed chapter under a new ID. Set `ARG_CONTENT_PACK` to a local version-1 or version-2 JSON pack to use other content. The pack preserves the original review draft for existing saves and includes a team-authored completed version for new play. See [the content-pack guide](assets/README.md).
 
 Character, scene, and CG keys resolve under `assets/characters/`, `assets/scenes/`, and `assets/cg/`. Set `ARG_ASSET_DIR` only when the same folder layout is stored under another trusted asset root.
 
@@ -32,38 +68,40 @@ For commands without Maven, see [Manual Compilation](Module%20Guide/Manual%20Com
 
 ## Current status
 
-- The title screen uses the available palace and character artwork. Begin immediately opens the welcome screen, and Audio Settings is available before login.
+- The text introduction includes a headphone recommendation and can be skipped. The loading screen rotates available artwork and reports startup progress; Reduce Motion is available during both stages.
+- Each account can select or change a provisional servant appearance. It applies to all saves for that account and does not affect story outcomes or scores.
+- The welcome and main menu show character artwork beside their controls on wider windows. On smaller windows, the artwork panel is hidden to keep the controls usable.
 - Main menu layout: title, decorative divider, New Game, Continue, Save/Load, Settings, and Quit.
 - Menus keep readable text as the window changes size and scroll when needed. Hover and keyboard focus states remain available.
 - Working signup/login/logout with normalized usernames, protected password verifiers, and matching account/student IDs.
 - Account-safe history, full-save, load, Continue, and assessment coordination; no controller-supplied student IDs.
 - Continue is enabled when the signed-in account has a full save. If an episode is active, the button becomes Return to Game and resumes its story, checkpoint, or result view. A new account has no saved progress.
 - Save/Load shows three real account-scoped slots. Saving needs an active game; successful writes and discard/overwrite confirmations are handled by services.
-- New Game lists prepared story episodes at the Java-approved starting difficulty. The bundled draft supports Study-first and Hall-first routes.
+- New Game lists prepared story episodes at the Java-approved starting difficulty. The completed episode supports Study-first and Hall-first investigations, then offers four conclusion outcomes.
 - Quit displays a confirmation before closing the window.
 - The earlier FXML dashboard remains in the project but is not the opening screen.
 - The older standalone backend demo may use synthetic records for local checks; it is not the player-facing story source. The JavaFX app loads story and question text from versioned JSON packs.
 - Shared story, checkpoint, game-state, and full-save records support version-1 packs and adaptive version-2 packs. Save encoding uses version 2 and still reads version-1 snapshots.
 - Java owns first-answer scoring and the final difficulty decision. `ModelAssistedDifficultyPolicy` summarizes stored history, asks the optional local helper, validates the recommendation, and keeps the deterministic fallback.
 - The app selects MySQL when all three `ARG_DB_*` settings are present. It uses in-memory development storage when all three settings are absent.
-- MySQL adapters persist accounts, episodes, route choices, checkpoints, first-answer drafts, checkpoint results, decision sources, and three full-save slots. The schema migrations V001 through V004 are in `database/migrations/`.
+- MySQL adapters persist accounts, servant appearances, episodes, route choices, checkpoints, first-answer drafts, checkpoint results, decision sources, and three full-save slots. The schema migrations V001 through V005 are in `database/migrations/`.
 - Generic story transitions keep narrative choices separate from comprehension scoring. MySQL and in-memory adapters store chapter graphs and first-answer drafts; unfinished assessments can restore from their stored first answers.
 - The live app uses `how-to-play.fxml`, `gameplay.fxml`, `results.fxml`, and `analysis.fxml` for the adaptive story and checkpoint flow. The 40 `uiux-*.fxml` files remain visual references. The player can make story choices and answer the separate checkpoint question.
 - Settings provide session-only reading text-size, character-art, and reduced-motion controls. Audio Settings provides separate session-only volume controls for music and sound effects.
-- The title, welcome, login, and main menu play optional background music. Button actions can play a click sound. Story and reading screens remain free of background music.
+- The opening, welcome, login, and main menu play optional background music. Button actions can play a click sound. Story scenes use optional local investigation and tense music; reading checks remain quiet. See [music and sound effects](assets/README.md#music-and-sound-effects).
 - Story Log shows up to 500 previously viewed story lines in the current session. Starting a chapter, loading saved progress, or signing out starts a fresh log. Reading questions and answers are not added.
 - Optional author-supplied stage directions can show a supporting character beside the current speaker. The [story content and art guide](assets/README.md) describes the cue file and fallback behavior.
 - Java integrates an optional local Qwen recommendation behind `DifficultyPolicy`. Java scores first answers, summarizes stored history, validates the recommendation, and applies the fallback. The Python helper returns one label and receives no account IDs or raw answers.
 - Qwen stays experimental and is not a trained reading-level classifier. Java holds the current level until three consecutive sections at the same difficulty exist, checks model suggestions, and applies its fallback. The pinned weight uses Git LFS, and the supplied image paths have Git LFS rules.
 
-Backend tests, JavaFX UI tests, a disposable-MySQL integration test, Python helper contract tests, and an opt-in real-model smoke test cover their respective code paths. The version-2 draft pack has in-memory route and difficulty coverage plus MySQL save and restore coverage. The group has not approved its answer keys, main character, suspect, or ending. The model quality remains unverified. Teacher and parent reporting are outside the student-game scope. See the [title screen and sound QA](docs/requirements/Dev1-Splash-Audio-QA-2026-10-27.md) and the [visual-novel player experience QA](docs/requirements/Dev1-Visual-Novel-QA-2026-10-27.md). Earlier gameplay repair, visual polish, and accessibility reports remain historical records.
+Java unit tests, JavaFX input tests, disposable-MySQL tests, Python helper tests, and an opt-in real-model smoke test cover their respective code paths. The default story pack preserves the original draft and includes a separate completed chapter with save and restore coverage. The group has not approved the player identity, suspect, ending, or answer keys. The model has not been evaluated for reading outcomes, and teacher or parent reporting is outside this student-game scope. See [completed story verification](docs/requirements/Completed-Story-Verification-2026-10-28.md) and [opening, appearance, and audio verification](docs/requirements/Dev1-Opening-Appearance-Audio-QA-2026-10-28.md) for test results and limits.
 
 ## Current implementation ownership
 
 The backend implementation is consolidated in the Dev1 workstream. The [Backend Development Guide](docs/requirements/Backend-Development-Guide.md) records the original service plan; the [Dev 1 handoff](docs/requirements/Dev1-Handoff.md) describes the current implementation and remaining group inputs.
 
 - Backend implementation: accounts, gameplay, MySQL persistence, content-pack loading, and optional model integration are connected in this branch.
-- Remaining group inputs: confirm the story and question wording, approve the unnamed player and culprit, provide the ending, and confirm final UI/UX details. The app loads story material through the versioned content pack rather than story-specific Java classes.
+- Remaining review inputs: approve or revise the player identity, culprit, ending, answer keys, and final UI/UX details. The app loads story material through the versioned content pack rather than story-specific Java classes.
 
 Run the baseline backend without Python or a database:
 
@@ -83,7 +121,7 @@ mvn compile exec:java -Dexec.mainClass=com.adaptivereadinggame.backend.Dev1Demo
 ```text
 AdaptiveReadingGame/
 |-- assets/
-|   |-- content/                    Provisional story-pack JSON
+|   |-- content/                    Versioned draft and completed story packs
 |   |   `-- source/                 Storyboard snapshot and node-source mapping
 |   |-- characters/                 Character-expression artwork
 |   |-- scenes/                     Background art
@@ -92,6 +130,7 @@ AdaptiveReadingGame/
 |   |-- migrations/                 Versioned MySQL schema files
 |   `-- examples/                   Versioned full-save JSON example
 |-- model-tool/                     Optional local Python inference helper
+|-- scripts/                        Prerequisite checks and setup launchers
 |-- docs/
 |   |-- requirements/
 |   |-- diagrams/
@@ -107,6 +146,7 @@ AdaptiveReadingGame/
 |   |       |-- AdaptiveReadingGameApp.java
 |   |       |-- backend/             BackendContext composition and console demo
 |   |       |-- controller/
+|   |       |   |-- AppearanceController.java
 |   |       |   |-- SplashController.java
 |   |       |   |-- MenuController.java
 |   |       |   |-- GameplayController.java
@@ -149,6 +189,7 @@ AdaptiveReadingGame/
 |   `-- resources/com/adaptivereadinggame/
 |       |-- audio/                  Music and generated click sound
 |       |-- view/
+|       |   |-- appearance.fxml
 |       |   |-- splash.fxml
 |       |   |-- account.fxml
 |       |   |-- main-menu.fxml
@@ -187,15 +228,15 @@ Current account, content, storage, and gameplay connection:
 
 ```text
 AdaptiveReadingGameApp
-    -> AppNavigator (one BackendContext)
-    -> splash.fxml -> SplashController -> welcome screen
+    -> OpeningScreen -> initialize one BackendContext -> wait for player input
+    -> AppNavigator -> account.fxml -> appearance.fxml when no choice exists
     -> account.fxml -> AccountController -> AccountGameService
     -> main-menu.fxml -> MenuController -> AccountGameService
     -> gameplay.fxml -> GameplayController -> AccountGameService
     -> results.fxml / analysis.fxml -> stored Java assessment result
     -> ARG_DB_* settings -> MySqlAccountRepository + MySqlGameRepository
     -> no database settings -> in-memory development repositories
-    -> ARG_CONTENT_PACK or bundled draft pack -> validate and import story episodes
+    -> ARG_CONTENT_PACK or bundled versioned story pack -> validate and import story episodes
 ```
 
 An FXML button's `onAction="#newGame"` calls `newGame()` in its controller. The FXML `fx:controller` attribute selects that controller. An `fx:id` connects a screen element to a matching `@FXML` field.

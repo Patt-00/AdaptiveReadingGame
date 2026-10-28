@@ -1,6 +1,6 @@
 # Dev 1: accounts, gameplay, and content integration
 
-Guys, ito yung Dev 1 workstream. This checkout connects accounts, MySQL, adaptive story checkpoints, the optional model helper, and the JavaFX game screens. The current story and art are a draft from the group folder, not the final story. The draft uses an unnamed servant and Prince Owen as the working name. The culprit, ending, and inferred answer keys still need confirmation. Follow [the content-pack guide](../../assets/README.md) when the group updates the content.
+Guys, ito yung Dev 1 workstream. This checkout connects accounts, MySQL, adaptive story checkpoints, the optional model helper, and the JavaFX game screens. The default content pack preserves the original draft and adds a team-authored continuation. It uses an unnamed servant and Prince Owen consistently, identifies Lord Robert, and includes four outcomes. The continuation and inferred answer keys still need group and teacher review. Follow [the content-pack guide](../../assets/README.md) when the group updates the content.
 
 The supplied ZIP has a separate `GameFlowController` and local save store, so that controller is not used for runtime persistence. The active account and gameplay screens remain connected to `AccountController` and `GameplayController`; those controllers keep `AccountGameService` and MySQL as the owners of account, score, and save behavior.
 
@@ -10,17 +10,17 @@ The supplied ZIP has a separate `GameFlowController` and local save store, so th
 | --- | --- | --- |
 | Signup, normalized usernames, password checks, login, logout | Implemented with account/profile IDs matched; tested with in-memory and MySQL repositories | Use the current account service from the UI |
 | Account-facing game access | `AccountGameService` uses the signed-in account; screens cannot supply a learner ID | UI/game screens call this service |
-| Story and checkpoint routes | `RepositoryStoryService` follows validated node graphs; narrative choices do not score, while answer correctness follows the checkpoint outcome edge | Confirm the provisional route text and replace it with the final approved script |
-| Full Save, Load, Continue and cancel/overwrite protection | The live menu can save, load, continue, and return to the active story or checkpoint result | Run the full flow with the final story and the group's MySQL setup |
-| First submitted answer | The active checkpoint stores the first answer before feedback and does not let a retry replace it | Confirm the current question wording and inferred answer keys with the group |
-| Reading results and next difficulty | Results show checkpoint score, next level, and the Java-validated decision source | Review the draft's one-question scores with the teacher before presentation |
-| Story and art | The runtime loads the current FXML flow, character sprites, backgrounds, and poisoning illustration | Review character expressions and approve the working Owen name |
-| Reading presentation | Written dialogue, questions, and supplied images; audio playback is removed | Review text wrapping and image choices |
-| Account, story, answer, result, and save persistence | MySQL migrations V001 through V004 persist the episode, checkpoint variants, results, routes, and full saves | Set up a MySQL database using `database/README.md` |
+| Story and checkpoint routes | `RepositoryStoryService` follows validated node graphs; narrative choices do not score, while answer correctness follows the checkpoint outcome edge | Review the team-authored continuation and approve or revise its route text |
+| Full Save, Load, Continue and cancel/overwrite protection | The live menu can save, load, continue, and return to the active story or checkpoint result | Repeat the completed-chapter flow with the group's MySQL database before presentation |
+| First submitted answer | The active checkpoint stores the first answer before feedback and does not let a retry replace it | Review the completed chapter's question wording and answer reasoning with the group |
+| Reading results and next difficulty | Results show checkpoint score, next level, and the Java-validated decision source | Review the question set and the model's educational limits before presentation |
+| Story and art | The runtime loads the completed pack, character sprites, backgrounds, poisoning illustration, and the reveal image in one ending | Review the team-authored ending and servant portraits with the group |
+| Reading presentation | Written dialogue, questions, and supplied images with optional music and click effects; dialogue has no voice recording | Listen to the sound on the target computer and review text wrapping and images |
+| Account, story, answer, result, and save persistence | MySQL migrations V001 through V005 persist the account appearance, episode, checkpoint variants, results, routes, and full saves | Set up a MySQL database using `database/README.md` |
 | Restoring a checkpoint | In-memory tests and the disposable MySQL test cover route, difficulty, and first-answer restoration | Repeat the visible review flow with the group's database setup |
 | Optional Python/Qwen model | Java owns scoring and validates the model's level suggestion; a Java fallback remains available | Start the helper separately when testing model-assisted decisions |
 
-When no `ARG_DB_*` settings are present, the app starts in labeled in-memory development mode. When all three database settings are present, it uses MySQL after the migrations have run. The app loads `assets/content/hailey-investigation-draft.json` by default. Set `ARG_CONTENT_PACK` to load another local pack. The bundled pack stops before a final culprit or ending.
+When no `ARG_DB_*` settings are present, the app starts in labeled in-memory development mode. When all three database settings are present, it uses MySQL after the migrations have run. The app loads `assets/content/hailey-investigation-complete.json` by default. That pack contains the original draft and the team-authored chapter under separate IDs. Set `ARG_CONTENT_PACK` to load another local pack.
 
 ## Run it
 
@@ -108,12 +108,12 @@ The runtime reads versioned story content instead of compiling authored dialogue
 4. Add artwork under `assets/characters/`, `assets/scenes/`, or `assets/cg/` and use a stable filename key. Do not place absolute paths in the content pack.
 5. Keep dialogue and questions in text. The title and menu music and optional click sound are described in [music and sound effects](../../assets/README.md#music-and-sound-effects); no voice recording is required.
 6. The live screens are `how-to-play.fxml`, `gameplay.fxml`, `results.fxml`, and `analysis.fxml`. The 40 `uiux-*.fxml` files remain visual references, not separate runtime routes.
-7. Keep the draft ending unresolved. Confirm the Owen/Ellis naming mismatch, the hard Study question's omitted clue, and all provisional answer keys with the group.
+7. Review the team-authored Lord Robert conclusion, four outcomes, unnamed player presentation, and six answer keys with the group and teacher. These are not yet approved story content.
 8. Add supporting-character cues only when the story author confirms who is present. Use the optional stage-directions file in [the content-pack guide](../../assets/README.md); cues change presentation and are not stored in saves.
 
 ## MySQL adapter and content validation
 
-The group has chosen **MySQL**. The adapters and four additive migrations live in `repository/mysql/` and `database/migrations/`. V004 stores checkpoint question variants, route state, and optional image keys. The setup guide documents configuration and the disposable-database test. Do not put credentials in source control.
+The group has chosen **MySQL**. The adapters and five additive migrations live in `repository/mysql/` and `database/migrations/`. V004 stores checkpoint question variants, route state, and optional image keys. V005 stores the account's servant appearance. The setup guide documents configuration and the disposable-database test. Do not put credentials in source control.
 
 | Operation | MySQL behavior |
 | --- | --- |
@@ -138,29 +138,33 @@ Use `BackendContext.create(...)`. It accepts student, account, credential, regis
 
 The application uses MySQL when all `ARG_DB_*` settings are present and otherwise labels its in-memory mode. Run the migration before the first MySQL launch. Controllers must continue using the account coordinator and must not contain SQL, grade answers, or read password verifiers.
 
-## Next integration milestone
+## Remaining review
 
-The provisional review flow uses the currently supplied scenes. The available narrative is playable through both investigations. Its terminal results screen displays the explicit draft boundary. The remaining story inputs are:
+The completed chapter and startup flow have automated and virtual-display verification. The [completed story verification report](Completed-Story-Verification-2026-10-28.md) records the test commands, results, and limits. Remaining work needs review on the group's environment:
 
-1. Confirm the main character, Owen/Ellis naming, suspect, and final ending with the story author.
-2. Confirm the six comprehension answer keys, including the Study hard question and the clue absent from its source.
-3. Append the approved conclusion as content nodes and publish a new chapter ID when learner records already refer to the draft.
-4. Run the full visible flow with the finalized story, art, and question pack.
-5. Launch the database-backed app with the group's MySQL setup and verify a full restart during an active checkpoint.
+1. Ask the group and teacher to approve or revise the unnamed player, Prince Owen naming, Lord Robert reveal, four endings, character portraits, and six answer keys.
+2. Play the completed chapter on the target desktop and listen to the click and music tracks.
+3. Connect the group's MySQL instance, apply migrations V001 through V005, and verify a full save restart there. The current MySQL evidence uses a disposable test database.
+4. Evaluate the optional difficulty model with a defined educational protocol before claiming that it improves reading outcomes.
 
-Passing service tests alone is not proof of overall completion. The current policy is not evidence that the model improves reading outcomes; test the model with the approved story after the playable loop is connected.
+The Python model remains optional. Java owns first-answer scoring, progress, and the final difficulty choice. Story choices affect the narrative and do not change comprehension scores.
 
 ## Verification and limits
 
-The latest player-flow work is recorded in [gameplay repair and verification, 2026-10-27](Dev1-Gameplay-QA-2026-10-27.md). The build, automated checks, and visible Study-first desktop route passed with the provisional pack. This does not make the group's story, answer keys, ending or model quality final.
+The full Maven verification passed 210 Java tests, including 41 JavaFX gameplay tests, six disposable MySQL tests, audio-device checks, and the real-model smoke test. Focused startup tests passed after the ready gate and story-pack checks were added. See [completed story verification](Completed-Story-Verification-2026-10-28.md) for the exact commands and for checks that remain manual.
 
-The current visual update is recorded in [gameplay visual polish and verification, 2026-10-27](Dev1-Visual-Polish-Verification-2026-10-27.md). It preserves the existing burgundy, gold, white, and serif direction, uses the mapped group art on a more cinematic story stage, and leaves the draft boundary unchanged.
+The [gameplay visual polish report](Dev1-Visual-Polish-Verification-2026-10-27.md) records the earlier visual update and its draft-boundary test. The default story pack now includes a separate team-authored completed chapter.
 
 The runtime UI accessibility checks are recorded in [runtime UI accessibility and consistency QA, 2026-10-27](Dev1-UI-Accessibility-QA-2026-10-27.md). The report covers disabled-button readability, keyboard focus, accessible labels, save-slot descriptions, and the desktop-test limits.
 
 The latest story presentation, Story Log, reduced motion, optional character staging, and verification are recorded in [visual-novel player experience QA, 2026-10-27](Dev1-Visual-Novel-QA-2026-10-27.md).
 
 The title screen, menu presentation, audio playback, and associated checks are recorded in [title screen and sound QA](Dev1-Splash-Audio-QA-2026-10-27.md).
+
+The opening text can be skipped, and the loading screen allows entry only after initialization finishes. Reduce Motion applies for the current session. Authentication and the main menu use an optional artwork panel on wide windows and retain their scrollable controls on smaller windows.
+
+The current startup, account appearance, story music, and verification are recorded in [opening, appearance, and audio QA](Dev1-Opening-Appearance-Audio-QA-2026-10-28.md).
+The completed chapter, four endings, version compatibility, startup animation, and current test evidence are recorded in [completed story and startup verification](Completed-Story-Verification-2026-10-28.md). The story decisions and answer keys remain pending group and teacher review.
 
 Focused tests cover authentication, account isolation, both adaptive route orders, difficulty variants, first-answer-only scoring, asset fallbacks, feedback, results, save/load/resume, and MySQL checkpoint persistence. Opt-in JavaFX tests still use test fixtures; they do not certify the group's final story or question copy.
 

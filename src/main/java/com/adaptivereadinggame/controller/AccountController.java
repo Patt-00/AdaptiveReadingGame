@@ -2,6 +2,7 @@ package com.adaptivereadinggame.controller;
 
 import com.adaptivereadinggame.model.Account;
 import com.adaptivereadinggame.service.AuthException;
+import com.adaptivereadinggame.view.MenuArtworkPane;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -20,6 +21,7 @@ public final class AccountController {
     private final AppNavigator navigator;
     private boolean signupMode;
     @FXML private StackPane accountRoot;
+    @FXML private MenuArtworkPane accountArtwork;
     @FXML private VBox selectionBox;
     @FXML private VBox formBox;
     @FXML private TextField usernameField;
@@ -37,6 +39,8 @@ public final class AccountController {
     public AccountController(AppNavigator navigator) { this.navigator = Objects.requireNonNull(navigator); }
 
     @FXML private void initialize() {
+        accountArtwork.fitToWindowWidth(accountRoot.getWidth());
+        accountRoot.widthProperty().addListener((observable, before, after) -> accountArtwork.fitToWindowWidth(after.doubleValue()));
         usernameLabel.setLabelFor(usernameField);
         displayNameLabel.setLabelFor(displayNameField);
         passwordLabel.setLabelFor(passwordField);
@@ -113,11 +117,7 @@ public final class AccountController {
                 status("Account created successfully! Please log in.", false);
                 passwordField.requestFocus();
             } else {
-                try { navigator.showMenu(); }
-                catch (IOException failure) {
-                    navigator.backend().accountGameService().logout(true);
-                    status("The menu could not open. Please try again.", true);
-                }
+                showAfterLogin();
             }
         });
         task.setOnFailed(event -> {
@@ -139,6 +139,26 @@ public final class AccountController {
         navigator.setWorkInProgress(false);
         formBox.setDisable(false);
         passwordField.clear();
+    }
+
+    private void showAfterLogin() {
+        formBox.setDisable(true);
+        navigator.runAsync("Load player appearance", () -> navigator.backend().playerAppearanceService().current(), appearance -> {
+            formBox.setDisable(false);
+            try {
+                if (appearance.isPresent()) {
+                    navigator.setPlayerAppearance(appearance.get());
+                    navigator.showMenu();
+                } else navigator.showAppearanceSelection();
+            } catch (IOException failure) {
+                navigator.backend().accountGameService().logout(true);
+                status("The next screen could not open. Please try again.", true);
+            }
+        }, failure -> {
+            formBox.setDisable(false);
+            navigator.backend().accountGameService().logout(true);
+            status("The player appearance could not be loaded. Check the database setup and try again.", true);
+        });
     }
 
     private void status(String message, boolean error) {

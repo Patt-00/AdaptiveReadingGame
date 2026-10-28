@@ -17,3 +17,6 @@ Modules/
 .venv/
 __pycache__/
 *.py[cod]
+
+# Locally downloaded licensed soundtrack files
+assets/local-music/

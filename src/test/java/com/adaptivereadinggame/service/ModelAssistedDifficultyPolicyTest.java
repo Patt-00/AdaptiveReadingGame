@@ -57,6 +57,15 @@ class ModelAssistedDifficultyPolicyTest {
         assertEquals(DifficultyDecisionSource.JAVA_FALLBACK, recommendation.source());
     }
 
+    @Test void modelRequestTimeoutUsesJavaFallback() {
+        addHistory(Difficulty.MEDIUM, 2, 5);
+        var policy = new ModelAssistedDifficultyPolicy(results,
+                prompt -> { throw new java.net.http.HttpTimeoutException("Synthetic model timeout"); });
+        var recommendation = policy.recommend(context(Difficulty.MEDIUM, 2, 5));
+        assertEquals(Difficulty.EASY, recommendation.nextDifficulty());
+        assertEquals(DifficultyDecisionSource.JAVA_FALLBACK, recommendation.source());
+    }
+
     @Test void javaGuardrailSourceIsVisibleWhenItRejectsTheModelSuggestion() {
         addHistory(Difficulty.MEDIUM, 3, 3);
         var policy = new ModelAssistedDifficultyPolicy(results, prompt -> DifficultyService.Action.INCREASE);

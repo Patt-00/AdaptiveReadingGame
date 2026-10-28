@@ -7,24 +7,28 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.SVGPath?>
+<?import com.adaptivereadinggame.view.MenuArtworkPane?>
 <StackPane fx:id="accountRoot" styleClass="account-screen" xmlns="http://javafx.com/javafx/21"
            xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.adaptivereadinggame.controller.AccountController">
-    <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" minWidth="0" minHeight="0" styleClass="menu-scroll">
+    <HBox minWidth="0" minHeight="0">
+    <MenuArtworkPane fx:id="accountArtwork"/>
+    <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" minWidth="0" minHeight="0" HBox.hgrow="ALWAYS" styleClass="menu-scroll">
       <content>
-        <VBox alignment="CENTER" spacing="18" minWidth="0" minHeight="-Infinity" styleClass="account-content">
+        <VBox alignment="CENTER" spacing="10" minWidth="0" minHeight="-Infinity" styleClass="account-content">
             <Label text="WELCOME" alignment="CENTER" styleClass="menu-title,responsive-title"/>
             <Label text="Sign in to continue your reading adventure." alignment="CENTER" wrapText="true" styleClass="account-intro"/>
             <Group scaleX="0.6" scaleY="0.6" mouseTransparent="true">
                 <SVGPath styleClass="menu-flourish" content="M 316 88 C 291 22 233 26 206 63 C 164 119 82 92 71 55 C 61 19 102 6 115 29 C 129 53 97 49 105 34 M 316 88 C 275 49 232 61 190 78 C 149 95 122 80 150 54 C 177 31 239 36 259 65 C 284 99 248 104 237 88 M 316 88 C 277 18 219 18 171 44 C 120 70 66 116 21 75 C -18 39 7 -10 37 0 C 69 10 45 35 42 20 M 316 88 C 302 52 228 61 176 30 C 118 -5 138 48 230 64"/>
                 <SVGPath layoutX="324" scaleX="-1" styleClass="menu-flourish" content="M 316 88 C 291 22 233 26 206 63 C 164 119 82 92 71 55 C 61 19 102 6 115 29 C 129 53 97 49 105 34 M 316 88 C 275 49 232 61 190 78 C 149 95 122 80 150 54 C 177 31 239 36 259 65 C 284 99 248 104 237 88 M 316 88 C 277 18 219 18 171 44 C 120 70 66 116 21 75 C -18 39 7 -10 37 0 C 69 10 45 35 42 20 M 316 88 C 302 52 228 61 176 30 C 118 -5 138 48 230 64"/>
             </Group>
-            <VBox fx:id="selectionBox" alignment="CENTER" spacing="22" maxWidth="580">
+            <VBox fx:id="selectionBox" alignment="CENTER" spacing="14" maxWidth="470" styleClass="account-card">
                 <Button text="LOG IN" onAction="#chooseLogin" styleClass="menu-option,responsive-option,welcome-primary" prefWidth="350"/>
                 <Button text="SIGN UP" onAction="#chooseSignup" styleClass="menu-option,responsive-option,welcome-secondary" prefWidth="350"/>
             </VBox>
-            <VBox fx:id="formBox" alignment="CENTER" spacing="8" maxWidth="580" minHeight="-Infinity" visible="false" managed="false">
+            <VBox fx:id="formBox" alignment="CENTER" spacing="8" maxWidth="470" minHeight="-Infinity" visible="false" managed="false" styleClass="account-card">
                 <Label fx:id="formTitle" text="LOG IN" styleClass="auth-heading"/>
                 <Label fx:id="usernameLabel" text="Username" styleClass="auth-body"/>
                 <TextField fx:id="usernameField" promptText="Username" accessibleText="Username" styleClass="auth-input"/>
@@ -42,4 +46,5 @@
         </VBox>
       </content>
     </ScrollPane>
+    </HBox>
 </StackPane>

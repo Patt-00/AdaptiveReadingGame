@@ -9,21 +9,24 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.shape.SVGPath?>
+<?import com.adaptivereadinggame.view.MenuArtworkPane?>
 
 <StackPane fx:id="menuRoot" styleClass="main-menu" xmlns="http://javafx.com/javafx/21"
            xmlns:fx="http://javafx.com/fxml/1"
            fx:controller="com.adaptivereadinggame.controller.MenuController">
-    <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" minWidth="0" minHeight="0" styleClass="menu-scroll">
+    <HBox minWidth="0" minHeight="0">
+    <MenuArtworkPane fx:id="menuArtwork"/>
+    <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" minWidth="0" minHeight="0" HBox.hgrow="ALWAYS" styleClass="menu-scroll">
       <content>
-        <VBox alignment="CENTER" spacing="12" minWidth="0" minHeight="-Infinity" styleClass="menu-content">
+        <VBox alignment="CENTER" spacing="8" minWidth="0" minHeight="-Infinity" styleClass="menu-content">
             <Label text="ADAPTIVE READING GAME" alignment="CENTER" wrapText="true" minHeight="-Infinity"
                    styleClass="menu-title,responsive-title"/>
-            <Group scaleX="0.6" scaleY="0.6" mouseTransparent="true">
+            <Group fx:id="menuFlourish" scaleX="0.6" scaleY="0.6" mouseTransparent="true">
                 <SVGPath styleClass="menu-flourish" content="M 316 88 C 291 22 233 26 206 63 C 164 119 82 92 71 55 C 61 19 102 6 115 29 C 129 53 97 49 105 34 M 316 88 C 275 49 232 61 190 78 C 149 95 122 80 150 54 C 177 31 239 36 259 65 C 284 99 248 104 237 88 M 316 88 C 277 18 219 18 171 44 C 120 70 66 116 21 75 C -18 39 7 -10 37 0 C 69 10 45 35 42 20 M 316 88 C 302 52 228 61 176 30 C 118 -5 138 48 230 64"/>
                 <SVGPath layoutX="324" scaleX="-1" styleClass="menu-flourish" content="M 316 88 C 291 22 233 26 206 63 C 164 119 82 92 71 55 C 61 19 102 6 115 29 C 129 53 97 49 105 34 M 316 88 C 275 49 232 61 190 78 C 149 95 122 80 150 54 C 177 31 239 36 259 65 C 284 99 248 104 237 88 M 316 88 C 277 18 219 18 171 44 C 120 70 66 116 21 75 C -18 39 7 -10 37 0 C 69 10 45 35 42 20 M 316 88 C 302 52 228 61 176 30 C 118 -5 138 48 230 64"/>
             </Group>
             <Label text="YOUR ADVENTURE" styleClass="menu-section-label"/>
-            <VBox fx:id="menuOptions" alignment="CENTER" spacing="6" maxWidth="660">
+            <VBox fx:id="menuOptions" alignment="CENTER" spacing="6" maxWidth="400" styleClass="menu-options-card">
                 <Button text="NEW GAME" onAction="#newGame" prefWidth="350" maxWidth="350" styleClass="menu-option,menu-primary"/>
                 <Button fx:id="continueButton" text="CONTINUE" onAction="#continueGame" prefWidth="350" maxWidth="350" disable="true" accessibleHelp="No saved game is available." styleClass="menu-option,menu-secondary"/>
                 <Button text="SAVE/LOAD" onAction="#saveLoad" prefWidth="350" maxWidth="350" styleClass="menu-option,menu-secondary"/>
@@ -36,6 +39,7 @@
             <HBox fx:id="accountActions" alignment="CENTER" spacing="24">
                 <Button text="READING HISTORY" onAction="#history" styleClass="account-link"/>
                 <Button text="AUDIO SETTINGS" onAction="#audioSettings" styleClass="account-link"/>
+                <Button text="CHARACTER" onAction="#characterSettings" styleClass="account-link"/>
                 <Button text="LOG OUT" onAction="#logout" styleClass="account-link"/>
             </HBox>
             <Label fx:id="runtimeLabel" alignment="CENTER" wrapText="true" minHeight="-Infinity" styleClass="runtime-note"/>
@@ -43,4 +47,5 @@
         </VBox>
       </content>
     </ScrollPane>
+    </HBox>
 </StackPane>

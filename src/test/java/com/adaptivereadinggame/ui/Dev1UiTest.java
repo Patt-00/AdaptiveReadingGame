@@ -141,6 +141,7 @@ class Dev1UiTest {
             assertTrue(navigator.workInProgress());
             return null;
         });
+        choosePlayerAppearanceIfNeeded();
         await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
         fx(() -> {
             assertEquals("readerone", backend.accountGameService().currentAccount().orElseThrow().username());
@@ -158,7 +159,7 @@ class Dev1UiTest {
             historyButton.requestFocus();
             root().applyCss();
             assertTrue(historyButton.isFocused());
-            assertVisibleFocusRing(historyButton, Color.web("#655438"));
+            assertVisibleFocusRing(historyButton, Color.web("#f4db92"));
             capture(root(), "accessibility-menu-continue");
             capture(root(), "main-menu");
             new Robot().keyPress(KeyCode.TAB);
@@ -167,14 +168,21 @@ class Dev1UiTest {
         });
         await(() -> button("AUDIO SETTINGS").isFocused());
         fx(() -> {
-            assertVisibleFocusRing(button("AUDIO SETTINGS"), Color.web("#655438"));
+            assertVisibleFocusRing(button("AUDIO SETTINGS"), Color.web("#f4db92"));
+            new Robot().keyPress(KeyCode.TAB);
+            new Robot().keyRelease(KeyCode.TAB);
+            return null;
+        });
+        await(() -> button("CHARACTER").isFocused());
+        fx(() -> {
+            assertVisibleFocusRing(button("CHARACTER"), Color.web("#f4db92"));
             new Robot().keyPress(KeyCode.TAB);
             new Robot().keyRelease(KeyCode.TAB);
             return null;
         });
         await(() -> button("LOG OUT").isFocused());
         fx(() -> {
-            assertVisibleFocusRing(button("LOG OUT"), Color.web("#655438"));
+            assertVisibleFocusRing(button("LOG OUT"), Color.web("#f4db92"));
             return null;
         });
     }
@@ -184,6 +192,7 @@ class Dev1UiTest {
             stage = new Stage();
             navigator = new AppNavigator(stage, BackendContext.inMemory(), "Temporary storage");
             navigator.audio().setVolumes(0, 0);
+            navigator.setReducedMotion(true);
             stage.setWidth(760);
             stage.setHeight(520);
             navigator.start();
@@ -228,6 +237,144 @@ class Dev1UiTest {
         await(() -> root().lookup("#accountRoot") != null);
     }
 
+    @Test void splashMotionCanBeReducedOrSkippedWithoutBlockingNavigation() throws Exception {
+        fx(() -> {
+            stage = new Stage();
+            navigator = new AppNavigator(stage, BackendContext.inMemory(), "Temporary storage");
+            navigator.audio().setVolumes(0, 0);
+            navigator.start();
+            stage.toFront();
+            stage.requestFocus();
+            return null;
+        });
+        await(() -> root().lookup("#splashRoot") != null);
+        robotClick(() -> root().lookup("#reduceMotion"));
+        fx(() -> {
+            assertTrue(navigator.reducedMotion());
+            assertEquals(1, root().lookup("#splashArtwork").getOpacity(), 0.001);
+            assertEquals(1, root().lookup("#splashArtwork").getScaleX(), 0.001);
+            assertEquals(1, root().lookup("#heroPortrait").getOpacity(), 0.001);
+            assertEquals(0, root().lookup("#heroPortrait").getTranslateX(), 0.001);
+            assertEquals(1, root().lookup("#titleLineOne").getOpacity(), 0.001);
+            return null;
+        });
+        robotClick(() -> button("BEGIN"));
+        await(() -> root().lookup("#accountRoot") != null);
+        Thread.sleep(1800);
+        assertNotNull(fx(() -> root().lookup("#accountRoot")), "The animation must not navigate later.");
+    }
+
+    @Test void splashBeginWorksWhileTheIntroIsPlaying() throws Exception {
+        fx(() -> {
+            stage = new Stage();
+            navigator = new AppNavigator(stage, BackendContext.inMemory(), "Temporary storage");
+            navigator.audio().setVolumes(0, 0);
+            navigator.start();
+            stage.toFront();
+            stage.requestFocus();
+            return null;
+        });
+        await(() -> root().lookup("#splashRoot") != null);
+        robotClick(() -> button("BEGIN"));
+        await(() -> root().lookup("#accountRoot") != null);
+        Thread.sleep(1800);
+        assertNotNull(fx(() -> root().lookup("#accountRoot")), "Skipping must leave the welcome screen open.");
+    }
+
+    @Test void splashIntroAnimatesAndSettlesOnItsTitle() throws Exception {
+        fx(() -> {
+            stage = new Stage();
+            navigator = new AppNavigator(stage, BackendContext.inMemory(), "Temporary storage");
+            navigator.audio().setVolumes(0, 0);
+            navigator.start();
+            assertEquals(0, root().lookup("#heroPortrait").getOpacity(), 0.001);
+            assertEquals(0.25, root().lookup("#titleLineOne").getOpacity(), 0.001);
+            return null;
+        });
+        Thread.sleep(450);
+        fx(() -> {
+            assertTrue(root().getBoundsInLocal().getWidth() <= stage.getScene().getWidth() + 1,
+                    "The animated background must remain clipped to the viewport.");
+            assertTrue(root().getBoundsInLocal().getHeight() <= stage.getScene().getHeight() + 1,
+                    "The animated background must not expand the viewport.");
+            capture(root(), "intro-motion-early");
+            return null;
+        });
+        Thread.sleep(1850);
+        fx(() -> {
+            assertEquals(1, root().lookup("#splashArtwork").getOpacity(), 0.001);
+            assertEquals(1, root().lookup("#splashArtwork").getScaleX(), 0.001);
+            assertEquals(1, root().lookup("#heroPortrait").getOpacity(), 0.001);
+            assertEquals(0, root().lookup("#heroPortrait").getTranslateX(), 0.001);
+            assertEquals(1, root().lookup("#titleLineTwo").getOpacity(), 0.001);
+            capture(root(), "intro-motion-settled");
+            return null;
+        });
+    }
+
+    @Test void accountAndMenuArtworkAdaptToWindowSize() throws Exception {
+        BackendContext backend = launch();
+        for (int[] size : new int[][]{{760, 520}, {800, 600}, {1280, 720}, {1366, 768}}) {
+            fx(() -> { stage.setWidth(size[0]); stage.setHeight(size[1]); return null; });
+            Thread.sleep(160);
+            fx(() -> {
+                Node art = root().lookup("#accountArtwork");
+                boolean wide = root().getLayoutBounds().getWidth() >= 1000;
+                assertEquals(wide, art.isVisible());
+                assertEquals(wide, art.isManaged());
+                assertTrue(root().getLayoutBounds().getWidth() <= stage.getScene().getWidth() + 1);
+                if (size[0] == 760) capture(root(), "welcome-small");
+                if (size[0] == 1280) capture(root(), "welcome-wide");
+                return null;
+            });
+        }
+        var game = backend.accountGameService();
+        game.signup("menu-layout-reader", "Menu Reader", "StrongPass1!".toCharArray());
+        game.login("menu-layout-reader", "StrongPass1!".toCharArray());
+        fx(() -> { navigator.showMenu(); return null; });
+        await(() -> root().lookup("#menuRoot") != null && !navigator.workInProgress());
+        for (int[] size : new int[][]{{760, 520}, {800, 600}, {1280, 720}, {1366, 768}}) {
+            fx(() -> { stage.setWidth(size[0]); stage.setHeight(size[1]); return null; });
+            Thread.sleep(160);
+            fx(() -> {
+                Node art = root().lookup("#menuArtwork");
+                boolean wide = root().getLayoutBounds().getWidth() >= 1000;
+                assertEquals(wide, art.isVisible());
+                assertEquals(wide, art.isManaged());
+                assertTrue(root().getLayoutBounds().getWidth() <= stage.getScene().getWidth() + 1);
+                if (size[0] == 760) {
+                    Node viewport = root().lookup(".menu-scroll .viewport");
+                    Bounds visible = viewport.localToScene(viewport.getLayoutBounds());
+                    Bounds logout = button("LOG OUT").localToScene(button("LOG OUT").getBoundsInLocal());
+                    assertTrue(visible.contains(logout.getCenterX(), logout.getCenterY()),
+                            "Account actions must be reachable in the minimum window.");
+                }
+                if (size[0] == 760) capture(root(), "menu-small");
+                if (size[0] == 1280) capture(root(), "menu-wide");
+                return null;
+            });
+        }
+        robotClick(() -> button("SETTINGS"));
+        awaitDialog("Adjust the reading view");
+        robotClick(() -> dialogPane().lookupButton(ButtonType.CANCEL));
+    }
+
+    @Test void signupAndLoginRemainReachableAtTheMinimumWindowSize() throws Exception {
+        BackendContext backend = launch();
+        fx(() -> { stage.setWidth(760); stage.setHeight(520); return null; });
+        robotClick(() -> button("SIGN UP"));
+        robotType("usernameField", "small-reader");
+        robotType("displayNameField", "Small Reader");
+        robotType("passwordField", "StrongPass1!");
+        robotClick(() -> button("SIGN UP"));
+        await(() -> label("statusLabel").getText().contains("Account created"));
+        robotType("passwordField", "StrongPass1!");
+        robotClick(() -> button("LOG IN"));
+        choosePlayerAppearanceIfNeeded();
+        await(() -> root().lookup("#menuRoot") != null && !navigator.workInProgress());
+        assertEquals("small-reader", backend.accountGameService().currentAccount().orElseThrow().username());
+    }
+
     @Test void audioSettingsCanBeAppliedAndCanceledBeforeAndAfterLogin() throws Exception {
         BackendContext backend = launch();
         fx(() -> { stage.setWidth(760); stage.setHeight(520); return null; });
@@ -262,6 +409,148 @@ class Dev1UiTest {
         assertEquals(0, fx(() -> ((Slider) dialogPane().lookup("#musicVolume")).getValue()), 0.001);
         assertEquals(0.6, fx(() -> ((Slider) dialogPane().lookup("#effectsVolume")).getValue()), 0.001);
         robotClick(() -> dialogPane().lookupButton(ButtonType.CANCEL));
+    }
+
+    @Test void selectedServantAppearsInDialogueAndSurvivesSaveAndLogin() throws Exception {
+        BackendContext backend = launch();
+        var game = backend.accountGameService();
+        game.signup("servant-reader", "Servant Reader", "StrongPass1!".toCharArray());
+        robotClick(() -> button("LOG IN"));
+        robotType("usernameField", "servant-reader");
+        robotType("passwordField", "StrongPass1!");
+        robotClick(() -> button("LOG IN"));
+        await(() -> root().lookup("#appearanceRoot") != null);
+        fx(() -> { capture(root(), "servant-selection"); return null; });
+        assertTrue(fx(() -> ((Button) root().lookup("#confirmButton")).isDisabled()));
+        robotClick(() -> root().lookup("#choiceB"));
+        robotClick(() -> root().lookup("#confirmButton"));
+        await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
+        assertEquals(com.adaptivereadinggame.model.PlayerAppearance.B, backend.playerAppearanceService().current().orElseThrow());
+        robotClick(() -> button("CHARACTER"));
+        await(() -> root().lookup("#appearanceRoot") != null);
+        assertTrue(fx(() -> ((RadioButton) root().lookup("#choiceB")).isSelected()));
+        robotClick(() -> root().lookup("#choiceA"));
+        robotClick(() -> root().lookup("#confirmButton"));
+        await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
+        assertEquals(com.adaptivereadinggame.model.PlayerAppearance.A, backend.playerAppearanceService().current().orElseThrow());
+        robotClick(() -> button("CHARACTER"));
+        await(() -> root().lookup("#appearanceRoot") != null);
+        robotClick(() -> root().lookup("#choiceB"));
+        robotClick(() -> root().lookup("#confirmButton"));
+        await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
+        backend.storyPackImporter().orElseThrow().importFile(Path.of("assets/content/hailey-investigation-draft.json"));
+        game.startChapter(backend.chapters().findByDifficulty(Difficulty.EASY).getFirst().id(), Difficulty.EASY, false);
+        advanceDraftTo(game, "opening-monologue");
+        fx(() -> { navigator.showGameplay(); return null; });
+        await(() -> root().lookup("#speakerImage") instanceof ImageView image && image.getImage() != null
+                && image.getImage().getUrl().contains("Servant_B.png") && !navigator.workInProgress());
+        fx(() -> { capture(root(), "servant-dialogue"); return null; });
+        game.save(1, false);
+        game.logout(true);
+        fx(() -> { navigator.showAccount(); return null; });
+        robotClick(() -> button("LOG IN"));
+        robotType("usernameField", "servant-reader");
+        robotType("passwordField", "StrongPass1!");
+        robotClick(() -> button("LOG IN"));
+        await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
+        robotClick(() -> button("CONTINUE"));
+        await(() -> root().lookup("#speakerImage") instanceof ImageView image && image.getImage() != null
+                && image.getImage().getUrl().contains("Servant_B.png") && !navigator.workInProgress());
+    }
+
+    @Test void completedStoryChoicesReachEachEndingThroughJavaFxControls() throws Exception {
+      for (String investigationOrder : List.of("study-first", "hall-first")) {
+        for (boolean accuseRobert : List.of(true, false)) {
+            for (boolean findAntidote : List.of(true, false)) {
+                if (stage != null) fx(() -> { stage.hide(); return null; });
+                BackendContext backend = launch();
+                var game = backend.accountGameService();
+                game.signup("ending-reader", "Ending Reader", "StrongPass1!".toCharArray());
+                game.login("ending-reader", "StrongPass1!".toCharArray());
+                backend.storyPackImporter().orElseThrow().importFile(Path.of("assets/content/hailey-investigation-complete.json"));
+                Chapter chapter = backend.chapters().findByDifficulty(Difficulty.EASY).stream()
+                        .filter(item -> item.title().equals("Aurelium Investigation")).findFirst().orElseThrow();
+                game.startChapter(chapter.id(), Difficulty.EASY, false);
+                advanceCompletedTo(game, "conclusion-suspect", investigationOrder);
+                boolean minimumWindowCase = investigationOrder.equals("study-first") && accuseRobert && findAntidote;
+                if (minimumWindowCase) fx(() -> {
+                    stage.setWidth(760); stage.setHeight(520);
+                    navigator.setReadingFontScale(1.6);
+                    return null;
+                });
+                fx(() -> { navigator.showGameplay(); return null; });
+                String accusationId = accuseRobert ? "accuse-robert" : "accuse-owen";
+                await(() -> root().lookup("#story-choice-" + accusationId) != null && !navigator.workInProgress());
+                robotClick(() -> root().lookup("#story-choice-" + accusationId));
+                await(() -> game.currentGame().orElseThrow().storyNodeId()
+                        .equals(accuseRobert ? "search-correct" : "search-wrong"));
+                String searchId = findAntidote ? "search-portfolio" : "search-cart";
+                await(() -> root().lookup("#story-choice-" + searchId) != null && !navigator.workInProgress());
+                robotClick(() -> root().lookup("#story-choice-" + searchId));
+                String ending = "ending-" + (accuseRobert ? "correct" : "wrong") + "-" + (findAntidote ? "found" : "lost");
+                await(() -> game.currentGame().orElseThrow().storyNodeId().equals(ending));
+                fx(() -> { navigator.showGameplay(); return null; });
+                await(() -> root().lookup("#storyText") instanceof Label && !navigator.workInProgress());
+                fx(() -> {
+                    assertTrue(label("storyText").getText().contains(accuseRobert ? "Robert" : "accusation"));
+                    capture(root(), investigationOrder + "-" + ending);
+                    return null;
+                });
+                game.advanceStory();
+                fx(() -> { navigator.showGameplay(); return null; });
+                await(() -> root().lookup("#resultsRoot") != null && !navigator.workInProgress());
+                assertTrue(fx(() -> label("nextChapterStatus").getText().contains("Case concluded")));
+                if (minimumWindowCase) fx(() -> {
+                    Label endingMessage = label("nextChapterStatus");
+                    assertTrue(endingMessage.isVisible());
+                    assertTrue(endingMessage.isWrapText());
+                    assertTrue(endingMessage.getHeight() >= endingMessage.prefHeight(endingMessage.getWidth()) - 1,
+                            "The ending summary must wrap without clipping at the minimum window size.");
+                    capture(root(), "completed-ending-small-window-large-text");
+                    return null;
+                });
+            }
+        }
+      }
+    }
+
+    @Test void completedChapterReadingCheckUsesTheLiveQuestionFeedbackAndResultsScreens() throws Exception {
+        BackendContext backend = launch();
+        var game = backend.accountGameService();
+        game.signup("complete-quiz-reader", "Complete Quiz Reader", "StrongPass1!".toCharArray());
+        game.login("complete-quiz-reader", "StrongPass1!".toCharArray());
+        backend.storyPackImporter().orElseThrow().importFile(Path.of("assets/content/hailey-investigation-complete.json"));
+        Chapter chapter = backend.chapters().findByDifficulty(Difficulty.EASY).stream()
+                .filter(item -> item.title().equals("Aurelium Investigation")).findFirst().orElseThrow();
+        game.startChapter(chapter.id(), Difficulty.EASY, false);
+        advanceCompletedTo(game, "study-first-check", "study-first");
+        fx(() -> { navigator.showGameplay(); return null; });
+        await(() -> root().lookup("#questionPrompt") != null && !navigator.workInProgress());
+        fx(() -> {
+            assertTrue(label("passageText").getText().contains("Empty Velvet Vials Case"));
+            assertTrue(button("SUBMIT").isDisabled());
+            capture(root(), "completed-story-question");
+            return null;
+        });
+        var prompt = game.questions(game.currentGame().orElseThrow().assessmentSessionId()).getFirst();
+        int correct = chapter.questions("study-first", Difficulty.EASY).getFirst().correctChoiceIndex();
+        robotClick(() -> root().lookup("#answer-" + correct));
+        robotClick(() -> button("SUBMIT"));
+        await(() -> root().lookup("#feedbackHeading") instanceof Label heading
+                && heading.getText().equals("CORRECT") && !navigator.workInProgress());
+        fx(() -> {
+            assertTrue(label("explanationText").getText().contains("physical signet ring"));
+            assertEquals(1, game.currentGame().orElseThrow().firstAnswers().size());
+            capture(root(), "completed-story-answer-feedback");
+            return null;
+        });
+        robotClick(() -> button("VIEW RESULTS"));
+        await(() -> root().lookup("#resultsRoot") != null && !navigator.workInProgress());
+        assertTrue(fx(() -> label("chapterTitle").getText().contains("Aurelium Investigation")));
+        robotClick(() -> button("CONTINUE STORY"));
+        await(() -> root().lookup("#gameplayRoot") != null && !navigator.workInProgress());
+        assertEquals("study-first-correct", game.currentGame().orElseThrow().storyNodeId());
+        assertNotNull(prompt);
     }
 
     @Test void illustratedViewportStaysBoundedAcrossWindowSizesAndReadingScales() throws Exception {
@@ -352,6 +641,7 @@ class Dev1UiTest {
         await(() -> label("statusLabel").getText().contains("Account created"));
         robotType("passwordField", "StrongPass1!");
         robotClick(() -> button("LOG IN"));
+        choosePlayerAppearanceIfNeeded();
         await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
         assertTrue(fx(() -> ((Button) root().lookup("#continueButton")).isDisabled()));
         robotClick(() -> button("NEW GAME"));
@@ -743,6 +1033,7 @@ class Dev1UiTest {
         robotType("usernameField", "save-robot");
         robotType("passwordField", "StrongPass1!");
         robotClick(() -> button("LOG IN"));
+        choosePlayerAppearanceIfNeeded();
         await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
         robotClick(() -> button("CONTINUE"));
         await(() -> root().lookup("#storyText") != null && !navigator.workInProgress());
@@ -850,6 +1141,19 @@ class Dev1UiTest {
         });
         robotClick(() -> dialogPane().lookupButton(ButtonType.CLOSE));
         assertEquals("poisoning-cg", game.currentGame().orElseThrow().storyNodeId());
+    }
+
+    private void choosePlayerAppearanceIfNeeded() throws Exception {
+        await(() -> root().lookup("#appearanceRoot") != null || root().lookup("#menuOptions") != null);
+        if (fx(() -> root().lookup("#appearanceRoot") != null)) {
+            fx(() -> {
+                assertTrue(((Button) root().lookup("#confirmButton")).isDisabled());
+                if (stage.getWidth() <= 800) capture(root(), "servant-selection-small");
+                return null;
+            });
+            robotClick(() -> root().lookup("#choiceA"));
+            robotClick(() -> root().lookup("#confirmButton"));
+        }
     }
 
     private void awaitDialog(String header) throws Exception {
@@ -1040,8 +1344,8 @@ class Dev1UiTest {
                     && passage.getText().contains("answer keys are provisional") && !navigator.workInProgress());
             var state = game.currentGame().orElseThrow();
             Question question = chapter.questions(checkpoint, state.activeDifficulty()).getFirst();
-            int selected = checkpoint.equals("study-first") ? question.correctChoiceIndex()
-                    : (question.correctChoiceIndex() + 1) % question.choices().size();
+            int selected = checkpoint.equals("study-first") ? 0
+                    : (0 + 1) % question.choices().size();
             fx(() -> {
                 capture(root(), "draft-" + checkpoint + "-question");
                 ((RadioButton) root().lookup("#answer-" + selected)).fire();
@@ -1146,6 +1450,32 @@ class Dev1UiTest {
             game.chooseStory(preferred);
         }
         fail("Draft story did not reach node " + targetNodeId);
+    }
+
+    private static void advanceCompletedTo(com.adaptivereadinggame.service.AccountGameService game,
+                                           String targetNodeId, String firstInvestigation) {
+        for (int step = 0; step < 1200; step++) {
+            var view = game.currentGameView().orElseThrow();
+            StoryNode node = view.storyNode();
+            if (targetNodeId.equals(node.storyNodeId())) return;
+            if (node.readingCheck()) {
+                var session = game.startAssessment(view.chapter().id());
+                var questions = game.questions(session);
+                for (var question : questions) game.submit(session, question.id(), 0);
+                game.complete(session);
+                game.continueAfterCheckpoint();
+                continue;
+            }
+            if (node.storyChoices().isEmpty()) {
+                game.advanceStory();
+                continue;
+            }
+            String requested = node.storyNodeId().equals("investigation-route-choice")
+                    ? firstInvestigation : node.storyChoices().getFirst().choiceId();
+            boolean available = node.storyChoices().stream().anyMatch(choice -> choice.choiceId().equals(requested));
+            game.chooseStory(available ? requested : node.storyChoices().getFirst().choiceId());
+        }
+        fail("Completed story did not reach node " + targetNodeId);
     }
 
     @Test void readingSettingsApplyTextSizeAndArtworkPreferenceForTheSession() throws Exception {
@@ -1284,6 +1614,7 @@ class Dev1UiTest {
             click("LOG IN");
             return null;
         });
+        choosePlayerAppearanceIfNeeded();
         await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
         Platform.runLater(() -> click("CONTINUE"));
         await(() -> root().lookup("#gameplayRoot") != null
@@ -1345,6 +1676,7 @@ class Dev1UiTest {
             click("LOG IN");
             return null;
         });
+        choosePlayerAppearanceIfNeeded();
         await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
         fx(() -> {
             assertTrue(label("runtimeLabel").getText().contains("MySQL storage"));
@@ -1389,6 +1721,7 @@ class Dev1UiTest {
             click("LOG IN");
             return null;
         });
+        choosePlayerAppearanceIfNeeded();
         await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
         fx(() -> {
             assertFalse(button("CONTINUE").isDisabled());

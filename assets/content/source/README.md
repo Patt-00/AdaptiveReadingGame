@@ -11,7 +11,7 @@ The application reads the adjacent JSON story pack. The source snapshot and map 
 - The Study hard prompt uses the described evidence because the source names a revoked knighthood decree without supplying that clue. The six answer keys are inferred and visibly provisional.
 - Each investigation can be visited first or second. An outcome after the second investigation leads to the draft boundary rather than directing the reader back to an already visited room.
 - The source repeats the drinking and stasis-lock events. Those beats remain available for the story author to review.
-- The story's time pressure and references to lost minutes remain fictional prose. The player has no countdown, time penalty, or audio playback.
+- The story's time pressure and references to lost minutes remain fictional prose. The player has no countdown or time penalty, and dialogue has no voice recording.
 - The poisoning CG is available during the poisoning scene. The killer-reveal CG remains outside the graph while the conclusion is undecided.
 
 Use [the content-pack guide](../../README.md) to add approved material. A conclusion can extend the graph through content nodes. Publish a new chapter ID when existing learner records refer to the draft.

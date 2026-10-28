@@ -37,6 +37,32 @@ final class MySqlGameRepositoryIntegrationTest {
         new MySqlSchemaMigrator(connections).migrate(); // repeated migration must be safe
     }
 
+    @Test void playerAppearancePersistsAcrossContextsAndRemainsAccountScoped() {
+        String first = "avatar-a-" + shortId();
+        String second = "avatar-b-" + shortId();
+        char[] password = "test-only-passphrase".toCharArray();
+        var initial = BackendContext.mysql(connections);
+        initial.accountGameService().signup(first, "First Reader", password.clone());
+        initial.accountGameService().signup(second, "Second Reader", password.clone());
+        initial.accountGameService().login(first, password.clone());
+        assertTrue(initial.playerAppearanceService().current().isEmpty());
+        initial.playerAppearanceService().save(PlayerAppearance.B);
+        initial.accountGameService().logout(true);
+        var reopened = BackendContext.mysql(connections);
+        reopened.accountGameService().login(first, password.clone());
+        assertEquals(PlayerAppearance.B, reopened.playerAppearanceService().current().orElseThrow());
+        reopened.accountGameService().logout(true);
+        reopened.accountGameService().login(second, password.clone());
+        assertTrue(reopened.playerAppearanceService().current().isEmpty());
+        reopened.playerAppearanceService().save(PlayerAppearance.A);
+        reopened.accountGameService().logout(true);
+        reopened.accountGameService().login(first, password.clone());
+        assertEquals(PlayerAppearance.B, reopened.playerAppearanceService().current().orElseThrow());
+        reopened.playerAppearanceService().save(PlayerAppearance.A);
+        assertEquals(PlayerAppearance.A, reopened.playerAppearanceService().current().orElseThrow());
+        reopened.accountGameService().logout(true);
+    }
+
     @Test void mysql_contract_round_trip_and_atomicity() throws Exception {
         var accounts = new MySqlAccountRepository(connections);
         var game = new MySqlGameRepository(connections);
@@ -398,6 +424,73 @@ final class MySqlGameRepositoryIntegrationTest {
             assertTrue(reopened.currentGameView().orElseThrow().storyNode().storyComplete());
             assertTrue(reopened.currentResult().isPresent());
         }
+    }
+
+    @Test void completedPackKeepsDraftSavesAndRestoresCompletedCheckpointAcrossContexts() throws Exception {
+        var pack = new StoryPackLoader().read(java.nio.file.Path.of("assets/content/hailey-investigation-complete.json"));
+        var draft = pack.chapters().getFirst();
+        var complete = pack.chapters().get(1);
+        String username = "versions-" + shortId();
+        char[] password = "versioned-story-test".toCharArray();
+        var first = BackendContext.mysql(connections);
+        first.storyPackImporter().orElseThrow().importPack(pack);
+        var player = first.accountGameService();
+        player.signup(username, "Versioned Reader", password.clone());
+        player.login(username, password.clone());
+        player.startChapter(draft.chapter().id(), Difficulty.EASY, false);
+        player.save(1, false);
+        player.logout(false);
+
+        var reopened = BackendContext.mysql(connections);
+        reopened.storyPackImporter().orElseThrow().importPack(pack);
+        var resumed = reopened.accountGameService();
+        resumed.login(username, password.clone());
+        GameState oldSave = resumed.load(1, false).orElseThrow();
+        assertEquals(draft.chapter().id(), oldSave.chapterId());
+        assertEquals("draft-notice", oldSave.storyNodeId());
+
+        resumed.startChapter(complete.chapter().id(), Difficulty.EASY, true);
+        reachCompletedCheckpoint(resumed, "study-first-check");
+        UUID session = resumed.startAssessment(complete.chapter().id());
+        var prompt = resumed.questions(session).getFirst();
+        resumed.submit(session, prompt.id(), 0);
+        resumed.save(2, false);
+        resumed.logout(false);
+
+        var afterRestart = BackendContext.mysql(connections);
+        afterRestart.storyPackImporter().orElseThrow().importPack(pack);
+        var restored = afterRestart.accountGameService();
+        restored.login(username, password.clone());
+        GameState completeSave = restored.continueGame(false).orElseThrow();
+        assertEquals(complete.chapter().id(), completeSave.chapterId());
+        assertEquals("study-first-check", completeSave.storyNodeId());
+        assertEquals("study-first", completeSave.activeCheckpointId());
+        assertEquals(1, completeSave.firstAnswers().size());
+        assertEquals(0, completeSave.firstAnswers().get(prompt.id()));
+        assertEquals(draft.chapter().id(), restored.load(1, true).orElseThrow().chapterId());
+        restored.logout(true);
+    }
+
+    private static void reachCompletedCheckpoint(com.adaptivereadinggame.service.AccountGameService player,
+                                                   String target) {
+        for (int step = 0; step < 1200; step++) {
+            var view = player.currentGameView().orElseThrow();
+            StoryNode node = view.storyNode();
+            if (target.equals(node.storyNodeId())) return;
+            if (node.readingCheck()) {
+                UUID session = player.startAssessment(view.chapter().id());
+                for (var question : player.questions(session)) player.submit(session, question.id(), 0);
+                player.complete(session);
+                player.continueAfterCheckpoint();
+            } else if (node.storyChoices().isEmpty()) player.advanceStory();
+            else {
+                String id = node.storyNodeId().equals("investigation-route-choice")
+                        ? "study-first" : node.storyChoices().getFirst().choiceId();
+                player.chooseStory(node.storyChoices().stream().anyMatch(choice -> choice.choiceId().equals(id))
+                        ? id : node.storyChoices().getFirst().choiceId());
+            }
+        }
+        fail("Completed story did not reach " + target);
     }
 
     private static void reachSuppliedCheckpoint(com.adaptivereadinggame.service.AccountGameService player,

@@ -5,7 +5,9 @@ import com.adaptivereadinggame.service.AccountGameService.ChapterSummary;
 import com.adaptivereadinggame.service.ConfirmationRequiredException;
 import com.adaptivereadinggame.model.Difficulty;
 import com.adaptivereadinggame.model.SaveSnapshot;
+import com.adaptivereadinggame.view.MenuArtworkPane;
 import javafx.concurrent.Task;
+import javafx.scene.Group;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
@@ -38,6 +40,8 @@ public final class MenuController {
     private List<SaveSnapshot> slots = List.of();
     private List<AssessmentResult> history = List.of();
     @FXML private StackPane menuRoot;
+    @FXML private MenuArtworkPane menuArtwork;
+    @FXML private Group menuFlourish;
     @FXML private VBox menuOptions;
     @FXML private HBox accountActions;
     @FXML private Button continueButton;
@@ -49,11 +53,22 @@ public final class MenuController {
     public MenuController(AppNavigator navigator) { this.navigator = Objects.requireNonNull(navigator); }
 
     @FXML private void initialize() {
+        menuArtwork.fitToWindowWidth(menuRoot.getWidth());
+        menuRoot.widthProperty().addListener((observable, before, after) -> menuArtwork.fitToWindowWidth(after.doubleValue()));
+        menuRoot.heightProperty().addListener((observable, before, after) -> updateCompactLayout(after.doubleValue()));
         accountLabel.setText(navigator.backend().accountGameService().currentAccount()
                 .map(account -> "Welcome, " + account.displayName()).orElse("No account signed in"));
         runtimeLabel.setText(navigator.storageDescription());
         fontLabel.setText(navigator.fontNotice());
         refresh();
+    }
+
+    private void updateCompactLayout(double height) {
+        boolean compact = height > 0 && height < 620;
+        menuRoot.getStyleClass().remove("compact-menu");
+        if (compact) menuRoot.getStyleClass().add("compact-menu");
+        menuFlourish.setVisible(!compact);
+        menuFlourish.setManaged(!compact);
     }
 
     private void refresh() {
@@ -286,6 +301,11 @@ public final class MenuController {
     }
 
     @FXML private void audioSettings() { navigator.showAudioSettings(); }
+
+    @FXML private void characterSettings() {
+        try { navigator.showAppearanceSelection(); }
+        catch (IOException failure) { navigator.notice("Appearance unavailable", "Please try again."); }
+    }
 
     @FXML private void quit() { navigator.requestQuit(); }
 

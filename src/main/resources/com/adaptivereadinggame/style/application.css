@@ -5,6 +5,23 @@
 .primary-button { -fx-background-color: #3973b8; -fx-text-fill: white; -fx-font-weight: bold; }
 .status { -fx-text-fill: #52616b; }
 
+.opening-root, .opening-text-screen, .opening-loading { -fx-background-color: #210c18; }
+.opening-text-screen { -fx-padding: 30px; }
+.opening-title { -fx-font-family: "Times New Roman"; -fx-font-size: 38px; -fx-text-fill: #fff1d0; -fx-text-alignment: center; }
+.opening-headphones { -fx-fill: transparent; -fx-stroke: #d7b55d; -fx-stroke-width: 1.5; }
+.opening-hint { -fx-font-family: "Georgia"; -fx-font-size: 19px; -fx-text-fill: #f1dfbd; -fx-text-alignment: center; }
+.opening-secondary { -fx-font-family: "Times New Roman"; -fx-font-size: 16px; -fx-text-fill: #fff1bd; -fx-background-color: #53172a; -fx-border-color: #c7a444; -fx-border-radius: 3px; -fx-background-radius: 3px; -fx-padding: 8px 16px; }
+.opening-secondary:hover { -fx-background-color: #842033; }
+.opening-secondary:focused { -fx-border-color: white; -fx-border-width: 2px; }
+.opening-motion { -fx-font-family: "Times New Roman"; -fx-font-size: 15px; -fx-text-fill: #fff1bd; }
+.opening-motion:focused .box { -fx-border-color: #fff1bd; -fx-border-width: 2px; }
+.opening-loading-shade { -fx-background-color: linear-gradient(to bottom, rgba(27, 8, 18, 0.25), rgba(27, 8, 18, 0.86)); }
+.opening-loading-card { -fx-background-color: rgba(45, 12, 27, 0.88); -fx-background-radius: 10px; -fx-border-color: #c7a444; -fx-border-radius: 10px; -fx-padding: 18px 22px; }
+.opening-caption { -fx-font-family: "Times New Roman"; -fx-font-size: 28px; -fx-text-fill: #fff1d0; }
+.opening-status { -fx-font-family: "Georgia"; -fx-font-size: 16px; -fx-text-fill: #f7ead7; }
+.opening-loading-card .progress-bar .track { -fx-background-color: #f0e6d3; -fx-background-radius: 4px; }
+.opening-loading-card .progress-bar .bar { -fx-background-color: #d4af37; -fx-background-radius: 4px; -fx-padding: 7px; }
+
 .splash-root { -fx-background-color: #28121c; }
 .splash-vignette { -fx-background-color: linear-gradient(to right, rgba(30, 9, 19, 0.94) 0%, rgba(45, 12, 27, 0.84) 46%, rgba(42, 12, 24, 0.18) 100%); }
 .splash-layout { -fx-padding: 30px 42px; }
@@ -20,8 +37,23 @@
 .splash-audio:hover { -fx-background-color: #842033; }
 .splash-begin:focused, .splash-audio:focused { -fx-border-color: white; -fx-border-width: 3px; }
 .splash-hint { -fx-font-family: "Times New Roman"; -fx-font-size: 14px; -fx-text-fill: #e6d5b0; }
+.splash-motion { -fx-font-family: "Times New Roman"; -fx-font-size: 14px; -fx-text-fill: #fff1bd; }
+.splash-motion:focused .box { -fx-border-color: #fff1bd; -fx-border-width: 2px; }
 
-.main-menu { -fx-background-color: white; }
+.main-menu { -fx-background-color: #35101f; }
+.main-menu .menu-scroll, .main-menu .menu-scroll .viewport { -fx-background-color: linear-gradient(to bottom right, #35101f, #692036); }
+.main-menu .menu-title { -fx-text-fill: #fff3d1; }
+.main-menu .menu-section-label { -fx-text-fill: #f0d493; }
+.main-menu .account-note, .main-menu .runtime-note { -fx-text-fill: #f7e8cf; }
+.main-menu .account-link { -fx-text-fill: #fff0cc; }
+.main-menu .account-link:hover { -fx-background-color: #862a3d; -fx-text-fill: white; }
+.main-menu .account-link:focused { -fx-border-color: #f4db92; -fx-border-width: 2px; }
+.menu-artwork { -fx-background-color: #35101f; }
+.menu-artwork-tint { -fx-background-color: linear-gradient(to bottom, rgba(38, 10, 23, 0.96) 0%, rgba(61, 15, 30, 0.65) 52%, rgba(29, 8, 20, 0.4) 100%); }
+.menu-artwork-kicker { -fx-font-family: "Times New Roman"; -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #e9ce86; }
+.menu-artwork-title { -fx-font-family: "Times New Roman"; -fx-font-size: 29px; -fx-font-weight: bold; -fx-text-fill: #fff5d4; }
+.menu-artwork-subtitle { -fx-font-family: "Georgia"; -fx-font-size: 15px; -fx-text-fill: #f2e5ce; }
+.menu-options-card { -fx-background-color: #fbf8f1; -fx-background-radius: 14px; -fx-border-color: #e4d6b9; -fx-border-radius: 14px; -fx-padding: 12px; }
 .menu-title {
     -fx-font-family: "Times New Roman";
     -fx-font-size: 88px;
@@ -62,7 +94,16 @@
 
 /* Dev 1 account screens retain the groupmate's white / serif reference style. */
 .account-screen { -fx-background-color: white; }
+.account-card { -fx-background-color: #fffdf9; -fx-background-radius: 14px; -fx-border-color: #e4d6b9; -fx-border-radius: 14px; -fx-padding: 15px 24px; -fx-effect: dropshadow(gaussian, rgba(66, 32, 31, 0.10), 16, 0.08, 0, 4); }
 .account-intro { -fx-font-family: "Georgia"; -fx-font-size: 18px; -fx-text-fill: #5b5147; }
+.appearance-root { -fx-background-color: white; }
+.appearance-content { -fx-padding: 20px 24px; }
+.appearance-heading { -fx-font-family: "Times New Roman"; -fx-font-size: 32px; -fx-text-fill: #73121f; }
+.appearance-note { -fx-font-family: "Georgia"; -fx-font-size: 17px; -fx-text-fill: #51463c; -fx-text-alignment: center; }
+.appearance-card { -fx-background-color: #fbf8f1; -fx-border-color: #d4c39a; -fx-border-radius: 12px; -fx-background-radius: 12px; -fx-padding: 12px 18px; }
+.appearance-card .radio-button { -fx-font-family: "Times New Roman"; -fx-font-size: 17px; -fx-text-fill: #73121f; }
+.appearance-card .radio-button:selected { -fx-font-weight: bold; -fx-text-fill: #5b1427; }
+.appearance-card .radio-button:focused .radio { -fx-border-color: #6e1428; -fx-border-width: 2px; -fx-border-radius: 20px; }
 .account-screen .welcome-primary { -fx-background-color: #73121f; -fx-border-color: #b89845; -fx-background-radius: 4px; -fx-text-fill: #fff1bd; }
 .account-screen .welcome-primary:hover { -fx-background-color: #98243a; -fx-text-fill: white; }
 .account-screen .welcome-secondary { -fx-background-color: #fffdf8; -fx-border-color: #d9c89f; -fx-background-radius: 4px; -fx-text-fill: #681729; }
@@ -78,6 +119,10 @@
 .auth-secondary { -fx-font-size: 24px; -fx-background-color: transparent; -fx-text-fill: black; -fx-padding: 5px 20px; -fx-border-color: transparent; -fx-border-width: 2px; -fx-border-radius: 3px; -fx-cursor: hand; }
 .auth-action:hover, .auth-secondary:hover, .account-link:hover { -fx-text-fill: #655438; -fx-background-color: #f8f5ef; }
 .auth-action:focused, .auth-secondary:focused, .account-link:focused { -fx-border-color: #655438; -fx-border-width: 2px; }
+.account-screen .auth-action { -fx-background-color: #73121f; -fx-background-radius: 4px; -fx-border-color: #b89845; -fx-text-fill: #fff1bd; }
+.account-screen .auth-action:hover { -fx-background-color: #98243a; -fx-text-fill: white; }
+.account-screen .auth-action:focused { -fx-border-color: #655438; -fx-border-width: 2px; }
+.account-screen .auth-action:disabled { -fx-opacity: 1; -fx-background-color: #eee8dc; -fx-border-color: #b9aa8b; -fx-text-fill: #6b6259; }
 .auth-status { -fx-font-size: 22px; }
 .auth-error { -fx-text-fill: #9b1731; }
 .auth-success { -fx-text-fill: #2d6e33; }
@@ -179,24 +224,31 @@
 .instructions-scroll, .instructions-scroll .viewport { -fx-background-color: white; }
 .instructions-scroll { -fx-padding: 8px 24px; }
 .menu-scroll, .menu-scroll .viewport { -fx-background-color: white; }
-.menu-content, .account-content { -fx-padding: 24px 32px; }
+.menu-content, .account-content { -fx-padding: 14px 26px; }
 .responsive-title { -fx-font-size: 48px; }
-.menu-content .menu-option, .responsive-option { -fx-font-size: 32px; -fx-min-height: 48px; -fx-padding: 6px 24px; }
+.menu-content .menu-option { -fx-font-size: 27px; -fx-min-height: 43px; -fx-padding: 5px 24px; }
+.responsive-option { -fx-font-size: 32px; -fx-min-height: 48px; -fx-padding: 6px 24px; }
 .menu-content .account-note { -fx-font-size: 18px; }
 .menu-content .account-link { -fx-font-size: 18px; }
 .menu-content .runtime-note, .account-content .runtime-note { -fx-font-size: 14px; }
+.compact-menu .menu-title { -fx-font-size: 36px; }
+.compact-menu .menu-content { -fx-padding: 8px 24px; -fx-spacing: 4px; }
+.compact-menu .menu-options-card { -fx-padding: 6px; }
+.compact-menu .menu-option { -fx-font-size: 23px; -fx-min-height: 37px; -fx-padding: 4px 24px; }
+.compact-menu .account-note { -fx-font-size: 16px; }
+.compact-menu .account-link { -fx-font-size: 15px; }
 .account-content .auth-body, .account-content .auth-input, .account-content .auth-status { -fx-font-size: 18px; }
 .account-content .auth-action { -fx-font-size: 26px; }
 .account-content .auth-secondary { -fx-font-size: 20px; }
 /* This fallback is explicitly announced in the screen footer and console. */
 .georgia-fallback .menu-option, .georgia-fallback .auth-body, .georgia-fallback .auth-input,
-.georgia-fallback .splash-subtitle, .georgia-fallback .account-intro,
+.georgia-fallback .splash-subtitle, .georgia-fallback .account-intro, .georgia-fallback .menu-artwork-subtitle, .georgia-fallback .appearance-note,
 .georgia-fallback .auth-action, .georgia-fallback .auth-secondary, .georgia-fallback .auth-status,
 .georgia-fallback .account-link, .georgia-fallback .account-note, .georgia-fallback .runtime-note,
 .georgia-fallback .gameplay-difficulty, .georgia-fallback .instructions-difficulty,
 .reference-dialog.georgia-fallback { -fx-font-family: "Times New Roman"; }
 .serif-fallback .menu-title, .serif-fallback .auth-heading, .serif-fallback .menu-option,
-.serif-fallback .splash-title, .serif-fallback .splash-subtitle, .serif-fallback .account-intro,
+.serif-fallback .splash-title, .serif-fallback .splash-subtitle, .serif-fallback .account-intro, .serif-fallback .menu-artwork-title, .serif-fallback .menu-artwork-subtitle, .serif-fallback .appearance-heading, .serif-fallback .appearance-note,
 .serif-fallback .auth-body, .serif-fallback .auth-input, .serif-fallback .auth-action,
 .serif-fallback .auth-secondary, .serif-fallback .auth-status, .serif-fallback .account-link,
 .serif-fallback .account-note, .serif-fallback .runtime-note,

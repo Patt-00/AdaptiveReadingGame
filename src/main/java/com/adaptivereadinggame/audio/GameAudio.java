@@ -4,14 +4,16 @@ import java.util.Objects;
 
 /** Session audio preferences and playback policy. */
 public final class GameAudio implements AutoCloseable {
+    public enum Track { SILENT, MENU, INVESTIGATION, TENSE }
     public interface Output extends AutoCloseable {
         void setMusic(boolean playing, double volume);
+        default void setTrack(Track track, double volume) { setMusic(track != Track.SILENT, volume); }
         void click(double volume);
         @Override void close();
     }
 
     private final Output output;
-    private boolean menuScene;
+    private Track track = Track.SILENT;
     private double musicVolume = 0.22;
     private double effectsVolume = 0.55;
     private boolean closed;
@@ -29,7 +31,11 @@ public final class GameAudio implements AutoCloseable {
     }
 
     public void setMenuScene(boolean menuScene) {
-        this.menuScene = menuScene;
+        setTrack(menuScene ? Track.MENU : Track.SILENT);
+    }
+
+    public void setTrack(Track track) {
+        this.track = Objects.requireNonNull(track);
         updateMusic();
     }
 
@@ -38,7 +44,7 @@ public final class GameAudio implements AutoCloseable {
     }
 
     private void updateMusic() {
-        if (!closed) output.setMusic(menuScene && musicVolume > 0, musicVolume);
+        if (!closed) output.setTrack(musicVolume > 0 ? track : Track.SILENT, musicVolume);
     }
 
     private static void validate(double value) {

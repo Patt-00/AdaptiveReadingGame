@@ -13,7 +13,9 @@ class GameAudioTest {
         double effect;
         int clicks;
         int closed;
+        GameAudio.Track track;
         public void setMusic(boolean playing, double volume) { this.playing = playing; music = volume; }
+        public void setTrack(GameAudio.Track track, double volume) { this.track = track; setMusic(track != GameAudio.Track.SILENT, volume); }
         public void click(double volume) { effect = volume; clicks++; }
         public void close() { closed++; }
     }
@@ -23,6 +25,7 @@ class GameAudioTest {
         var audio = new GameAudio(output);
         audio.setMenuScene(true);
         assertTrue(output.playing);
+        assertEquals(GameAudio.Track.MENU, output.track);
         assertEquals(0.22, output.music);
         audio.setVolumes(0, 0.5);
         assertFalse(output.playing);
@@ -34,6 +37,10 @@ class GameAudioTest {
         assertEquals(1, output.clicks);
         audio.setMenuScene(false);
         assertFalse(output.playing);
+        audio.setTrack(GameAudio.Track.INVESTIGATION);
+        assertEquals(GameAudio.Track.INVESTIGATION, output.track);
+        audio.setTrack(GameAudio.Track.TENSE);
+        assertEquals(GameAudio.Track.TENSE, output.track);
         audio.setMenuScene(true);
         assertTrue(output.playing);
         audio.close();

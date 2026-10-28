@@ -18,7 +18,8 @@ public final class MySqlSchemaMigrator {
             new Migration(1, "initial schema", "/db/migrations/V001__initial_schema.sql"),
             new Migration(2, "content feedback and assets", "/db/migrations/V002__content_feedback_and_assets.sql"),
             new Migration(3, "difficulty decision source", "/db/migrations/V003__difficulty_decision_source.sql"),
-            new Migration(4, "adaptive story checkpoints and assets", "/db/migrations/V004__adaptive_story_checkpoints_and_assets.sql"));
+            new Migration(4, "adaptive story checkpoints and assets", "/db/migrations/V004__adaptive_story_checkpoints_and_assets.sql"),
+            new Migration(5, "player appearance", "/db/migrations/V005__player_appearance.sql"));
 
     private final ConnectionProvider connections;
 

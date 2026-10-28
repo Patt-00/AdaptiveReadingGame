@@ -6,6 +6,7 @@ import com.adaptivereadinggame.audio.JavaFxAudioOutput;
 import com.adaptivereadinggame.backend.BackendContext;
 import com.adaptivereadinggame.content.StoryStageDirections;
 import com.adaptivereadinggame.model.StoryNode;
+import com.adaptivereadinggame.model.PlayerAppearance;
 import com.adaptivereadinggame.service.AccountGameService.ChapterSummary;
 import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
@@ -43,7 +44,8 @@ public final class AppNavigator {
     private final BackendContext backend;
     private final String storageDescription;
     private final StoryStageDirections stageDirections;
-    private final GameAudio audio = new GameAudio(new JavaFxAudioOutput());
+    private final GameAudio audio;
+    private Scene wiredScene;
     private final String stageDirectionsNotice;
     private final boolean georgiaMissing = Font.getFamilies().stream()
             .noneMatch(family -> family.equalsIgnoreCase("Georgia"));
@@ -54,27 +56,34 @@ public final class AppNavigator {
     private double readingFontScale = 1.0;
     private boolean characterArtworkEnabled = true;
     private boolean reducedMotion;
+    private PlayerAppearance playerAppearance;
     private final List<StoryLogEntry> storyLog = new ArrayList<>();
     private UUID storyLogAccount;
     private UUID storyLogChapter;
     private ChapterSummary pendingChapter;
 
     public AppNavigator(Stage stage, BackendContext backend, String storageDescription) {
-        this(stage, backend, storageDescription, loadStageDirections());
+        this(stage, backend, storageDescription, loadStageDirections(), new GameAudio(new JavaFxAudioOutput()));
+    }
+
+    public AppNavigator(Stage stage, BackendContext backend, String storageDescription, GameAudio audio) {
+        this(stage, backend, storageDescription, loadStageDirections(), audio);
     }
 
     public AppNavigator(Stage stage, BackendContext backend, String storageDescription,
                         StoryStageDirections stageDirections) {
-        this(stage, backend, storageDescription, new StageDirectionsLoad(Objects.requireNonNull(stageDirections), ""));
+        this(stage, backend, storageDescription, new StageDirectionsLoad(Objects.requireNonNull(stageDirections), ""),
+                new GameAudio(new JavaFxAudioOutput()));
     }
 
     private AppNavigator(Stage stage, BackendContext backend, String storageDescription,
-                         StageDirectionsLoad stageLoad) {
+                         StageDirectionsLoad stageLoad, GameAudio audio) {
         this.stage = Objects.requireNonNull(stage);
         this.backend = Objects.requireNonNull(backend);
         this.storageDescription = Objects.requireNonNull(storageDescription);
         this.stageDirections = stageLoad.directions();
         this.stageDirectionsNotice = stageLoad.notice();
+        this.audio = Objects.requireNonNull(audio);
     }
 
     public BackendContext backend() { return backend; }
@@ -93,6 +102,8 @@ public final class AppNavigator {
     public void setCharacterArtworkEnabled(boolean enabled) { characterArtworkEnabled = enabled; }
     public boolean reducedMotion() { return reducedMotion; }
     public void setReducedMotion(boolean reduced) { reducedMotion = reduced; }
+    public Optional<PlayerAppearance> playerAppearance() { return Optional.ofNullable(playerAppearance); }
+    public void setPlayerAppearance(PlayerAppearance appearance) { playerAppearance = appearance; }
     public GameAudio audio() { return audio; }
     public Optional<ChapterSummary> pendingChapter() { return Optional.ofNullable(pendingChapter); }
 
@@ -125,6 +136,21 @@ public final class AppNavigator {
     }
 
     public void start() throws IOException {
+        prepareStage();
+        show("splash.fxml");
+        stage.show();
+        if (!fontNotice().isEmpty()) System.err.println(fontNotice());
+    }
+
+    /** Enter the account screen after the startup loading sequence has completed. */
+    public void startAtAccount() throws IOException {
+        prepareStage();
+        showAccount();
+        if (!stage.isShowing()) stage.show();
+        if (!fontNotice().isEmpty()) System.err.println(fontNotice());
+    }
+
+    private void prepareStage() {
         stage.setTitle("Adaptive Reading Game");
         stage.setMinWidth(760);
         stage.setMinHeight(520);
@@ -135,12 +161,10 @@ public final class AppNavigator {
                 requestQuit();
             }
         });
-        show("splash.fxml");
-        stage.show();
-        if (!fontNotice().isEmpty()) System.err.println(fontNotice());
     }
 
-    public void showAccount() throws IOException { clearStoryLog(); show("account.fxml"); }
+    public void showAccount() throws IOException { clearStoryLog(); playerAppearance = null; show("account.fxml"); }
+    public void showAppearanceSelection() throws IOException { show("appearance.fxml"); }
     public void showMenu() throws IOException { show("main-menu.fxml"); }
     public void showGameplay() throws IOException { show("gameplay.fxml"); }
     public void showCurrentGame() throws IOException { showGameplay(); }
@@ -178,6 +202,7 @@ public final class AppNavigator {
         loader.setControllerFactory(type -> {
             if (type == AccountController.class) return new AccountController(this);
             if (type == SplashController.class) return new SplashController(this);
+            if (type == AppearanceController.class) return new AppearanceController(this);
             if (type == MenuController.class) return new MenuController(this);
             if (type == GameplayController.class) return new GameplayController(this);
             if (type == ResultsController.class) return new ResultsController(this);
@@ -189,13 +214,18 @@ public final class AppNavigator {
         applyFontFallback(root);
         if (stage.getScene() == null) {
             Scene scene = new Scene(root, 1280, 720);
-            scene.getStylesheets().add(stylesheet());
+            stage.setScene(scene);
+        } else stage.getScene().setRoot(root);
+        Scene scene = stage.getScene();
+        if (!scene.getStylesheets().contains(stylesheet())) scene.getStylesheets().add(stylesheet());
+        if (wiredScene != scene) {
             scene.addEventFilter(ActionEvent.ACTION, event -> {
                 if (event.getTarget() instanceof ButtonBase) audio.click();
             });
-            stage.setScene(scene);
-        } else stage.getScene().setRoot(root);
-        audio.setMenuScene(resource.equals("splash.fxml") || resource.equals("account.fxml") || resource.equals("main-menu.fxml"));
+            wiredScene = scene;
+        }
+        audio.setMenuScene(resource.equals("splash.fxml") || resource.equals("account.fxml")
+                || resource.equals("appearance.fxml") || resource.equals("main-menu.fxml"));
     }
 
     public void styleDialog(Dialog<?> dialog) {

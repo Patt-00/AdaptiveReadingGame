@@ -2,6 +2,7 @@ package com.adaptivereadinggame.controller;
 
 import com.adaptivereadinggame.content.CharacterAssetResolver;
 import com.adaptivereadinggame.content.StoryAssetResolver;
+import com.adaptivereadinggame.content.StoryMusicCues;
 import com.adaptivereadinggame.model.StoryNode;
 import com.adaptivereadinggame.model.StoryChoice;
 import com.adaptivereadinggame.service.AccountGameService;
@@ -220,6 +221,7 @@ public final class GameplayController {
     }
 
     private void showStory(StoryNode node) {
+        navigator.audio().setTrack(StoryMusicCues.forNode(loaded.view().state().chapterId(), node));
         setStoryPresentation(true);
         storyScroll.setVisible(true);
         storyScroll.setManaged(true);
@@ -287,7 +289,10 @@ public final class GameplayController {
         try {
             if (navigator.characterArtworkEnabled() && node.cgAssetKey().isBlank()) {
                 Path root = Path.of(System.getenv().getOrDefault("ARG_ASSET_DIR", "assets"));
-                active = characterImage(node.speakerAssetKey(), root);
+                String activeKey = "You".equals(node.speakerName())
+                        ? navigator.playerAppearance().map(com.adaptivereadinggame.model.PlayerAppearance::assetKey).orElse("")
+                        : node.speakerAssetKey();
+                active = characterImage(activeKey, root);
                 var direction = navigator.stageDirections().forNode(loaded.view().state().chapterId(), node.storyNodeId());
                 if (active != null && !node.speakerName().isBlank() && direction.isPresent()) {
                     supporting = characterImage(direction.get().assetKey(), root);
@@ -510,6 +515,7 @@ public final class GameplayController {
 
     private void showAssessment(AccountGameService.GameView view,
                                 List<AssessmentService.QuestionPrompt> questions) {
+        navigator.audio().setTrack(com.adaptivereadinggame.audio.GameAudio.Track.SILENT);
         setStoryPresentation(false);
         clearSceneAssets();
         storyScroll.setVisible(false);
