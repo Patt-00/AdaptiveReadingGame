@@ -54,6 +54,12 @@ mvn -B -DskipTests compile
 mvn javafx:run
 ```
 
+### Build-check the source in Termux
+
+Run `./scripts/termux-build-check.sh` from a Termux checkout. A standalone copy clones `main` into `$HOME/AdaptiveReadingGame-Termux` when it cannot find a project. The script installs missing Git, JDK 21, or Maven packages, then compiles the Java sources. Pass `--install-only` to check or install tools without cloning or compiling. Pass `--project-dir PATH` to use an existing checkout or select a clone directory.
+
+On the Pad 7's ARM64 system, the script uses desktop Linux JavaFX classes to compile the source. Their native libraries cannot run on Android ARM64, so the script does not open the game window or create an Android package. [Gluon Mobile](https://gluonhq.com/products/mobile/) provides a JavaFX-based Android packaging path.
+
 The launch class is `com.adaptivereadinggame.AdaptiveReadingGameApp`. It opens an animated text introduction and a loading screen. Once startup finishes, press Space or select Enter to open authentication. A new account selects a servant appearance before reaching the main menu.
 
 With no database settings, the app uses visibly labeled in-memory development storage. To use MySQL, set `ARG_DB_URL`, `ARG_DB_USER`, and `ARG_DB_PASSWORD`, then apply the schema described in [database setup](database/README.md).
