@@ -12,9 +12,8 @@ command -v proot-distro >/dev/null 2>&1 \
     || fail 'Run scripts/termux-setup-x11.sh first to install the launcher requirements.'
 command -v termux-x11 >/dev/null 2>&1 \
     || fail 'Run scripts/termux-setup-x11.sh first to install the Termux:X11 package.'
-command -v pm >/dev/null 2>&1 \
-    && pm path com.termux.x11 2>/dev/null | grep -q '^package:' \
-    || fail 'Install the separate Termux:X11 Android app before launching the game: https://github.com/termux/termux-x11/releases'
+command -v am >/dev/null 2>&1 \
+    || fail 'Android Activity Manager am is unavailable in this Termux session.'
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$script_dir/termux-audio-bridge.sh"
@@ -71,8 +70,23 @@ fi
 [[ -S "$display_socket" ]] \
     || fail "X11 did not create $display_socket. Check $log_dir/x11.log and open the Termux:X11 app."
 
-if command -v am >/dev/null 2>&1; then
-    am start --user 0 -n com.termux.x11/com.termux.x11.MainActivity >/dev/null 2>&1 || true
+activity_start_result=""
+for ((attempt = 0; attempt < 5; attempt++)); do
+    activity_start_result="$(am start --user 0 -n com.termux.x11/com.termux.x11.MainActivity 2>&1 || true)"
+    if [[ "$activity_start_result" == *"Starting: Intent"* \
+            || "$activity_start_result" == *"Warning: Activity not started"* ]]; then
+        break
+    fi
+    if [[ "$activity_start_result" == *"Error type 3"* \
+            || "$activity_start_result" == *"does not exist"* \
+            || "$activity_start_result" == *"unable to resolve Intent"* ]]; then
+        fail 'Install the separate Termux:X11 Android app before launching the game: https://github.com/termux/termux-x11/releases'
+    fi
+    sleep 1
+done
+if [[ "$activity_start_result" != *"Starting: Intent"* \
+        && "$activity_start_result" != *"Warning: Activity not started"* ]]; then
+    printf 'Warning: Android did not confirm Termux:X11 activity startup. Continuing with the active X11 display.\n' >&2
 fi
 
 if prepare_termux_audio_bridge; then

@@ -126,9 +126,21 @@ else
     printf 'Warning: Termux PulseAudio has no usable Android sink; the game will run without sound.\n' >&2
 fi
 
+x11_app_state=unknown
 x11_app_path=""
 if command -v pm >/dev/null 2>&1; then
-    x11_app_path="$(pm path com.termux.x11 2>/dev/null || true)"
+    for ((attempt = 0; attempt < 5; attempt++)); do
+        x11_app_path="$(pm path com.termux.x11 </dev/null 2>&1 || true)"
+        if [[ "$x11_app_path" == package:* ]]; then
+            x11_app_state=installed
+            break
+        fi
+        if [[ "$x11_app_path" == *"not found"* || "$x11_app_path" == *"does not exist"* ]]; then
+            x11_app_state=missing
+            break
+        fi
+        sleep 1
+    done
 fi
 
 if [[ ! -f "$PREFIX/var/lib/proot-distro/containers/debian/rootfs/etc/debian_version" ]]; then
@@ -199,10 +211,14 @@ printf 'Java: %s, javac: %s\n' "$java_major" "$javac_major"
 printf 'Maven: %s\n' "$(mvn -version 2>&1 | sed -n '1p')"
 DEBIAN_SETUP
 
-if [[ "$x11_app_path" != package:* ]]; then
+if [[ "$x11_app_state" == missing ]]; then
     printf '\nTermux packages and Debian dependencies are ready. Install the separate Termux:X11 Android app before launch:\n' >&2
     printf 'https://github.com/termux/termux-x11/releases\n' >&2
     exit 1
+fi
+
+if [[ "$x11_app_state" == unknown ]]; then
+    printf 'Warning: Android did not confirm the Termux:X11 app. The launcher will try to open it before starting the game.\n' >&2
 fi
 
 printf '\nSetup complete for %s. Run scripts/termux-run-x11.sh from the project root to open the game.\n' "$project_root"

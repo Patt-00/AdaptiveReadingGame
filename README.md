@@ -66,7 +66,7 @@ Run setup once from the project root in Termux:
 ./scripts/termux-setup-x11.sh
 ```
 
-The setup script uses the current checkout. If you run it outside a checkout, it clones `main` into `$HOME/AdaptiveReadingGame-Termux`. Pass `--project-dir PATH` to select another project directory.
+The setup script uses the current checkout. If you run it outside a checkout, it clones `main` into `$HOME/AdaptiveReadingGame-Termux`. Pass `--project-dir PATH` to select another project directory. A temporary Android package-manager query failure is treated as unknown; the launcher tries to open Termux:X11 and reports a missing app only when Android explicitly cannot resolve its activity.
 
 Launch the game from the same project root:
 
