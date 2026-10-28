@@ -114,7 +114,7 @@ proot-distro login --detach --shared-tmp \
     --env "MAVEN_OPTS=$maven_opts" \
     debian -- /bin/bash -lc 'cd /workspace/AdaptiveReadingGame && exec mvn javafx:run > target/termux-game.log 2>&1'
 
-for ((attempt = 0; attempt < 20; attempt++)); do
+for ((attempt = 0; attempt < 60; attempt++)); do
     if grep -Eq 'Loaded [0-9]+ story chapter' "$log_file" 2>/dev/null; then
         printf 'Game is ready in Termux:X11 full screen.\n'
         printf 'Log: %s\n' "$log_file"

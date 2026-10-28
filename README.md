@@ -78,6 +78,8 @@ The launcher opens the Termux:X11 app, uses an existing `:0` or `:1` display soc
 
 The game uses temporary in-memory storage when MySQL settings are absent. The Java difficulty fallback works when the optional Python model helper is not running.
 
+The Termux launcher does not change Android's media-volume setting. If PulseAudio reports an active stream but the game sounds silent, raise the device's media volume and check its selected audio output.
+
 ### Compile-check source in native Termux
 
 Run `./scripts/termux-build-check.sh` from a Termux checkout when you only need a Java source compile check. A standalone copy clones `main` into `$HOME/AdaptiveReadingGame-Termux` when it cannot find a project. The script installs missing Git, JDK 21, or Maven packages and compiles the Java sources. It uses desktop Linux JavaFX classes for compilation on ARM64; it cannot launch the game window. Pass `--install-only` to check or install tools without cloning or compiling. Pass `--project-dir PATH` to use an existing checkout or select a clone directory.
