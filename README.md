@@ -58,7 +58,7 @@ mvn javafx:run
 
 The game runs inside a Debian PRoot environment on Termux and opens its JavaFX window through Termux:X11. The Android Java runtime cannot load the desktop JavaFX native libraries. Debian supplies a Linux ARM64 runtime, and Maven resolves JavaFX artifacts for that platform. See the [OpenJFX Maven setup](https://openjfx.io/openjfx-docs/), [Termux:X11 instructions](https://github.com/termux/termux-x11), and [proot-distro options](https://github.com/termux/proot-distro).
 
-Install the Termux:X11 Android app from its [official release page](https://github.com/termux/termux-x11/releases). The setup script installs the Termux companion package, Debian PRoot, JDK 21 or newer, Maven, Git LFS, PulseAudio, and the Linux libraries used by JavaFX graphics and media. It downloads the artwork and menu music, then compiles the Java sources. The launcher exposes the Termux audio sink to Debian on loopback using the [Termux PulseAudio PRoot method](https://github.com/termux/termux-packages/issues/12289). It does not download the optional Qwen model or install MySQL.
+Install the Termux:X11 Android app from its [official release page](https://github.com/termux/termux-x11/releases). The setup script installs the Termux companion package, Debian PRoot, JDK 21 or newer, Maven, Git LFS, PulseAudio, and the Linux libraries used by JavaFX graphics and media. It downloads the artwork and menu music, then compiles the Java sources. The launcher maps ALSA's default device to the Termux PulseAudio sink over loopback using the [Termux PulseAudio PRoot method](https://github.com/termux/termux-packages/issues/12289). It does not download the optional Qwen model or install MySQL.
 
 Run setup once from the project root in Termux:
 

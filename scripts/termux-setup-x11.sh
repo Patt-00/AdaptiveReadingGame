@@ -156,7 +156,7 @@ package_available libasound2t64 && alsa_package=libasound2t64
 
 packages=(
     openjdk-21-jdk maven git git-lfs
-    "$gtk_package" "$alsa_package"
+    "$gtk_package" "$alsa_package" libasound2-plugins
     libfontconfig1 libgl1 libegl1 libxtst6 libxi6 libxrender1
     libxrandr2 libxinerama1 libxxf86vm1
     gstreamer1.0-plugins-base gstreamer1.0-plugins-good

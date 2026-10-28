@@ -106,6 +106,7 @@ exec proot-distro login debian --shared-tmp \
     --env TMPDIR=/tmp \
     --env XDG_RUNTIME_DIR=/tmp \
     --env PULSE_SERVER=127.0.0.1 \
+    --env ALSA_CONFIG_PATH=/workspace/AdaptiveReadingGame/scripts/termux-asoundrc \
     --env ARG_FULL_SCREEN=true \
     --env "JAVA_TOOL_OPTIONS=$java_tool_options" \
     --env "MAVEN_OPTS=$maven_opts" \
