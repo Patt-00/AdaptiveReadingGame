@@ -74,16 +74,7 @@ if command -v am >/dev/null 2>&1; then
     am start --user 0 -n com.termux.x11/com.termux.x11.MainActivity >/dev/null 2>&1 || true
 fi
 
-if ! proot-distro list | awk '
-    /Installed containers:/ { in_installed = 1; next }
-    /Log in with:/ { in_installed = 0 }
-    in_installed {
-        gsub(/^[[:space:]]*\*[[:space:]]*/, "")
-        gsub(/^[[:space:]]+|[[:space:]]+$/, "")
-        if ($0 == "debian") found = 1
-    }
-    END { exit !found }
-'; then
+if [[ ! -f "$PREFIX/var/lib/proot-distro/containers/debian/rootfs/etc/debian_version" ]]; then
     fail 'The Debian PRoot environment is missing. Run scripts/termux-setup-x11.sh first.'
 fi
 
