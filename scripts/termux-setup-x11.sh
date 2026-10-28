@@ -107,7 +107,7 @@ if ! package_installed x11-repo; then
 fi
 
 host_packages=()
-for package in git proot-distro procps termux-x11-nightly; do
+for package in git git-lfs proot-distro procps termux-x11-nightly; do
     package_installed "$package" || host_packages+=("$package")
 done
 if ((${#host_packages[@]} > 0)); then
@@ -120,10 +120,9 @@ fi
 command -v proot-distro >/dev/null 2>&1 || fail 'proot-distro is unavailable after installation.'
 command -v termux-x11 >/dev/null 2>&1 || fail 'termux-x11 is unavailable after installation.'
 
-x11_app_installed=false
-if command -v pm >/dev/null 2>&1 \
-        && pm path com.termux.x11 2>/dev/null | grep -q '^package:'; then
-    x11_app_installed=true
+x11_app_path=""
+if command -v pm >/dev/null 2>&1; then
+    x11_app_path="$(pm path com.termux.x11 2>/dev/null || true)"
 fi
 
 if [[ ! -f "$PREFIX/var/lib/proot-distro/containers/debian/rootfs/etc/debian_version" ]]; then
@@ -186,7 +185,7 @@ printf 'Java: %s, javac: %s\n' "$java_major" "$javac_major"
 printf 'Maven: %s\n' "$(mvn -version 2>&1 | sed -n '1p')"
 DEBIAN_SETUP
 
-if [[ "$x11_app_installed" != true ]]; then
+if [[ "$x11_app_path" != package:* ]]; then
     printf '\nTermux packages and Debian dependencies are ready. Install the separate Termux:X11 Android app before launch:\n' >&2
     printf 'https://github.com/termux/termux-x11/releases\n' >&2
     exit 1
