@@ -8,7 +8,7 @@ This version connects account services, adaptive story checkpoints, MySQL reposi
 
 - JDK 21 or newer; the project compiles for Java 21.
 - Maven available on the terminal PATH.
-- JavaFX 21.0.5 dependencies are managed by Maven.
+- JavaFX 21.0.13 dependencies are managed by Maven.
 - Git LFS is needed to download the bundled music, large artwork, and optional model weights when cloning the repository.
 
 For one-command setup and launch, use the setup script for your operating system. It installs JDK 21 or newer and Maven through the available package manager when either is missing, then checks the project and starts the game. Package installation may ask for administrator permission.

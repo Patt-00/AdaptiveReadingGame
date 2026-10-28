@@ -12,7 +12,7 @@ AdaptiveReadingGame/
 ├── Module Guide/
 │   └── Manual Compilation.md
 ├── Modules/
-│   └── javafx-sdk-21.0.5/
+│   └── javafx-sdk-21.0.13/
 │       └── lib/                 ← JavaFX SDK for your OS
 ├── src/
 │   └── main/
@@ -30,8 +30,8 @@ The application's package is `com.adaptivereadinggame`. Its launch class is **`c
 ## 2. Requirements
 
 - Install a JDK with both `java` and `javac`. Use JDK 21 or newer to match the project's compiler release of 21.
-- Download and extract the JavaFX 21.0.5 **SDK** for your operating system and processor architecture. Match Windows, Linux, or macOS and x64 or ARM64 to your computer.
-- Put the extracted SDK in `Modules`. The examples assume `Modules/javafx-sdk-21.0.5/lib`. Change the path if your SDK folder has a different name.
+- Download and extract the JavaFX 21.0.13 **SDK** for your operating system and processor architecture. Match Windows, Linux, or macOS and x64 or ARM64 to your computer.
+- Put the extracted SDK in `Modules`. The examples assume `Modules/javafx-sdk-21.0.13/lib`. Change the path if your SDK folder has a different name.
 - On `Dev1`, put the three Jackson runtime JARs (`jackson-databind`, `jackson-core`, `jackson-annotations`) under `Modules/dependencies/`. Use the versions resolved by this branch's Jackson BOM in `pom.xml`, not unrelated versions.
 - Add MySQL Connector/J 9.7.0 to `Modules/dependencies/` only when you run the app with MySQL settings. The project uses its JDBC driver at runtime and does not need MySQL classes to compile.
 - Verify Java in your terminal:
@@ -64,7 +64,7 @@ cd "C:\path\to\AdaptiveReadingGame"
 New-Item -ItemType Directory -Path .\bin -Force | Out-Null
 
 # Point to the Windows JavaFX SDK's lib folder.
-$javafxLib = (Resolve-Path ".\Modules\javafx-sdk-21.0.5\lib").Path
+$javafxLib = (Resolve-Path ".\Modules\javafx-sdk-21.0.13\lib").Path
 
 # Collect every Java source file, including files in subfolders.
 $javaSources = @(Get-ChildItem ".\src\main\java" -Recurse -Filter *.java | ForEach-Object { $_.FullName })
@@ -89,7 +89,7 @@ cd "/path/to/AdaptiveReadingGame"
 mkdir -p bin
 
 # Point to the Linux JavaFX SDK's lib folder.
-javafx_lib="$PWD/Modules/javafx-sdk-21.0.5/lib"
+javafx_lib="$PWD/Modules/javafx-sdk-21.0.13/lib"
 
 # Collect source paths safely, including names containing spaces.
 mapfile -d '' -t java_sources < <(find src/main/java -type f -name '*.java' -print0)
@@ -114,7 +114,7 @@ cd "/path/to/AdaptiveReadingGame"
 mkdir -p bin
 
 # Point to the macOS JavaFX SDK's lib folder.
-javafx_lib="$PWD/Modules/javafx-sdk-21.0.5/lib"
+javafx_lib="$PWD/Modules/javafx-sdk-21.0.13/lib"
 
 # zsh recursively collects Java files into an array.
 java_sources=(src/main/java/**/*.java(N))

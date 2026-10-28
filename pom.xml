@@ -11,7 +11,7 @@
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javafx.version>21.0.5</javafx.version>
+        <javafx.version>21.0.13</javafx.version>
         <jackson.version>2.18.11</jackson.version>
         <mysql.connector.version>9.7.0</mysql.connector.version>
         <exec.mainClass>com.adaptivereadinggame.backend.BackendDemo</exec.mainClass>
