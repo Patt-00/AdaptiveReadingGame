@@ -94,8 +94,9 @@ prism_order="${ARG_TERMUX_PRISM_ORDER:-sw}"
 [[ "$prism_order" == sw || "$prism_order" == es2 ]] \
     || fail 'ARG_TERMUX_PRISM_ORDER must be sw or es2.'
 maven_opts="-Dprism.order=$prism_order"
+java_tool_options=""
 if [[ "${ARG_TERMUX_MEDIA_DEBUG:-false}" == true ]]; then
-    maven_opts+=" -Djfxmedia.loglevel=debug"
+    java_tool_options="-Djfxmedia.loglevel=debug"
 fi
 
 printf 'Launching Adaptive Reading Game on Termux:X11 display %s. Close the game window to stop the launcher.\n' "$display"
@@ -106,5 +107,6 @@ exec proot-distro login debian --shared-tmp \
     --env XDG_RUNTIME_DIR=/tmp \
     --env PULSE_SERVER=127.0.0.1 \
     --env ARG_FULL_SCREEN=true \
+    --env "JAVA_TOOL_OPTIONS=$java_tool_options" \
     --env "MAVEN_OPTS=$maven_opts" \
     debian -- /bin/bash -lc 'cd /workspace/AdaptiveReadingGame && exec mvn javafx:run'
