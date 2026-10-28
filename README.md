@@ -54,11 +54,33 @@ mvn -B -DskipTests compile
 mvn javafx:run
 ```
 
-### Build-check the source in Termux
+### Run the game from Termux:X11
 
-Run `./scripts/termux-build-check.sh` from a Termux checkout. A standalone copy clones `main` into `$HOME/AdaptiveReadingGame-Termux` when it cannot find a project. The script installs missing Git, JDK 21, or Maven packages, then compiles the Java sources. Pass `--install-only` to check or install tools without cloning or compiling. Pass `--project-dir PATH` to use an existing checkout or select a clone directory.
+The game runs inside a Debian PRoot environment on Termux and opens its JavaFX window through Termux:X11. The Android Java runtime cannot load the desktop JavaFX native libraries. Debian supplies a Linux ARM64 runtime, and Maven resolves JavaFX artifacts for that platform. See the [OpenJFX Maven setup](https://openjfx.io/openjfx-docs/), [Termux:X11 instructions](https://github.com/termux/termux-x11), and [proot-distro options](https://github.com/termux/proot-distro).
 
-On the Pad 7's ARM64 system, the script uses desktop Linux JavaFX classes to compile the source. Their native libraries cannot run on Android ARM64, so the script does not open the game window or create an Android package. [Gluon Mobile](https://gluonhq.com/products/mobile/) provides a JavaFX-based Android packaging path.
+Install the Termux:X11 Android app from its [official release page](https://github.com/termux/termux-x11/releases). The setup script installs the Termux companion package, Debian PRoot, JDK 21 or newer, Maven, Git LFS, and the Linux libraries used by JavaFX graphics and media. It downloads the artwork and menu music, then compiles the Java sources. It does not download the optional Qwen model or install MySQL.
+
+Run setup once from the project root in Termux:
+
+```sh
+./scripts/termux-setup-x11.sh
+```
+
+The setup script uses the current checkout. If you run it outside a checkout, it clones `main` into `$HOME/AdaptiveReadingGame-Termux`. Pass `--project-dir PATH` to select another project directory.
+
+Launch the game from the same project root:
+
+```sh
+./scripts/termux-run-x11.sh
+```
+
+The launcher opens the Termux:X11 app and uses an existing `:0` or `:1` display socket. If neither exists, it starts display `:0`. Set `ARG_TERMUX_X11_DISPLAY=:1` to choose another display. JavaFX uses software rendering by default; set `ARG_TERMUX_PRISM_ORDER=es2` to request its accelerated pipeline.
+
+The game uses temporary in-memory storage when MySQL settings are absent. The Java difficulty fallback works when the optional Python model helper is not running.
+
+### Compile-check source in native Termux
+
+Run `./scripts/termux-build-check.sh` from a Termux checkout when you only need a Java source compile check. A standalone copy clones `main` into `$HOME/AdaptiveReadingGame-Termux` when it cannot find a project. The script installs missing Git, JDK 21, or Maven packages and compiles the Java sources. It uses desktop Linux JavaFX classes for compilation on ARM64; it cannot launch the game window. Pass `--install-only` to check or install tools without cloning or compiling. Pass `--project-dir PATH` to use an existing checkout or select a clone directory.
 
 The launch class is `com.adaptivereadinggame.AdaptiveReadingGameApp`. It opens an animated text introduction and a loading screen. Once startup finishes, press Space or select Enter to open authentication. A new account selects a servant appearance before reaching the main menu.
 
