@@ -100,7 +100,9 @@ if [[ "${ARG_TERMUX_MEDIA_DEBUG:-false}" == true ]]; then
 fi
 
 printf 'Launching Adaptive Reading Game on Termux:X11 display %s. Close the game window to stop the launcher.\n' "$display"
-exec proot-distro login debian --shared-tmp \
+mkdir -p "$project_root/target"
+log_file="$project_root/target/termux-game.log"
+proot-distro login --detach --shared-tmp \
     --bind "$project_root:/workspace/AdaptiveReadingGame" \
     --env "DISPLAY=$display" \
     --env TMPDIR=/tmp \
@@ -110,4 +112,20 @@ exec proot-distro login debian --shared-tmp \
     --env ARG_FULL_SCREEN=true \
     --env "JAVA_TOOL_OPTIONS=$java_tool_options" \
     --env "MAVEN_OPTS=$maven_opts" \
-    debian -- /bin/bash -lc 'cd /workspace/AdaptiveReadingGame && exec mvn javafx:run'
+    debian -- /bin/bash -lc 'cd /workspace/AdaptiveReadingGame && exec mvn javafx:run > target/termux-game.log 2>&1'
+
+for ((attempt = 0; attempt < 20; attempt++)); do
+    if grep -Eq 'Loaded [0-9]+ story chapter' "$log_file" 2>/dev/null; then
+        printf 'Game is ready in Termux:X11 full screen.\n'
+        printf 'Log: %s\n' "$log_file"
+        exit 0
+    fi
+    if grep -q '\[ERROR\]' "$log_file" 2>/dev/null; then
+        tail -n 40 "$log_file" >&2
+        fail "The game exited during startup. Check $log_file for details."
+    fi
+    sleep 1
+done
+
+printf 'Game startup is still in progress in Termux:X11.\n'
+printf 'Log: %s\n' "$log_file"
