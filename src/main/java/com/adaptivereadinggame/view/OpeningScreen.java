@@ -280,11 +280,11 @@ public final class OpeningScreen {
 
     private void addSlide(Path assets, String sceneKey, String portraitKey, String text) {
         Image backgroundImage = new StoryAssetResolver().findSceneImage(sceneKey, assets)
-                .map(path -> new Image(path.toUri().toString(), 1280, 720, true, true, false)).orElse(null);
+                .map(path -> new Image(path.toUri().toString(), 1280, 720, true, true, true)).orElse(null);
         Image character = new CharacterAssetResolver().findCharacterImage(portraitKey, assets)
-                .map(path -> new Image(path.toUri().toString(), 800, 1200, true, true, false)).orElse(null);
-        if (backgroundImage != null && (backgroundImage.isError() || backgroundImage.getWidth() == 0)) backgroundImage = null;
-        if (character != null && (character.isError() || character.getWidth() == 0)) character = null;
+                .map(path -> new Image(path.toUri().toString(), 800, 1200, true, true, true)).orElse(null);
+        if (backgroundImage != null && backgroundImage.isError()) backgroundImage = null;
+        if (character != null && character.isError()) character = null;
         if (backgroundImage != null || character != null) slides.add(new Slide(backgroundImage, character, text));
     }
 
