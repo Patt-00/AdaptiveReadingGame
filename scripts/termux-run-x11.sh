@@ -38,6 +38,7 @@ display_number="${display#:}"
 display_socket="$PREFIX/tmp/.X11-unix/X$display_number"
 log_dir="$HOME/.local/state/adaptive-reading-game"
 mkdir -p "$log_dir"
+x11_log_file="$log_dir/x11.log"
 
 running_display=""
 if command -v pidof >/dev/null 2>&1; then
@@ -59,16 +60,10 @@ if [[ ! -S "$display_socket" ]]; then
     fi
     if [[ -z "$running_display" ]]; then
         printf 'Starting Termux:X11 on display %s.\n' "$display"
-        termux-x11 "$display" >"$log_dir/x11.log" 2>&1 &
+        : >"$x11_log_file"
+        TERMUX_X11_DEBUG=1 termux-x11 "$display" >"$x11_log_file" 2>&1 &
     fi
-
-    for ((attempt = 0; attempt < 20; attempt++)); do
-        [[ -S "$display_socket" ]] && break
-        sleep 1
-    done
 fi
-[[ -S "$display_socket" ]] \
-    || fail "X11 did not create $display_socket. Check $log_dir/x11.log and open the Termux:X11 app."
 
 activity_start_result=""
 for ((attempt = 0; attempt < 5; attempt++)); do
@@ -87,6 +82,27 @@ done
 if [[ "$activity_start_result" != *"Starting: Intent"* \
         && "$activity_start_result" != *"Warning: Activity not started"* ]]; then
     printf 'Warning: Android did not confirm Termux:X11 activity startup. Continuing with the active X11 display.\n' >&2
+fi
+
+# The Android app must be open before waiting for its display socket. Starting
+# the server and waiting first can time out while the app is still closed.
+if [[ ! -S "$display_socket" ]]; then
+    for ((attempt = 0; attempt < 30; attempt++)); do
+        [[ -S "$display_socket" ]] && break
+        sleep 1
+    done
+fi
+if [[ ! -S "$display_socket" ]]; then
+    printf 'Termux:X11 did not create the expected display socket: %s\n' "$display_socket" >&2
+    printf 'Activity Manager response: %s\n' "${activity_start_result:-none}" >&2
+    printf 'Termux:X11 log: %s\n' "$x11_log_file" >&2
+    if [[ -s "$x11_log_file" ]]; then
+        printf '%s\n' 'Recent Termux:X11 output:' >&2
+        tail -n 40 "$x11_log_file" >&2
+    else
+        printf '%s\n' 'The Termux:X11 log is empty. Confirm that the separate Termux:X11 Android app is installed and open.' >&2
+    fi
+    fail 'Display startup failed. Open Termux:X11, then rerun this script. If the app is open, use the log above to identify the server error.'
 fi
 
 if prepare_termux_audio_bridge; then
