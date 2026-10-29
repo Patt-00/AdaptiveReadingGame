@@ -6,9 +6,11 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.Cursor;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -23,6 +25,8 @@ public final class AppearanceController {
     @FXML private RadioButton choiceB;
     @FXML private ImageView portraitA;
     @FXML private ImageView portraitB;
+    @FXML private VBox choiceACard;
+    @FXML private VBox choiceBCard;
     @FXML private Button confirmButton;
     @FXML private Button backButton;
 
@@ -36,6 +40,15 @@ public final class AppearanceController {
             else choiceB.setSelected(true);
             backButton.setText("BACK TO MENU");
         });
+        appearanceGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) ->
+                updateSelectedCard(newValue));
+        choiceACard.setCursor(Cursor.HAND);
+        choiceBCard.setCursor(Cursor.HAND);
+        choiceACard.setAccessibleText("Select appearance A");
+        choiceBCard.setAccessibleText("Select appearance B");
+        choiceACard.setOnMouseClicked(event -> choiceA.setSelected(true));
+        choiceBCard.setOnMouseClicked(event -> choiceB.setSelected(true));
+        updateSelectedCard(appearanceGroup.getSelectedToggle());
         confirmButton.disableProperty().bind(appearanceGroup.selectedToggleProperty().isNull());
         try {
             Path root = Path.of(System.getenv().getOrDefault("ARG_ASSET_DIR", "assets"));
@@ -44,6 +57,13 @@ public final class AppearanceController {
         } catch (RuntimeException unavailable) {
             // Selection remains possible if optional artwork is unavailable.
         }
+    }
+
+    private void updateSelectedCard(javafx.scene.control.Toggle selected) {
+        choiceACard.getStyleClass().remove("selected");
+        choiceBCard.getStyleClass().remove("selected");
+        if (selected == choiceA) choiceACard.getStyleClass().add("selected");
+        else if (selected == choiceB) choiceBCard.getStyleClass().add("selected");
     }
 
     private static void load(ImageView view, PlayerAppearance appearance, Path root) {

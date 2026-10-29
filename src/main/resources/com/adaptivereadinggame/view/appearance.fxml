@@ -18,11 +18,11 @@
                 <Label text="Both appearances play the same servant and story. Your choice applies to all saves on your account."
                        wrapText="true" maxWidth="650" minHeight="-Infinity" styleClass="appearance-note"/>
                 <HBox alignment="CENTER" spacing="18">
-                    <VBox alignment="CENTER" spacing="8" styleClass="appearance-card">
+                    <VBox fx:id="choiceACard" alignment="CENTER" spacing="8" styleClass="appearance-card">
                         <ImageView fx:id="portraitA" fitWidth="180" fitHeight="260" preserveRatio="true" accessibleText="Servant appearance A"/>
                         <RadioButton fx:id="choiceA" text="APPEARANCE A" toggleGroup="$appearanceGroup"/>
                     </VBox>
-                    <VBox alignment="CENTER" spacing="8" styleClass="appearance-card">
+                    <VBox fx:id="choiceBCard" alignment="CENTER" spacing="8" styleClass="appearance-card">
                         <ImageView fx:id="portraitB" fitWidth="180" fitHeight="260" preserveRatio="true" accessibleText="Servant appearance B"/>
                         <RadioButton fx:id="choiceB" text="APPEARANCE B" toggleGroup="$appearanceGroup"/>
                     </VBox>

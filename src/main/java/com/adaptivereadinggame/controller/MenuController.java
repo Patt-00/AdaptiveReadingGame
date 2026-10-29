@@ -200,7 +200,8 @@ public final class MenuController {
         ScrollPane slotsScroll = new ScrollPane(content);
         slotsScroll.setFitToWidth(true);
         slotsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        slotsScroll.setPrefViewportHeight(Math.min(360, navigator.stage().getHeight() * 0.55));
+        double slotViewportLimit = Math.min(360, navigator.stage().getHeight() * 0.55);
+        slotsScroll.setPrefViewportHeight(Math.min(slotViewportLimit, Math.max(300, content.prefHeight(640))));
         dialog.getDialogPane().setContent(slotsScroll);
         dialog.showAndWait();
     }
@@ -226,7 +227,7 @@ public final class MenuController {
         rows.getChildren().add(rule);
         ScrollPane scroll = new ScrollPane(rows);
         scroll.setFitToWidth(true);
-        scroll.setPrefViewportHeight(320);
+        scroll.setPrefViewportHeight(Math.min(320, Math.max(150, rows.prefHeight(640))));
         dialog.getDialogPane().setContent(scroll);
         dialog.showAndWait();
     }

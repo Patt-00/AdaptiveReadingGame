@@ -72,13 +72,14 @@
             </ScrollPane>
             <ScrollPane fx:id="assessmentScroll" fitToWidth="true" fitToHeight="false" pannable="true"
                         hbarPolicy="NEVER" minWidth="0" minHeight="0"
-                        styleClass="gameplay-scroll" visible="false" managed="false">
+                        styleClass="gameplay-scroll,assessment-scroll" visible="false" managed="false">
               <content>
             <StackPane minWidth="0" minHeight="-Infinity">
-            <VBox fx:id="assessmentPane" minWidth="0" minHeight="-Infinity" spacing="8" maxWidth="1100">
+            <VBox fx:id="assessmentPane" minWidth="0" minHeight="-Infinity" spacing="8" maxWidth="980" styleClass="assessment-pane">
                 <VBox spacing="8" styleClass="passage-panel">
                     <Label text="READING PASSAGE" styleClass="passage-heading"/>
-                    <ScrollPane fitToWidth="true" prefViewportHeight="105" maxHeight="125" styleClass="passage-scroll">
+                    <ScrollPane fx:id="passageScroll" fitToWidth="true" prefViewportHeight="125" maxHeight="145"
+                                hbarPolicy="NEVER" pannable="true" styleClass="passage-scroll">
                         <content>
                             <Label fx:id="passageText" minHeight="-Infinity" styleClass="passage-text" wrapText="true" maxWidth="1020"/>
                         </content>

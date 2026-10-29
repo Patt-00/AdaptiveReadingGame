@@ -75,6 +75,7 @@ public final class GameplayController {
     @FXML private ScrollPane storyScroll;
     @FXML private ScrollPane dialogueScroll;
     @FXML private ScrollPane assessmentScroll;
+    @FXML private ScrollPane passageScroll;
     @FXML private VBox storyPanel;
     @FXML private VBox portraitColumn;
     @FXML private VBox storyChoices;
@@ -108,6 +109,7 @@ public final class GameplayController {
         storyScroll.viewportBoundsProperty().addListener((observable, before, after) -> updateStoryLayout(after.getWidth()));
         gameplayRoot.heightProperty().addListener((observable, before, after) -> {
             if (Boolean.TRUE.equals(narrowStoryLayout)) updatePortraitImageSizes();
+            if (storyScroll.isVisible()) sizeDialogueViewport();
         });
         storyPanel.widthProperty().addListener((observable, before, after) -> {
             if (storyScroll.isVisible() && after.doubleValue() > 0) sizeDialogueViewport();
@@ -370,7 +372,10 @@ public final class GameplayController {
                 : storyPanel.getPrefWidth();
         double availableTextWidth = Math.max(120, Math.min(storyText.getMaxWidth(), panelWidth - 76));
         double neededHeight = storyText.prefHeight(availableTextWidth) + 12;
-        double viewportHeight = Math.max(96, Math.min(220, neededHeight));
+        double stageHeight = gameplayRoot.getHeight() > 0 ? gameplayRoot.getHeight() : 720;
+        double maximumViewportHeight = Math.clamp(stageHeight * 0.40, 180, 280);
+        double viewportHeight = Math.max(Math.min(120, maximumViewportHeight),
+                Math.min(maximumViewportHeight, neededHeight));
         dialogueScroll.setPrefViewportHeight(viewportHeight);
         dialogueScroll.setMaxHeight(viewportHeight);
     }
@@ -484,7 +489,8 @@ public final class GameplayController {
         ScrollPane scroll = new ScrollPane(entries);
         scroll.setFitToWidth(true);
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scroll.setPrefViewportHeight(Math.min(380, navigator.stage().getHeight() * 0.55));
+        double logViewportLimit = Math.min(380, navigator.stage().getHeight() * 0.55);
+        scroll.setPrefViewportHeight(Math.min(logViewportLimit, Math.max(150, entries.prefHeight(660))));
         scroll.setAccessibleText("Story lines read in this session");
         dialog.getDialogPane().setContent(scroll);
         navigator.styleDialog(dialog);
@@ -526,6 +532,8 @@ public final class GameplayController {
         assessmentScroll.setVisible(true);
         assessmentScroll.setManaged(true);
         footerText.setText("No timer. Only your first submitted answer counts toward the score.");
+        setPassagePreview(false);
+        passageScroll.setVvalue(0);
         passageText.setText(view.passage());
         int index = view.state().questionIndex();
         answerChoices.getChildren().clear();
@@ -598,6 +606,7 @@ public final class GameplayController {
 
     private void showFeedback(Feedback data) {
         loaded = new LoadedGame(data.view(), loaded.questions());
+        setPassagePreview(true);
         AssessmentService.QuestionFeedback feedback = data.answer();
         answerChoices.getChildren().forEach(node -> node.setDisable(true));
         submitButton.setVisible(false);
@@ -624,8 +633,48 @@ public final class GameplayController {
         javafx.application.Platform.runLater(() -> {
             assessmentScroll.applyCss();
             assessmentScroll.layout();
-            assessmentScroll.setVvalue(assessmentScroll.getVmax());
+            scrollFeedbackIntoView();
         });
+    }
+
+    private void scrollFeedbackIntoView() {
+        javafx.scene.Node content = assessmentScroll.getContent();
+        double viewportHeight = assessmentScroll.getViewportBounds().getHeight();
+        double scrollableHeight = content == null ? 0 : content.getBoundsInLocal().getHeight() - viewportHeight;
+        if (content == null || scrollableHeight <= 1) {
+            assessmentScroll.setVvalue(assessmentScroll.getVmin());
+            return;
+        }
+
+        javafx.geometry.Bounds feedbackBounds = content.sceneToLocal(
+                feedbackPane.localToScene(feedbackPane.getBoundsInLocal()));
+        javafx.geometry.Bounds nextButtonBounds = content.sceneToLocal(
+                nextQuestionButton.localToScene(nextQuestionButton.getBoundsInLocal()));
+        double focusTop = Math.min(feedbackBounds.getMinY(), nextButtonBounds.getMinY());
+        double focusBottom = Math.max(feedbackBounds.getMaxY(), nextButtonBounds.getMaxY());
+        Toggle selected = answerGroup.getSelectedToggle();
+        if (selected instanceof javafx.scene.Node selectedNode) {
+            javafx.geometry.Bounds answerBounds = content.sceneToLocal(
+                    selectedNode.localToScene(selectedNode.getBoundsInLocal()));
+            focusTop = Math.min(focusTop, answerBounds.getMinY());
+        }
+
+        double valueRange = assessmentScroll.getVmax() - assessmentScroll.getVmin();
+        double currentTop = valueRange <= 0 ? 0
+                : (assessmentScroll.getVvalue() - assessmentScroll.getVmin()) / valueRange * scrollableHeight;
+        double targetTop = currentTop;
+        if (focusBottom - focusTop > viewportHeight || focusBottom > currentTop + viewportHeight) {
+            targetTop = focusBottom - viewportHeight;
+        }
+        if (focusTop < targetTop && focusBottom - focusTop <= viewportHeight) targetTop = focusTop;
+        targetTop = Math.clamp(targetTop, 0, scrollableHeight);
+        assessmentScroll.setVvalue(assessmentScroll.getVmin() + targetTop / scrollableHeight * valueRange);
+    }
+
+    private void setPassagePreview(boolean compact) {
+        double viewportHeight = compact ? 65 : 125;
+        passageScroll.setPrefViewportHeight(viewportHeight);
+        passageScroll.setMaxHeight(compact ? 75 : 145);
     }
 
     @FXML private void nextQuestion() {
