@@ -209,7 +209,13 @@ public final class MenuController {
     @FXML private void history() {
         Dialog<Void> dialog = dialog("Reading History", "Completed comprehension checks");
         VBox rows = new VBox(14);
-        if (history.isEmpty()) rows.getChildren().add(new Label("No completed reading checks yet."));
+        if (history.isEmpty()) {
+            Label empty = new Label("No completed reading checks yet.");
+            empty.setWrapText(true);
+            empty.setMaxWidth(Double.MAX_VALUE);
+            empty.getStyleClass().add("dialog-empty-state");
+            rows.getChildren().add(empty);
+        }
         for (AssessmentResult result : history) {
             String text = TIME.format(result.attempt().completedAt()) + "\n"
                     + result.attempt().correctAnswers() + " / " + result.attempt().totalQuestions()
@@ -227,7 +233,7 @@ public final class MenuController {
         rows.getChildren().add(rule);
         ScrollPane scroll = new ScrollPane(rows);
         scroll.setFitToWidth(true);
-        scroll.setPrefViewportHeight(Math.min(320, Math.max(150, rows.prefHeight(640))));
+        scroll.setPrefViewportHeight(Math.min(320, Math.max(90, rows.prefHeight(640))));
         dialog.getDialogPane().setContent(scroll);
         dialog.showAndWait();
     }

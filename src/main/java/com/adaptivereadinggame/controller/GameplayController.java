@@ -469,6 +469,8 @@ public final class GameplayController {
         if (navigator.storyLog().isEmpty()) {
             Label empty = new Label("No story lines have been read in this session yet.");
             empty.setWrapText(true);
+            empty.setMaxWidth(Double.MAX_VALUE);
+            empty.getStyleClass().add("dialog-empty-state");
             entries.getChildren().add(empty);
         }
         for (AppNavigator.StoryLogEntry entry : navigator.storyLog()) {

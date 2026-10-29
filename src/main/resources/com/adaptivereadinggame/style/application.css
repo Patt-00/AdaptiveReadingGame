@@ -165,6 +165,7 @@
 .reference-dialog .button:disabled { -fx-opacity: 1; -fx-text-fill: #6b6259; -fx-background-color: #f4efe5; -fx-border-color: #c9bea8; }
 .reference-dialog .scroll-pane, .reference-dialog .scroll-pane .viewport { -fx-background-color: #fff8ed; }
 .slot-row, .history-record { -fx-background-color: #fffaf2; -fx-border-color: #c6b790; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 14px; }
+.dialog-empty-state { -fx-background-color: #fffaf2; -fx-border-color: #d4af37; -fx-border-radius: 10px; -fx-background-radius: 10px; -fx-padding: 16px; -fx-text-fill: #5b1427; -fx-font-size: 16px; -fx-text-alignment: center; }
 .dialog-note { -fx-text-fill: #5b5147; -fx-font-size: 14px; }
 
 .gameplay-root { -fx-background-color: linear-gradient(to bottom right, #210c18, #4a172b); }
