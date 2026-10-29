@@ -152,9 +152,13 @@ fi
 
 printf 'Launching Adaptive Reading Game on Termux:X11 display %s. Close the game window to stop the launcher.\n' "$display"
 mkdir -p "$project_root/target"
-log_file="$project_root/target/termux-game.log"
+log_name="termux-game-$(date +%Y%m%d-%H%M%S)-$$.log"
+log_file="$project_root/target/$log_name"
+: >"$log_file"
+ln -sfn "$log_name" "$project_root/target/termux-game.log"
+proot_arguments+=(--env "ARG_GAME_LOG_NAME=$log_name")
 proot-distro "${proot_arguments[@]}" debian -- \
-    /bin/bash -lc 'cd /workspace/AdaptiveReadingGame && exec ./scripts/termux-run-javafx.sh > target/termux-game.log 2>&1'
+    /bin/bash -lc 'cd /workspace/AdaptiveReadingGame && exec ./scripts/termux-run-javafx.sh > "target/${ARG_GAME_LOG_NAME:?}" 2>&1'
 
 for ((attempt = 0; attempt < 60; attempt++)); do
     if grep -Eq 'Loaded [0-9]+ story chapter' "$log_file" 2>/dev/null; then
