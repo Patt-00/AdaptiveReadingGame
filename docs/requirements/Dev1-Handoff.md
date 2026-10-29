@@ -1,6 +1,6 @@
 # Dev 1: accounts, gameplay, and content integration
 
-Guys, ito yung Dev 1 workstream. This checkout connects accounts, MySQL, adaptive story checkpoints, the optional model helper, and the JavaFX game screens. The default content pack preserves the original draft and adds a team-authored continuation. It uses an unnamed servant and Prince Owen consistently, identifies Lord Robert, and includes four outcomes. The continuation and inferred answer keys still need group and teacher review. Follow [the content-pack guide](../../assets/README.md) when the group updates the content.
+Guys, ito yung Dev 1 workstream. This checkout connects accounts, MySQL, adaptive story checkpoints, the optional model helper, and the JavaFX game screens. The default content pack preserves the original draft and adds a team-authored continuation. The protagonist remains a palace servant, while gameplay uses the signed-in account's registered display name in player dialogue and direct forms of address. The pack uses Prince Owen consistently, identifies Lord Robert, and includes four outcomes. The continuation and inferred answer keys still need group and teacher review. Follow [the content-pack guide](../../assets/README.md) when the group updates the content.
 
 The supplied ZIP has a separate `GameFlowController` and local save store, so that controller is not used for runtime persistence. The active account and gameplay screens remain connected to `AccountController` and `GameplayController`; those controllers keep `AccountGameService` and MySQL as the owners of account, score, and save behavior.
 
@@ -67,11 +67,11 @@ Only call `BackendContext.accountGameService()` from new game/account controller
 | Answer feedback | `feedback(sessionId, questionId)` | Available only after the first answer has been stored |
 | Results | `complete(sessionId)` / `continueAfterCheckpoint()` | Stores the score and next difficulty, then follows the correct or incorrect story outcome without changing the score |
 | Current game/dirty check | `currentGame()` / `hasUnsavedProgress()` | Requires login; UI uses these before Save/Load/navigation |
-| Save | `save(slot, overwriteConfirmed)` | Only slots 1-3; full snapshot; clear dirty flag only after the stored snapshot matches the request |
+| Save | `save(slot, overwriteConfirmed)` | Slots 1-3 store full snapshots at story, reading-check, results, or completed states; clear dirty flag only after the stored snapshot matches the request |
 | Load | `load(slot, discardConfirmed)` | Empty slot returns empty without changing the game; cancel preserves everything |
 | Continue | `continueGame(discardConfirmed)` | Newest full snapshot; lower slot wins timestamp ties; a basic checkpoint alone is not resumable |
 | Slot listing | `snapshots()` | Only current account's full snapshots, sorted by slot |
-| Reading history | `history()` | Only current account's actual completed results |
+| Reading history | `history()` | Only current account's actual completed results; the menu adds chapter and checkpoint names |
 | Logout | `logout(discardConfirmed)` | Clears active story/question/account state, not stored records; no state change on cancelled confirmation |
 
 Use `ConfirmationRequiredException` to ask the player before retrying an overwrite/discard action with `true`. Do not blindly pass `true` from a new screen. The current menu obtains the player's confirmation first. For account tasks, clear the password field immediately, do work off the JavaFX thread, and wipe the temporary `char[]` afterward.
@@ -108,7 +108,7 @@ The runtime reads versioned story content instead of compiling authored dialogue
 4. Add artwork under `assets/characters/`, `assets/scenes/`, or `assets/cg/` and use a stable filename key. Do not place absolute paths in the content pack.
 5. Keep dialogue and questions in text. The title and menu music and optional click sound are described in [music and sound effects](../../assets/README.md#music-and-sound-effects); no voice recording is required.
 6. The live screens are `how-to-play.fxml`, `gameplay.fxml`, `results.fxml`, and `analysis.fxml`. The 40 `uiux-*.fxml` files remain visual references, not separate runtime routes.
-7. Review the team-authored Lord Robert conclusion, four outcomes, unnamed player presentation, and six answer keys with the group and teacher. These are not yet approved story content.
+7. Review the team-authored Lord Robert conclusion, four outcomes, protagonist display-name presentation, and six answer keys with the group and teacher. These are not yet approved story content.
 8. Add supporting-character cues only when the story author confirms who is present. Use the optional stage-directions file in [the content-pack guide](../../assets/README.md); cues change presentation and are not stored in saves.
 
 ## MySQL adapter and content validation
@@ -142,7 +142,7 @@ The application uses MySQL when all `ARG_DB_*` settings are present and otherwis
 
 The completed chapter and startup flow have automated and virtual-display verification. The [completed story verification report](Completed-Story-Verification-2026-10-28.md) records the test commands, results, and limits. Remaining work needs review on the group's environment:
 
-1. Ask the group and teacher to approve or revise the unnamed player, Prince Owen naming, Lord Robert reveal, four endings, character portraits, and six answer keys.
+1. Ask the group and teacher to approve or revise the protagonist's servant role and display-name presentation, Prince Owen naming, Lord Robert reveal, four endings, character portraits, and six answer keys.
 2. Play the completed chapter on the target desktop and listen to the click and music tracks.
 3. Connect the group's MySQL instance, apply migrations V001 through V005, and verify a full save restart there. The current MySQL evidence uses a disposable test database.
 4. Evaluate the optional difficulty model with a defined educational protocol before claiming that it improves reading outcomes.
@@ -161,9 +161,9 @@ The latest story presentation, Story Log, reduced motion, optional character sta
 
 The title screen, menu presentation, audio playback, and associated checks are recorded in [title screen and sound QA](Dev1-Splash-Audio-QA-2026-10-27.md).
 
-The opening text can be skipped, and the loading screen allows entry only after initialization finishes. Reduce Motion applies for the current session. Authentication and the main menu use an optional artwork panel on wide windows and retain their scrollable controls on smaller windows.
+The opening text can be skipped, and the loading screen allows entry only after initialization finishes. Reading and audio settings use device-local Java preferences. Reduce Motion and music mute take effect from the opening; the settings dialog applies pending defaults only when the player selects Apply. Authentication and the main menu use an optional artwork panel on wide windows and retain their scrollable controls on smaller windows.
 
-The current startup, account appearance, story music, and verification are recorded in [opening, appearance, and audio QA](Dev1-Opening-Appearance-Audio-QA-2026-10-28.md).
+The current startup, account appearance, story music, and verification are recorded in [opening, appearance, and audio QA](Dev1-Opening-Appearance-Audio-QA-2026-10-28.md). The [player experience update verification](Player-Experience-Update-2026-10-30.md) covers device-local settings, save and history labels, Credits, preflight checks, current test results, and remaining external review.
 The completed chapter, four endings, version compatibility, startup animation, and current test evidence are recorded in [completed story and startup verification](Completed-Story-Verification-2026-10-28.md). The story decisions and answer keys remain pending group and teacher review.
 
 Focused tests cover authentication, account isolation, both adaptive route orders, difficulty variants, first-answer-only scoring, asset fallbacks, feedback, results, save/load/resume, and MySQL checkpoint persistence. Opt-in JavaFX tests still use test fixtures; they do not certify the group's final story or question copy.

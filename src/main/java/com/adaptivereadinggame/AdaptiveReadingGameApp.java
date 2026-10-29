@@ -6,6 +6,7 @@ import com.adaptivereadinggame.backend.BackendContext;
 import com.adaptivereadinggame.audio.GameAudio;
 import com.adaptivereadinggame.audio.JavaFxAudioOutput;
 import com.adaptivereadinggame.repository.mysql.MySqlConfig;
+import com.adaptivereadinggame.settings.PlayerPreferences;
 import com.adaptivereadinggame.view.OpeningScreen;
 
 import java.io.IOException;
@@ -16,7 +17,8 @@ import java.nio.file.Path;
 public class AdaptiveReadingGameApp extends Application {
     @Override
     public void start(Stage stage) {
-        new OpeningScreen(stage, new GameAudio(new JavaFxAudioOutput()), AdaptiveReadingGameApp::loadGame).start();
+        new OpeningScreen(stage, new GameAudio(new JavaFxAudioOutput()), AdaptiveReadingGameApp::loadGame,
+                PlayerPreferences.system()).start();
     }
 
     private static OpeningScreen.Loaded loadGame(OpeningScreen.Reporter progress) throws Exception {

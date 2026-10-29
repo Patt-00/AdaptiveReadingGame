@@ -192,6 +192,8 @@
 .speaker-image { -fx-effect: dropshadow(gaussian, rgba(24, 10, 18, 0.55), 28, 0.18, 0, 8); }
 .speaker-initials { -fx-font-family: "Times New Roman"; -fx-font-size: 68px; -fx-font-weight: bold; -fx-text-fill: #fff1bd; }
 .story-panel { -fx-background-color: linear-gradient(to bottom right, rgba(89, 18, 36, 0.96), rgba(48, 15, 30, 0.94)); -fx-border-color: linear-gradient(to bottom, #f2d783, #b58a30); -fx-border-width: 2px; -fx-border-radius: 12px; -fx-background-radius: 12px; -fx-padding: 20px 26px; -fx-effect: dropshadow(gaussian, rgba(25, 9, 18, 0.48), 26, 0.14, 0, 8); }
+.story-panel.compact-story-panel { -fx-padding: 12px 22px; -fx-spacing: 10px; }
+.story-panel.compact-story-panel .story-panel-heading { -fx-padding: 0 0 4px 0; }
 .story-panel.cg-caption-panel { -fx-background-color: rgba(73, 14, 31, 0.92); -fx-padding: 14px 22px; }
 .story-panel-heading { -fx-padding: 0 0 10px 0; -fx-border-color: transparent transparent rgba(212, 175, 55, 0.58) transparent; -fx-border-width: 0 0 1px 0; }
 .story-mode { -fx-font-family: "Times New Roman"; -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #fff1bd; -fx-background-color: rgba(212, 175, 55, 0.14); -fx-border-color: rgba(212, 175, 55, 0.8); -fx-border-width: 1px; -fx-border-radius: 3px; -fx-background-radius: 3px; -fx-padding: 5px 11px; }

@@ -1,6 +1,6 @@
 # Provisional player character artwork
 
-The two servant portraits were generated as provisional art for review by the story author and the group. Both appearances represent the same unnamed servant, and neither changes the story, pronouns, choices, or scoring. The images use the existing `Amelia_Neutral.png` as a style reference; they are not approved final character designs.
+The two servant portraits were generated as provisional art for review by the story author and the group. Both appearances represent the same player character, whose in-game name comes from the signed-in account's registered display name. Appearance does not change the story, pronouns, choices, or scoring. The images use the existing `Amelia_Neutral.png` as a style reference; they are not approved final character designs.
 
 - Appearance A: `assets/characters/Servant_A.png`
 - Appearance B: `assets/characters/Servant_B.png`

@@ -146,6 +146,8 @@ public final class GameplayController {
         boolean narrow = width < 900;
         if (narrowStoryLayout != null && narrowStoryLayout == narrow) return;
         narrowStoryLayout = narrow;
+        storyPanel.getStyleClass().remove("compact-story-panel");
+        if (narrow) storyPanel.getStyleClass().add("compact-story-panel");
         if (!storyRow.getChildren().isEmpty() && storyRow.getChildren().getFirst() instanceof Pane previous
                 && previous != portraitColumn) previous.getChildren().clear();
         storyRow.getChildren().clear();
@@ -235,10 +237,11 @@ public final class GameplayController {
         storyPanel.getStyleClass().remove("thought-panel");
         if (node.thought()) storyPanel.getStyleClass().add("thought-panel");
         storyModeLabel.setText(node.thought() ? "THOUGHT" : node.speakerName().isBlank() ? "NARRATION" : "DIALOGUE");
-        speakerName.setText(node.speakerName().isBlank() ? "Narration" : node.speakerName());
+        String displayedSpeaker = navigator.displayStorySpeaker(node.speakerName());
+        speakerName.setText(node.speakerName().isBlank() ? "Narration" : displayedSpeaker);
         speakerName.setVisible(!node.speakerName().isBlank());
         speakerName.setManaged(!node.speakerName().isBlank());
-        speakerInitials.setText(initials(node.speakerName()));
+        speakerInitials.setText(initials(displayedSpeaker));
         boolean showCg = !node.cgAssetKey().isBlank();
         boolean showPortrait = !showCg && !node.speakerName().isBlank();
         portraitColumn.setVisible(showPortrait);
@@ -250,7 +253,7 @@ public final class GameplayController {
         if (showCg) storyPanel.getStyleClass().add("cg-caption-panel");
         showSceneAssets(node);
         showCharacterImage(node);
-        storyText.setText(node.dialogueText());
+        storyText.setText(navigator.personalizeStoryText(node.dialogueText()));
         navigator.recordStoryLine(loaded.view().state().studentId(), loaded.view().state().chapterId(), node);
         applyReadingFontScale();
         sizeDialogueViewport();
@@ -262,9 +265,10 @@ public final class GameplayController {
             gameplayFooter.setVisible(false);
             gameplayFooter.setManaged(false);
             for (StoryChoice choice : node.storyChoices()) {
-                Button button = new Button(choice.choiceText());
+                String displayedChoice = navigator.personalizeStoryText(choice.choiceText());
+                Button button = new Button(displayedChoice);
                 button.setId("story-choice-" + choice.choiceId());
-                button.setAccessibleText(choice.choiceText());
+                button.setAccessibleText(displayedChoice);
                 button.setMaxWidth(Double.MAX_VALUE);
                 button.setWrapText(true);
                 button.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
@@ -291,7 +295,7 @@ public final class GameplayController {
         try {
             if (navigator.characterArtworkEnabled() && node.cgAssetKey().isBlank()) {
                 Path root = Path.of(System.getenv().getOrDefault("ARG_ASSET_DIR", "assets"));
-                String activeKey = "You".equals(node.speakerName())
+                String activeKey = navigator.isPlayerStorySpeaker(node.speakerName())
                         ? navigator.playerAppearance().map(com.adaptivereadinggame.model.PlayerAppearance::assetKey).orElse("")
                         : node.speakerAssetKey();
                 active = characterImage(activeKey, root);
@@ -306,7 +310,7 @@ public final class GameplayController {
         }
         if (supporting == active) supporting = null;
         speakerImage.setImage(active);
-        speakerImage.setAccessibleText(node.speakerName());
+        speakerImage.setAccessibleText(navigator.displayStorySpeaker(node.speakerName()));
         speakerImage.setVisible(active != null);
         speakerImage.setManaged(active != null);
         supportingImage.setImage(supporting);

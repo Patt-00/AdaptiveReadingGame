@@ -121,6 +121,38 @@ class AdaptiveEpisodeFlowTest {
         assertEquals("hall-first-incorrect", game.continueAfterCheckpoint().storyNodeId());
     }
 
+    @Test void savedResultAndCompletedStoryRestoreAcrossBackendRecreation() {
+        game.startChapter(chapter.id(), Difficulty.EASY, false);
+        reachCheckpoint("study-first");
+        UUID session = game.startAssessment(chapter.id());
+        var prompt = game.questions(session).getFirst();
+        int correct = chapter.questions("study-first", Difficulty.EASY).getFirst().correctChoiceIndex();
+        assertTrue(game.submit(session, prompt.id(), correct));
+        AssessmentResult first = game.complete(session);
+        game.save(1, false);
+        game.logout(false);
+
+        backend = newBackend();
+        game = backend.accountGameService();
+        game.login("draft-reader", PASSWORD);
+        game.continueGame(false).orElseThrow();
+        assertEquals(first, game.currentResult().orElseThrow());
+        assertNull(game.currentGame().orElseThrow().assessmentSessionId());
+        game.continueAfterCheckpoint();
+        answerCheckpoint("hall-second", true);
+        reachBoundary();
+        game.save(1, true);
+        game.logout(false);
+
+        backend = newBackend();
+        game = backend.accountGameService();
+        game.login("draft-reader", PASSWORD);
+        game.continueGame(false).orElseThrow();
+        assertTrue(game.currentGameView().orElseThrow().storyNode().storyComplete());
+        assertEquals(2, game.episodeResults().size());
+        assertTrue(game.currentResult().isPresent());
+    }
+
     @ParameterizedTest
     @MethodSource("routeOutcomes")
     void fullDraftRoutesReachBoundaryAndLockBothFirstAnswers(String route, Difficulty initial,

@@ -1,6 +1,6 @@
 # Story content and art
 
-The JavaFX application loads `assets/content/hailey-investigation-complete.json` by default. It preserves the original draft chapter and adds a team-authored continuation under a new chapter ID. The player is an unnamed servant, and Prince Owen is used consistently. The continuation identifies Lord Robert and has four suspect and antidote outcomes. This is a working team version, not an author or teacher-approved conclusion. The Study hard question uses described evidence instead of the absent revoked-knighthood clue. See [completed story decisions](../docs/requirements/Completed-Story-Decisions.md) for the answer reasoning and creative decisions.
+The JavaFX application loads `assets/content/hailey-investigation-complete.json` by default. It preserves the original draft chapter and adds a team-authored continuation under a new chapter ID. The protagonist remains a palace servant, and gameplay uses the signed-in account's registered display name for the character's name. The pack uses Prince Owen consistently, identifies Lord Robert, and has four suspect and antidote outcomes. This is a working team version, not an author or teacher-approved conclusion. The Study hard question uses described evidence instead of the absent revoked-knighthood clue. See [completed story decisions](../docs/requirements/Completed-Story-Decisions.md) for the answer reasoning and creative decisions.
 
 ## Run the story pack
 
@@ -74,9 +74,9 @@ The opening, welcome, login, and main menu use [Comfortable Mystery by Kevin Mac
 
 The provisional story cues use [Investigation Piano by leberch](https://pixabay.com/music/crime-scene-investigation-piano-611639/) and [Tense Atmosphere Cinematic Loop by Sonican](https://pixabay.com/music/crime-scene-tense-atmosphere-cinematic-loop-piano-mystery-343445/). Both are subject to the [Pixabay Content License](https://pixabay.com/service/license-summary/) and are registered with Content ID. The local audio files are excluded from Git because Pixabay restricts standalone distribution. Each developer must obtain the tracks from their source pages and place PCM WAV copies at `assets/local-music/investigation.wav` and `assets/local-music/tense.wav`. Without them, the story remains playable without the missing track. If the tense file is missing, the investigation file is used when available.
 
-Audio Settings is available on the welcome screen and main menu; the opening also provides a music mute control. Music and effects have separate session-only volume sliders; setting a slider to zero mutes that sound. Reading checks remain quiet. The game remains usable if audio playback is unavailable.
+Audio Settings is available on the welcome screen and main menu; the opening also provides a music mute control. Music and effects have separate volume sliders, and Java preferences save their values on this device. The opening and game use the same values. Reading checks remain quiet, and the game remains usable if audio playback is unavailable.
 
-`Servant_A.png` and `Servant_B.png` are provisional generated player portraits in `assets/characters/`. Both represent the same unnamed servant. An account can change its selected appearance from Character on the main menu; the selected appearance applies to all saves for that account. The [player artwork record](../docs/requirements/Player-Character-Art.md) contains the generation prompts and replacement guidance. The group should review the designs and main-character identity before treating them as final.
+`Servant_A.png` and `Servant_B.png` are provisional generated player portraits in `assets/characters/`. Both represent the same player character, whose in-game name comes from the signed-in account's registered display name. An account can change its selected appearance from Character on the main menu; the selected appearance applies to all saves for that account. The [player artwork record](../docs/requirements/Player-Character-Art.md) contains the generation prompts and replacement guidance. The group should review the designs and character presentation before treating them as final.
 
 Set `ARG_ASSET_DIR` only when the `characters`, `scenes`, and `cg` folders are inside another trusted asset root. The default root is `assets/` in the project directory.
 
@@ -108,7 +108,7 @@ A supporting image appears only when the node has a named speaker with available
 
 ## Content review boundary
 
-The original storyboard leaves the player identity, culprit, and ending open. The completed chapter is a team-authored continuation that selects an unnamed servant, Lord Robert, and four outcomes. Review these choices and the six answer keys with the group and teacher before treating them as approved. The original draft remains available for existing learner records.
+The original storyboard leaves the player identity, culprit, and ending open. The completed chapter is a team-authored continuation that presents the protagonist under the registered display name in the servant role, identifies Lord Robert, and provides four outcomes. Review these choices and the six answer keys with the group and teacher before treating them as approved. The original draft remains available for existing learner records.
 
 ## Replacing the team-authored conclusion
 

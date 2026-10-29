@@ -2,7 +2,7 @@
 
 A school project for a story-driven reading game for elementary students. Players read stories, make story decisions, and answer comprehension questions. The application saves progress per account and adjusts reading difficulty after a completed checkpoint.
 
-This version connects account services, adaptive story checkpoints, MySQL repositories, the optional difficulty helper, and live JavaFX screens. It includes the supplied investigations and a team-authored continuation with four outcomes. The player is an unnamed servant, and Prince Owen is used consistently. The continuation identifies Lord Robert based on the supplied clues; this creative decision and its answer keys still need group and teacher review. The student game uses written dialogue and images. See [story content and art](assets/README.md) and the [Dev 1 handoff](docs/requirements/Dev1-Handoff.md).
+This version connects account services, adaptive story checkpoints, MySQL repositories, the optional difficulty helper, and live JavaFX screens. It includes the supplied investigations and a team-authored continuation with four outcomes. The protagonist remains a palace servant, and gameplay uses the signed-in account's registered display name in the story. Prince Owen is used consistently. The continuation identifies Lord Robert based on the supplied clues; this creative decision and its answer keys still need group and teacher review. The student game uses written dialogue and images. See [story content and art](assets/README.md) and the [Dev 1 handoff](docs/requirements/Dev1-Handoff.md).
 
 ## Requirements and running the app
 
@@ -27,9 +27,9 @@ Windows PowerShell, from the project root:
 
 To install missing tools and run the check without launching the game, add `--install-only` on Linux or macOS, or `-InstallOnly` in PowerShell. Automatic installation requires Homebrew on macOS and WinGet on Windows. On Linux the script supports DNF and APT.
 
-The setup script does not install or create a MySQL server, database, or user. Without MySQL variables the game runs with temporary in-memory storage. To use persistent storage, configure MySQL and apply the migrations in [database setup](database/README.md); the preflight script checks that the three connection variables are all set.
+The setup script does not install or create a MySQL server, database, or user. Without MySQL variables the game runs with temporary in-memory storage. To use persistent storage, configure MySQL and apply the migrations in [database setup](database/README.md). Preflight checks the Java and Maven runtimes, story-pack path, and MySQL setting shape; it does not connect to MySQL or apply migrations.
 
-You can also run the preflight check by itself to confirm Java 21 or newer, Maven, the selected story-pack file, and complete MySQL settings without changing the database. If the check passes, use the launch script:
+You can run the preflight check by itself to confirm Java 21 or newer, including the runtime Maven uses, the selected story-pack file, and MySQL settings without changing the database. The check also reports missing optional Git LFS assets, story music, and model weights. If the check passes, use the launch script:
 
 Linux or macOS, from the project root:
 
@@ -101,13 +101,13 @@ For commands without Maven, see [Manual Compilation](Module%20Guide/Manual%20Com
 - The text introduction includes a headphone recommendation and can be skipped. The loading screen rotates available artwork and reports startup progress; Reduce Motion is available during both stages.
 - Each account can select or change a provisional servant appearance. It applies to all saves for that account and does not affect story outcomes or scores.
 - The welcome and main menu show character artwork beside their controls on wider windows. On smaller windows, the artwork panel is hidden to keep the controls usable.
-- Main menu layout: title, decorative divider, New Game, Continue, Save/Load, Settings, and Quit.
+- Main menu layout: title, decorative divider, New Game, Continue, Save/Load, Settings, Credits, and Quit.
 - Menus keep readable text as the window changes size and scroll when needed. Hover and keyboard focus states remain available.
 - Working signup/login/logout with normalized usernames, protected password verifiers, and matching account/student IDs.
 - Account-safe history, full-save, load, Continue, and assessment coordination; no controller-supplied student IDs.
 - Continue is enabled when the signed-in account has a full save. If an episode is active, the button becomes Return to Game and resumes its story, checkpoint, or result view. A new account has no saved progress.
-- Save/Load shows three real account-scoped slots. Saving needs an active game; successful writes and discard/overwrite confirmations are handled by services.
-- New Game lists prepared story episodes at the Java-approved starting difficulty. The completed episode supports Study-first and Hall-first investigations, then offers four conclusion outcomes.
+- Save/Load shows three account-specific slots with chapter, progress phase, difficulty, investigation order, and save time. Players can save and restore story, reading-check, results, and completed states; overwrite and unsaved-progress confirmations remain in place.
+- New Game labels previously assessed chapters as replays and explains that recorded answers and scores remain. The completed episode supports Study-first and Hall-first investigations, then offers four conclusion outcomes.
 - Quit displays a confirmation before closing the window.
 - The earlier FXML dashboard remains in the project but is not the opening screen.
 - The older standalone backend demo may use synthetic records for local checks; it is not the player-facing story source. The JavaFX app loads story and question text from versioned JSON packs.
@@ -117,14 +117,14 @@ For commands without Maven, see [Manual Compilation](Module%20Guide/Manual%20Com
 - MySQL adapters persist accounts, servant appearances, episodes, route choices, checkpoints, first-answer drafts, checkpoint results, decision sources, and three full-save slots. The schema migrations V001 through V005 are in `database/migrations/`.
 - Generic story transitions keep narrative choices separate from comprehension scoring. MySQL and in-memory adapters store chapter graphs and first-answer drafts; unfinished assessments can restore from their stored first answers.
 - The live app uses `how-to-play.fxml`, `gameplay.fxml`, `results.fxml`, and `analysis.fxml` for the adaptive story and checkpoint flow. The 40 `uiux-*.fxml` files remain visual references. The player can make story choices and answer the separate checkpoint question.
-- Settings provide session-only reading text-size, character-art, and reduced-motion controls. Audio Settings provides separate session-only volume controls for music and sound effects.
+- Reading and audio settings persist on the device through Java preferences. Players can change text size, character artwork, reduced motion, music, and sound-effect volume; Reset to defaults stays pending until Apply.
 - The opening, welcome, login, and main menu play optional background music. Button actions can play a click sound. Story scenes use optional local investigation and tense music; reading checks remain quiet. See [music and sound effects](assets/README.md#music-and-sound-effects).
 - Story Log shows up to 500 previously viewed story lines in the current session. Starting a chapter, loading saved progress, or signing out starts a fresh log. Reading questions and answers are not added.
 - Optional author-supplied stage directions can show a supporting character beside the current speaker. The [story content and art guide](assets/README.md) describes the cue file and fallback behavior.
 - Java integrates an optional local Qwen recommendation behind `DifficultyPolicy`. Java scores first answers, summarizes stored history, validates the recommendation, and applies the fallback. The Python helper returns one label and receives no account IDs or raw answers.
 - Qwen stays experimental and is not a trained reading-level classifier. Java holds the current level until three consecutive sections at the same difficulty exist, checks model suggestions, and applies its fallback. The pinned weight uses Git LFS, and the supplied image paths have Git LFS rules.
 
-Java unit tests, JavaFX input tests, disposable-MySQL tests, Python helper tests, and an opt-in real-model smoke test cover their respective code paths. The default story pack preserves the original draft and includes a separate completed chapter with save and restore coverage. The group has not approved the player identity, suspect, ending, or answer keys. The model has not been evaluated for reading outcomes, and teacher or parent reporting is outside this student-game scope. See [completed story verification](docs/requirements/Completed-Story-Verification-2026-10-28.md) and [opening, appearance, and audio verification](docs/requirements/Dev1-Opening-Appearance-Audio-QA-2026-10-28.md) for test results and limits.
+Java unit tests, JavaFX input tests, disposable-MySQL tests, Python helper tests, and an opt-in real-model smoke test cover their respective code paths. The default story pack preserves the original draft and includes a separate completed chapter with save and restore coverage. The group has not approved the player-character presentation, suspect, ending, or answer keys. The model has not been evaluated for reading outcomes. Teacher and parent/guardian reporting are deferred. See [completed story verification](docs/requirements/Completed-Story-Verification-2026-10-28.md), [opening, appearance, and audio verification](docs/requirements/Dev1-Opening-Appearance-Audio-QA-2026-10-28.md), and [player experience update verification](docs/requirements/Player-Experience-Update-2026-10-30.md) for test results and limits.
 
 ## Current implementation ownership
 
@@ -287,7 +287,7 @@ When gameplay calls assessment completion, `ModelAssistedDifficultyPolicy` reads
 ## Playable screen flow
 
 1. Login or signup
-2. Main menu, including new game, continue, save/load, settings, logout, and quit
+2. Main menu, including new game, continue, save/load, settings, credits, logout, and quit
 3. How to Play for the selected chapter
 4. Story dialogue, thoughts, and narrative choices
 5. Separate Study or Hall passage and comprehension checkpoint

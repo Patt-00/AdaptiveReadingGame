@@ -3,6 +3,7 @@ package com.adaptivereadinggame.ui;
 import com.adaptivereadinggame.audio.GameAudio;
 import com.adaptivereadinggame.backend.BackendContext;
 import com.adaptivereadinggame.view.OpeningScreen;
+import com.adaptivereadinggame.settings.PlayerPreferences;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -21,6 +22,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.UUID;
+import java.util.prefs.Preferences;
 import java.util.function.BooleanSupplier;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,6 +45,38 @@ class OpeningScreenUiTest {
         assertTrue(ready.await(10, TimeUnit.SECONDS));
     }
     @AfterEach void close() throws Exception { if (stage != null) fx(() -> { stage.hide(); return null; }); }
+
+    @Test void openingRestoresMuteAndReducedMotionBeforeEntering() throws Exception {
+        Preferences node = Preferences.userRoot().node("com/adaptivereadinggame-tests/" + UUID.randomUUID());
+        try {
+            var preferences = new PlayerPreferences(node);
+            preferences.setVolumes(0, 0.3);
+            preferences.setReducedMotion(true);
+            var audio = new GameAudio(new SilentOutput());
+            fx(() -> {
+                stage = new Stage();
+                new OpeningScreen(stage, audio, reporter -> {
+                    reporter.update(4, 4, "Ready");
+                    return new OpeningScreen.Loaded(BackendContext.inMemory(), "Temporary storage");
+                }, preferences).start();
+                return null;
+            });
+            await(() -> root("#loadingScreen") != null && root("#loadingScreen").isVisible());
+            await(() -> root("#enterGame") != null && root("#enterGame").isVisible());
+            assertTrue(fx(() -> ((javafx.scene.control.CheckBox) root("#loadingReduceMotion")).isSelected()));
+            assertEquals(0, audio.musicVolume());
+            assertEquals(0.3, audio.effectsVolume());
+            fx(() -> { ((Button) root("#enterGame")).fire(); return null; });
+            await(() -> root("#accountRoot") != null);
+            assertEquals(0, audio.musicVolume());
+            assertTrue(new PlayerPreferences(node).reducedMotion());
+            assertEquals(0, new PlayerPreferences(node).music());
+        } finally {
+            if (stage != null) fx(() -> { stage.hide(); return null; });
+            node.removeNode();
+            Preferences.userRoot().flush();
+        }
+    }
 
     @Test void openingWaitsForRealLoadingBeforeSpaceEnters() throws Exception {
         CountDownLatch release = new CountDownLatch(1);
