@@ -1,6 +1,6 @@
 # Player experience update verification
 
-The `main` checkout stores reading and audio settings in device-local Java preferences, names the protagonist from the account display name, shows clearer save and history details, marks chapter replays, and includes a Credits screen. This verification covered the worktree based on commit `ed5c3b4`.
+The `main` checkout stores reading and audio settings in device-local Java preferences, names the protagonist from the account display name, shows clearer save and history details, marks chapter replays, includes a Credits screen, and starts in full screen by default. Set `ARG_FULL_SCREEN=false` to use a window. This verification covered the worktree based on commit `ed5c3b4`.
 
 ## Changes
 
@@ -14,7 +14,7 @@ Credits display repository-recorded attribution for the menu music, optional sto
 
 ## Verification
 
-The full command completed with **227 Java tests, zero failures, zero errors, and four skipped opt-in tests**. It included 44 JavaFX gameplay tests, four opening tests, six MySQL integration tests, five prerequisite-script tests, and three isolated preference tests. The JavaFX tests ran through Robot under Xvfb. The MySQL tests used a temporary MySQL 8.4 container on loopback and stopped the container after the run.
+The full command ran on the tree based on `ed5c3b4` and completed with **227 Java tests, zero failures, zero errors, and four skipped opt-in tests**. It included 44 JavaFX gameplay tests, four opening tests, six MySQL integration tests, five prerequisite-script tests, and three isolated preference tests. The JavaFX tests ran through Robot under Xvfb. The MySQL tests used a temporary MySQL 8.4 container on loopback and stopped the container after the run.
 
 ```sh
 MAVEN_OPTS=-Xmx256m \
@@ -31,13 +31,15 @@ xvfb-run -a -s '-screen 0 1920x1200x24' mvn -B verify \
 
 The `PlayerPreferencesTest` cases verified saved values after constructing a new preference store, invalid values, and an unavailable store. JavaFX checks covered opening preferences, the registered name in dialogue and Story Log, Apply and Cancel, Credits at the 760 by 520 minimum window, result saving and restore, save/history descriptions, and both story routes through their visible controls.
 
+After integrating the newer `origin/main` UI commits, the complete `Dev1UiTest` class passed all 44 tests. The fullscreen default, windowed opt-out, and `Stage` request checks passed as four targeted tests after the fullscreen change. The Fedora launch confirmed actual fullscreen geometry and state; Windows, macOS, and Termux fullscreen behavior was not tested during this update.
+
 The Python helper contract suite passed eight tests:
 
 ```sh
 python3 -m unittest discover -s model-tool -v
 ```
 
-The Bash preflight passed from `/tmp`, including with `JAVA_TOOL_OPTIONS` set. The `run-game.sh` launcher passed preflight on the active Fedora desktop and loaded both story chapters. Its ready-to-enter screen was captured in [the desktop loading screenshot](../qa/player-experience-2026-10-30/desktop-loading-ready.png). The JavaFX Robot tests cover interaction under Xvfb; this desktop launch did not include a full manual playthrough or human listening check.
+The Bash preflight passed from `/tmp`, including with `JAVA_TOOL_OPTIONS` set. The `run-game.sh` launcher passed preflight on Fedora and loaded both story chapters. `AdaptiveReadingGameAppStartupTest` and the focused fullscreen opening test passed. With `ARG_FULL_SCREEN` unset, the visible JavaFX stage measured 1920 by 1080 and reported `_NET_WM_STATE_FULLSCREEN`; the [desktop loading screenshot](../qa/player-experience-2026-10-30/desktop-loading-ready.png) records that launch. JavaFX Robot tests cover input under Xvfb; this desktop launch did not include a full manual playthrough or human listening check.
 
 ## Remaining limits
 

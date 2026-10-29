@@ -45,7 +45,7 @@ Windows PowerShell, from the project root:
 .\scripts\Run-Game.ps1
 ```
 
-You can still start the app directly with `mvn javafx:run`. The Java startup screen then checks and loads the story pack and provides Retry when startup fails. The preflight scripts check that the selected pack file exists; the Java loader validates its contents.
+The application starts in full screen on supported desktop and Termux:X11 launches. Set `ARG_FULL_SCREEN=false` to open it in a window. You can still start the app directly with `mvn javafx:run`. The Java startup screen checks and loads the story pack and provides Retry when startup fails. The preflight scripts check that the selected pack file exists; the Java loader validates its contents.
 
 To compile manually before launch, run these commands from the project root:
 

@@ -58,6 +58,7 @@ public final class OpeningScreen {
     private final Stage stage;
     private final GameAudio audio;
     private final PlayerPreferences preferences;
+    private final boolean fullScreen;
     private final Loader loader;
     private final StackPane root = new StackPane();
     private final VBox opening = new VBox(18);
@@ -93,10 +94,16 @@ public final class OpeningScreen {
     }
 
     public OpeningScreen(Stage stage, GameAudio audio, Loader loader, PlayerPreferences preferences) {
+        this(stage, audio, loader, preferences, false);
+    }
+
+    public OpeningScreen(Stage stage, GameAudio audio, Loader loader, PlayerPreferences preferences,
+                         boolean fullScreen) {
         this.stage = Objects.requireNonNull(stage);
         this.audio = Objects.requireNonNull(audio);
         this.loader = Objects.requireNonNull(loader);
         this.preferences = Objects.requireNonNull(preferences);
+        this.fullScreen = fullScreen;
         audio.setVolumes(preferences.music(), preferences.effects());
         if (preferences.music() > 0) rememberedMusic = preferences.music();
         this.soundFilter = event -> { if (event.getTarget() instanceof ButtonBase) this.audio.click(); };
@@ -127,7 +134,7 @@ public final class OpeningScreen {
         stage.setScene(scene);
         stage.addEventHandler(javafx.stage.WindowEvent.WINDOW_HIDDEN, event -> close());
         stage.show();
-        if (Boolean.parseBoolean(System.getenv("ARG_FULL_SCREEN"))) {
+        if (fullScreen) {
             stage.setFullScreenExitHint("Press Esc to leave full screen.");
             stage.setFullScreen(true);
         }

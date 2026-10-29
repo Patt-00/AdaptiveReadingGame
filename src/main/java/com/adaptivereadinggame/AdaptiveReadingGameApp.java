@@ -18,7 +18,11 @@ public class AdaptiveReadingGameApp extends Application {
     @Override
     public void start(Stage stage) {
         new OpeningScreen(stage, new GameAudio(new JavaFxAudioOutput()), AdaptiveReadingGameApp::loadGame,
-                PlayerPreferences.system()).start();
+                PlayerPreferences.system(), fullScreenEnabled(System.getenv("ARG_FULL_SCREEN"))).start();
+    }
+
+    static boolean fullScreenEnabled(String configured) {
+        return configured == null || configured.isBlank() || Boolean.parseBoolean(configured);
     }
 
     private static OpeningScreen.Loaded loadGame(OpeningScreen.Reporter progress) throws Exception {

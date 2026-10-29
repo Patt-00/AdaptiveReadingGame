@@ -78,6 +78,21 @@ class OpeningScreenUiTest {
         }
     }
 
+    @Test void configuredFullscreenOpeningUsesTheWholeDisplay() throws Exception {
+        var preferences = PlayerPreferences.temporary();
+        preferences.setReducedMotion(true);
+        fx(() -> {
+            stage = new Stage();
+            new OpeningScreen(stage, new GameAudio(new SilentOutput()), reporter -> {
+                reporter.update(4, 4, "Ready");
+                return new OpeningScreen.Loaded(BackendContext.inMemory(), "Temporary storage");
+            }, preferences, true).start();
+            return null;
+        });
+        await(() -> root("#enterGame") != null && root("#enterGame").isVisible());
+        assertEquals("Press Esc to leave full screen.", fx(() -> stage.getFullScreenExitHint()));
+    }
+
     @Test void openingWaitsForRealLoadingBeforeSpaceEnters() throws Exception {
         CountDownLatch release = new CountDownLatch(1);
         SilentOutput output = new SilentOutput();

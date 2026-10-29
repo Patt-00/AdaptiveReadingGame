@@ -10,6 +10,14 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AdaptiveReadingGameAppStartupTest {
+    @Test void fullscreenIsTheDefaultAndCanBeDisabledByLauncherSetting() {
+        assertTrue(AdaptiveReadingGameApp.fullScreenEnabled(null));
+        assertTrue(AdaptiveReadingGameApp.fullScreenEnabled(""));
+        assertTrue(AdaptiveReadingGameApp.fullScreenEnabled("true"));
+        assertFalse(AdaptiveReadingGameApp.fullScreenEnabled("false"));
+        assertFalse(AdaptiveReadingGameApp.fullScreenEnabled("0"));
+    }
+
     @TempDir Path projectRoot;
 
     @Test void missingDefaultPackFailsClearlyInsteadOfStartingAnEmptyGame() {
