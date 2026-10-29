@@ -205,6 +205,9 @@ fi
 
 cd /workspace/AdaptiveReadingGame
 mvn -B -DskipTests compile
+mvn -B -DincludeScope=runtime \
+    -Dmdep.outputFile=target/termux-runtime-classpath.txt \
+    dependency:build-classpath
 
 printf '\nDebian JavaFX setup is ready.\n'
 printf 'Java: %s, javac: %s\n' "$java_major" "$javac_major"

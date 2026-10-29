@@ -123,26 +123,38 @@ fi
 prism_order="${ARG_TERMUX_PRISM_ORDER:-sw}"
 [[ "$prism_order" == sw || "$prism_order" == es2 ]] \
     || fail 'ARG_TERMUX_PRISM_ORDER must be sw or es2.'
-maven_opts="-Dprism.order=$prism_order"
-java_tool_options=""
-if [[ "${ARG_TERMUX_MEDIA_DEBUG:-false}" == true ]]; then
-    java_tool_options="-Djfxmedia.loglevel=debug"
+
+proot_arguments=(
+    login --detach --shared-tmp
+    --bind "$project_root:/workspace/AdaptiveReadingGame"
+    --env "DISPLAY=$display"
+    --env TMPDIR=/tmp
+    --env XDG_RUNTIME_DIR=/tmp
+    --env PULSE_SERVER=tcp:127.0.0.1:4713
+    --env ALSA_CONFIG_PATH=/workspace/AdaptiveReadingGame/scripts/termux-asoundrc
+    --env ARG_FULL_SCREEN=true
+    --env "ARG_TERMUX_PRISM_ORDER=$prism_order"
+    --env "ARG_TERMUX_MEDIA_DEBUG=${ARG_TERMUX_MEDIA_DEBUG:-false}"
+)
+
+xauthority_file="${XAUTHORITY:-$HOME/.Xauthority}"
+if [[ -f "$xauthority_file" ]]; then
+    proot_arguments+=(--bind "$xauthority_file:/root/.Xauthority" --env XAUTHORITY=/root/.Xauthority)
+fi
+
+pulse_cookie_file="$HOME/.config/pulse/cookie"
+if [[ -f "$pulse_cookie_file" ]]; then
+    proot_arguments+=(
+        --bind "$pulse_cookie_file:/tmp/adaptive-reading-game-pulse-cookie"
+        --env PULSE_COOKIE=/tmp/adaptive-reading-game-pulse-cookie
+    )
 fi
 
 printf 'Launching Adaptive Reading Game on Termux:X11 display %s. Close the game window to stop the launcher.\n' "$display"
 mkdir -p "$project_root/target"
 log_file="$project_root/target/termux-game.log"
-proot-distro login --detach --shared-tmp \
-    --bind "$project_root:/workspace/AdaptiveReadingGame" \
-    --env "DISPLAY=$display" \
-    --env TMPDIR=/tmp \
-    --env XDG_RUNTIME_DIR=/tmp \
-    --env PULSE_SERVER=127.0.0.1 \
-    --env ALSA_CONFIG_PATH=/workspace/AdaptiveReadingGame/scripts/termux-asoundrc \
-    --env ARG_FULL_SCREEN=true \
-    --env "JAVA_TOOL_OPTIONS=$java_tool_options" \
-    --env "MAVEN_OPTS=$maven_opts" \
-    debian -- /bin/bash -lc 'cd /workspace/AdaptiveReadingGame && exec mvn javafx:run > target/termux-game.log 2>&1'
+proot-distro "${proot_arguments[@]}" debian -- \
+    /bin/bash -lc 'cd /workspace/AdaptiveReadingGame && exec ./scripts/termux-run-javafx.sh > target/termux-game.log 2>&1'
 
 for ((attempt = 0; attempt < 60; attempt++)); do
     if grep -Eq 'Loaded [0-9]+ story chapter' "$log_file" 2>/dev/null; then
@@ -150,7 +162,7 @@ for ((attempt = 0; attempt < 60; attempt++)); do
         printf 'Log: %s\n' "$log_file"
         exit 0
     fi
-    if grep -q '\[ERROR\]' "$log_file" 2>/dev/null; then
+    if grep -Eq '\[ERROR\]|Exception in Application|Error occurred during initialization|Unable to open DISPLAY' "$log_file" 2>/dev/null; then
         tail -n 40 "$log_file" >&2
         fail "The game exited during startup. Check $log_file for details."
     fi

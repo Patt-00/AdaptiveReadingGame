@@ -16,10 +16,19 @@ prepare_termux_audio_bridge() {
 
     if ! pactl list short modules 2>/dev/null \
             | awk '$2 == "module-native-protocol-tcp" { found = 1 } END { exit !found }'; then
-        pactl load-module module-native-protocol-tcp \
-            auth-ip-acl=127.0.0.1 auth-anonymous=1 >/dev/null 2>&1 || return 1
+        pulse_cookie="$HOME/.config/pulse/cookie"
+        if [[ -f "$pulse_cookie" ]]; then
+            pactl load-module module-native-protocol-tcp \
+                auth-ip-acl=127.0.0.1 >/dev/null 2>&1 || return 1
+        else
+            pactl load-module module-native-protocol-tcp \
+                auth-ip-acl=127.0.0.1 auth-anonymous=1 >/dev/null 2>&1 || return 1
+        fi
     fi
 
+    pactl list short modules 2>/dev/null \
+        | awk '$2 == "module-native-protocol-tcp" { found = 1 } END { exit !found }' \
+        || return 1
     pactl list short sinks 2>/dev/null \
         | awk '$2 != "auto_null" { found = 1 } END { exit !found }'
 }
