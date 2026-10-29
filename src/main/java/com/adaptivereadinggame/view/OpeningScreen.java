@@ -33,6 +33,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.SVGPath;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -98,6 +99,10 @@ public final class OpeningScreen {
         stage.setMinHeight(520);
         root.setId("openingRoot");
         root.getStyleClass().add("opening-root");
+        if (Font.getFamilies().stream().noneMatch(family -> family.equalsIgnoreCase("Georgia")))
+            root.getStyleClass().add("georgia-fallback");
+        if (Font.getFamilies().stream().noneMatch(family -> family.equalsIgnoreCase("Times New Roman")))
+            root.getStyleClass().add("serif-fallback");
         buildOpening();
         buildLoading();
         root.getChildren().addAll(loading, opening);
