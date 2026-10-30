@@ -7,6 +7,7 @@ import com.adaptivereadinggame.backend.BackendContext;
 import com.adaptivereadinggame.content.StoryStageDirections;
 import com.adaptivereadinggame.model.StoryNode;
 import com.adaptivereadinggame.model.PlayerAppearance;
+import com.adaptivereadinggame.settings.PlayerPreferences;
 import com.adaptivereadinggame.service.AccountGameService.ChapterSummary;
 import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
@@ -14,6 +15,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBase;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
@@ -32,6 +34,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -40,11 +44,14 @@ public final class AppNavigator {
     public record StoryLogEntry(String nodeId, String speaker, String text, boolean thought) {}
     record StageDirectionsLoad(StoryStageDirections directions, String notice) {}
     private static final int STORY_LOG_LIMIT = 500;
+    private static final Pattern PLAYER_ROLE_ADDRESS = Pattern.compile(
+            "(?i)(^|[.!?,;:]\\s+)servant(?=\\s*[,;:.!?])");
     private final Stage stage;
     private final BackendContext backend;
     private final String storageDescription;
     private final StoryStageDirections stageDirections;
     private final GameAudio audio;
+    private final PlayerPreferences preferences;
     private Scene wiredScene;
     private final String stageDirectionsNotice;
     private final boolean georgiaMissing = Font.getFamilies().stream()
@@ -63,27 +70,36 @@ public final class AppNavigator {
     private ChapterSummary pendingChapter;
 
     public AppNavigator(Stage stage, BackendContext backend, String storageDescription) {
-        this(stage, backend, storageDescription, loadStageDirections(), new GameAudio(new JavaFxAudioOutput()));
+        this(stage, backend, storageDescription, loadStageDirections(), new GameAudio(new JavaFxAudioOutput()), PlayerPreferences.temporary());
     }
 
     public AppNavigator(Stage stage, BackendContext backend, String storageDescription, GameAudio audio) {
-        this(stage, backend, storageDescription, loadStageDirections(), audio);
+        this(stage, backend, storageDescription, loadStageDirections(), audio, PlayerPreferences.temporary());
+    }
+
+    public AppNavigator(Stage stage, BackendContext backend, String storageDescription, GameAudio audio,
+                        PlayerPreferences preferences) {
+        this(stage, backend, storageDescription, loadStageDirections(), audio, preferences);
     }
 
     public AppNavigator(Stage stage, BackendContext backend, String storageDescription,
                         StoryStageDirections stageDirections) {
         this(stage, backend, storageDescription, new StageDirectionsLoad(Objects.requireNonNull(stageDirections), ""),
-                new GameAudio(new JavaFxAudioOutput()));
+                new GameAudio(new JavaFxAudioOutput()), PlayerPreferences.temporary());
     }
 
     private AppNavigator(Stage stage, BackendContext backend, String storageDescription,
-                         StageDirectionsLoad stageLoad, GameAudio audio) {
+                         StageDirectionsLoad stageLoad, GameAudio audio, PlayerPreferences preferences) {
         this.stage = Objects.requireNonNull(stage);
         this.backend = Objects.requireNonNull(backend);
         this.storageDescription = Objects.requireNonNull(storageDescription);
         this.stageDirections = stageLoad.directions();
         this.stageDirectionsNotice = stageLoad.notice();
         this.audio = Objects.requireNonNull(audio);
+        this.preferences = Objects.requireNonNull(preferences);
+        this.readingFontScale = preferences.textScale();
+        this.characterArtworkEnabled = preferences.artwork();
+        this.reducedMotion = preferences.reducedMotion();
     }
 
     public BackendContext backend() { return backend; }
@@ -95,17 +111,55 @@ public final class AppNavigator {
     public void setWorkInProgress(boolean busy) { workInProgress = busy; }
     public double readingFontScale() { return readingFontScale; }
     public void setReadingFontScale(double scale) {
-        if (scale < 0.8 || scale > 1.6) throw new IllegalArgumentException("Reading text scale must be 0.8 to 1.6.");
+        if (!Double.isFinite(scale) || scale < 0.8 || scale > 1.6) throw new IllegalArgumentException("Reading text scale must be 0.8 to 1.6.");
         readingFontScale = scale;
+        preferences.setTextScale(scale);
     }
     public boolean characterArtworkEnabled() { return characterArtworkEnabled; }
-    public void setCharacterArtworkEnabled(boolean enabled) { characterArtworkEnabled = enabled; }
+    public void setCharacterArtworkEnabled(boolean enabled) { characterArtworkEnabled = enabled; preferences.setArtwork(enabled); }
     public boolean reducedMotion() { return reducedMotion; }
-    public void setReducedMotion(boolean reduced) { reducedMotion = reduced; }
+    public void setReducedMotion(boolean reduced) { reducedMotion = reduced; preferences.setReducedMotion(reduced); }
     public Optional<PlayerAppearance> playerAppearance() { return Optional.ofNullable(playerAppearance); }
     public void setPlayerAppearance(PlayerAppearance appearance) { playerAppearance = appearance; }
     public GameAudio audio() { return audio; }
     public Optional<ChapterSummary> pendingChapter() { return Optional.ofNullable(pendingChapter); }
+
+    /** The account's registered display name is also the protagonist's name in story screens. */
+    public String playerDisplayName() {
+        return backend.accountGameService().currentAccount()
+                .map(account -> account.displayName().trim())
+                .filter(name -> !name.isEmpty())
+                .orElse("Player");
+    }
+
+    public String displayStorySpeaker(String sourceName) {
+        return isPlayerStorySpeaker(sourceName) ? playerDisplayName() : sourceName;
+    }
+
+    public boolean isPlayerStorySpeaker(String sourceName) {
+        return "You".equalsIgnoreCase(sourceName) || "Servant".equalsIgnoreCase(sourceName);
+    }
+
+    /**
+     * Personalizes references that address or identify the protagonist while leaving references to
+     * servants as a group or occupation intact. This happens at display time so saved story content
+     * and stable database chapter IDs do not change.
+     */
+    public String personalizeStoryText(String text) {
+        String name = playerDisplayName();
+        String personalized = Objects.requireNonNull(text)
+                .replace("{{playerName}}", name)
+                .replace("You play an unnamed servant.", "You play as " + name + ", a palace servant.")
+                .replace("You are an unnamed servant at Princess Hailey’s gathering.",
+                        "You are " + name + ", a palace servant at Princess Hailey’s gathering.")
+                .replace("a lowly servant", name)
+                .replace("This servant was just", name + " was just")
+                .replace("The servant isn't wrong", name + " isn't wrong")
+                .replace("do not concern a mere domestic servant.", "do not concern you, " + name + ".")
+                .replace("the genuine panic of an innocent servant", "genuine panic from " + name);
+        return PLAYER_ROLE_ADDRESS.matcher(personalized)
+                .replaceAll("$1" + Matcher.quoteReplacement(name));
+    }
 
     public void clearStoryLog() {
         storyLog.clear();
@@ -125,7 +179,8 @@ public final class AppNavigator {
         if (node.readingCheck() || node.storyComplete()) return;
         if (!storyLog.isEmpty() && storyLog.getLast().nodeId().equals(node.storyNodeId())) return;
         if (storyLog.size() == STORY_LOG_LIMIT) storyLog.removeFirst();
-        storyLog.add(new StoryLogEntry(node.storyNodeId(), node.speakerName(), node.dialogueText(), node.thought()));
+        storyLog.add(new StoryLogEntry(node.storyNodeId(), displayStorySpeaker(node.speakerName()),
+                personalizeStoryText(node.dialogueText()), node.thought()));
     }
 
     public List<StoryLogEntry> storyLog() { return List.copyOf(storyLog); }
@@ -264,14 +319,19 @@ public final class AppNavigator {
         credit.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
         credit.setMaxWidth(500);
         credit.getStyleClass().add("dialog-note");
-        VBox content = new VBox(10, musicLabel, music, effectsLabel, effects, credit);
+        Button reset = new Button("Reset to defaults");
+        reset.setId("resetAudioSettings");
+        reset.setOnAction(event -> { music.setValue(PlayerPreferences.DEFAULT_MUSIC); effects.setValue(PlayerPreferences.DEFAULT_EFFECTS); });
+        VBox content = new VBox(10, musicLabel, music, effectsLabel, effects, reset, credit);
         content.setPrefWidth(500);
         content.setMaxWidth(500);
         content.setPadding(new Insets(8));
         dialog.getDialogPane().setContent(content);
         styleDialog(dialog);
-        if (dialog.showAndWait().filter(ButtonType.APPLY::equals).isPresent())
+        if (dialog.showAndWait().filter(ButtonType.APPLY::equals).isPresent()) {
             audio.setVolumes(music.getValue(), effects.getValue());
+            preferences.setVolumes(audio.musicVolume(), audio.effectsVolume());
+        }
     }
 
     public boolean confirm(String title, String message) {

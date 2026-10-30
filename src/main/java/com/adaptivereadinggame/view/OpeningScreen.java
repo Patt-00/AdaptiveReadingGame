@@ -1,6 +1,7 @@
 package com.adaptivereadinggame.view;
 
 import com.adaptivereadinggame.audio.GameAudio;
+import com.adaptivereadinggame.settings.PlayerPreferences;
 import com.adaptivereadinggame.backend.BackendContext;
 import com.adaptivereadinggame.content.CharacterAssetResolver;
 import com.adaptivereadinggame.content.StoryAssetResolver;
@@ -56,6 +57,8 @@ public final class OpeningScreen {
 
     private final Stage stage;
     private final GameAudio audio;
+    private final PlayerPreferences preferences;
+    private final boolean fullScreen;
     private final Loader loader;
     private final StackPane root = new StackPane();
     private final VBox opening = new VBox(18);
@@ -87,9 +90,22 @@ public final class OpeningScreen {
     private double rememberedMusic = 0.22;
 
     public OpeningScreen(Stage stage, GameAudio audio, Loader loader) {
+        this(stage, audio, loader, PlayerPreferences.temporary());
+    }
+
+    public OpeningScreen(Stage stage, GameAudio audio, Loader loader, PlayerPreferences preferences) {
+        this(stage, audio, loader, preferences, false);
+    }
+
+    public OpeningScreen(Stage stage, GameAudio audio, Loader loader, PlayerPreferences preferences,
+                         boolean fullScreen) {
         this.stage = Objects.requireNonNull(stage);
         this.audio = Objects.requireNonNull(audio);
         this.loader = Objects.requireNonNull(loader);
+        this.preferences = Objects.requireNonNull(preferences);
+        this.fullScreen = fullScreen;
+        audio.setVolumes(preferences.music(), preferences.effects());
+        if (preferences.music() > 0) rememberedMusic = preferences.music();
         this.soundFilter = event -> { if (event.getTarget() instanceof ButtonBase) this.audio.click(); };
     }
 
@@ -118,13 +134,14 @@ public final class OpeningScreen {
         stage.setScene(scene);
         stage.addEventHandler(javafx.stage.WindowEvent.WINDOW_HIDDEN, event -> close());
         stage.show();
-        if (Boolean.parseBoolean(System.getenv("ARG_FULL_SCREEN"))) {
+        if (fullScreen) {
             stage.setFullScreenExitHint("Press Esc to leave full screen.");
             stage.setFullScreen(true);
         }
         audio.setMenuScene(true);
         startLoading();
-        playOpening();
+        if (reduceMotion.isSelected()) showLoading();
+        else playOpening();
     }
 
     private void buildOpening() {
@@ -150,8 +167,10 @@ public final class OpeningScreen {
         skip.setOnAction(event -> showLoading());
         reduceMotion.setId("openingReduceMotion");
         reduceMotion.getStyleClass().add("opening-motion");
+        reduceMotion.setSelected(preferences.reducedMotion());
+        reduceMotion.selectedProperty().addListener((observable, before, after) -> preferences.setReducedMotion(after));
         reduceMotion.setOnAction(event -> { if (reduceMotion.isSelected()) showLoading(); });
-        Button mute = new Button("MUTE MUSIC");
+        Button mute = new Button(audio.musicVolume() > 0 ? "MUTE MUSIC" : "UNMUTE MUSIC");
         mute.setId("openingMute");
         mute.getStyleClass().add("opening-secondary");
         mute.setOnAction(event -> {
@@ -163,6 +182,7 @@ public final class OpeningScreen {
                 audio.setVolumes(rememberedMusic, audio.effectsVolume());
                 mute.setText("MUTE MUSIC");
             }
+            preferences.setVolumes(audio.musicVolume(), audio.effectsVolume());
         });
         HBox actions = new HBox(12, skip, mute);
         actions.setAlignment(Pos.CENTER);
@@ -419,7 +439,7 @@ public final class OpeningScreen {
         scene.removeEventFilter(ActionEvent.ACTION, soundFilter);
         scene.removeEventFilter(KeyEvent.KEY_PRESSED, keyFilter);
         try {
-            AppNavigator navigator = new AppNavigator(stage, loaded.backend(), loaded.storageDescription(), audio);
+            AppNavigator navigator = new AppNavigator(stage, loaded.backend(), loaded.storageDescription(), audio, preferences);
             navigator.setReducedMotion(reduceMotion.isSelected());
             navigator.startAtAccount();
         } catch (IOException failure) {

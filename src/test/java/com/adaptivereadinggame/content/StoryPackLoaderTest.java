@@ -81,7 +81,7 @@ class StoryPackLoaderTest {
     }
 
     @Test void rejectsUnsupportedVersionUnknownFieldsAndTrailingJson() {
-        assertThrows(IllegalArgumentException.class, () -> loader.parse(PACK.replace("\"formatVersion\": 1", "\"formatVersion\": 2")));
+        assertThrows(IllegalArgumentException.class, () -> loader.parse(PACK.replace("\"formatVersion\": 1", "\"formatVersion\": 4")));
         assertThrows(IllegalArgumentException.class, () -> loader.parse(PACK.replace("\"formatVersion\": 1", "\"formatVersion\": 1, \"unexpected\": true")));
         assertThrows(IllegalArgumentException.class, () -> loader.parse(PACK + " {}"));
     }
@@ -106,7 +106,7 @@ class StoryPackLoaderTest {
 
     @Test void loadsTheCurrentDraftWithBothInvestigationOrdersAndThreeDifficultyVariants() throws IOException {
         StoryPack pack = loader.read(Path.of("assets/content/hailey-investigation-draft.json"));
-        assertEquals(StoryPack.CURRENT_FORMAT_VERSION, pack.formatVersion());
+        assertEquals(StoryPackLoader.ADAPTIVE_FORMAT_VERSION, pack.formatVersion());
         var chapter = pack.chapters().getFirst().chapter();
         assertTrue(chapter.adaptive());
         assertEquals(4, chapter.checkpoints().size());
@@ -120,5 +120,15 @@ class StoryPackLoaderTest {
         assertTrue(pack.chapters().getFirst().nodes().stream().anyMatch(node -> node.storyChoices().stream()
                 .anyMatch(choice -> choice.routeId().equals("hall-first"))));
         assertTrue(pack.chapters().getFirst().nodes().stream().anyMatch(com.adaptivereadinggame.model.StoryNode::storyComplete));
+        assertTrue(pack.chapters().getFirst().availableForNewGame(), "Version 2 packs default to selectable chapters.");
+    }
+
+    @Test void availabilityFieldIsRequiredOnlyByVersionThreePacks() throws IOException {
+        String current = Files.readString(Path.of("assets/content/hailey-investigation-complete.json"));
+        assertThrows(IllegalArgumentException.class,
+                () -> loader.parse(current.replaceAll(",\\s*\"availableForNewGame\": true", "")));
+
+        StoryPack legacyAdaptive = loader.read(Path.of("assets/content/hailey-investigation-draft.json"));
+        assertTrue(legacyAdaptive.chapters().getFirst().availableForNewGame());
     }
 }

@@ -31,6 +31,7 @@
                 <Button fx:id="continueButton" text="CONTINUE" onAction="#continueGame" prefWidth="350" maxWidth="350" disable="true" accessibleHelp="No saved game is available." styleClass="menu-option,menu-secondary"/>
                 <Button text="SAVE/LOAD" onAction="#saveLoad" prefWidth="350" maxWidth="350" styleClass="menu-option,menu-secondary"/>
                 <Button text="SETTINGS" onAction="#settings" prefWidth="350" maxWidth="350" styleClass="menu-option,menu-secondary"/>
+                <Button text="CREDITS" onAction="#credits" prefWidth="350" maxWidth="350" styleClass="menu-option,menu-secondary"/>
                 <Button text="QUIT" onAction="#quit" prefWidth="350" maxWidth="350" styleClass="menu-option,menu-secondary"/>
             </VBox>
             <Label fx:id="continueStatusLabel" alignment="CENTER" wrapText="true" minHeight="-Infinity"

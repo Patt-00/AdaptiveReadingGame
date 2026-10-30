@@ -29,7 +29,7 @@ public final class StoryPackImporter {
     public int importPack(StoryPack pack) {
         Objects.requireNonNull(pack);
         for (StoryPack.ChapterPack item : pack.chapters()) {
-            chapters.saveChapter(item.chapter());
+            chapters.saveChapter(item.chapter(), item.availableForNewGame());
             stories.saveStoryNodes(item.chapter().id(), item.nodes(), item.startNodeId(), item.chapter().checkpoints());
         }
         return pack.chapters().size();

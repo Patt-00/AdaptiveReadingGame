@@ -17,6 +17,8 @@ public final class AccountGameService {
     /** Current screen data excludes question answer keys and is scoped to the signed-in learner. */
     public record GameView(GameState state, ChapterSummary chapter, StoryNode storyNode, String passage,
                            Optional<AssessmentResult> completedResult) {}
+    public record SaveDescription(SaveSnapshot snapshot, String chapterTitle, String phase, String route) {}
+    public record HistoryDescription(AssessmentResult result, String chapterTitle, String checkpointTitle) {}
     private final AuthService auth;
     private final ProgressService progress;
     private final SaveSnapshotRepository snapshots;
@@ -124,6 +126,37 @@ public final class AccountGameService {
                 new HashSet<>(), new HashMap<>());
     }
     public synchronized List<AssessmentResult> history() { return List.copyOf(progress.history(studentId())); }
+    public synchronized List<HistoryDescription> historyDescriptions() {
+        return history().stream().map(result -> new HistoryDescription(result,
+                chapters.findChapter(result.attempt().materialId()).map(Chapter::title).orElse("Unavailable chapter"),
+                checkpointLabel(result.attempt().checkpointId()))).toList();
+    }
+
+    public synchronized SaveDescription describeSnapshot(SaveSnapshot snapshot) {
+        Objects.requireNonNull(snapshot);
+        UUID learnerId = studentId();
+        GameState state = snapshot.gameState();
+        requireOwner(state, learnerId);
+        Optional<Chapter> chapter = chapters.findChapter(state.chapterId());
+        Optional<StoryNode> node = nodes.findNode(state.chapterId(), state.storyNodeId());
+        String phase = "Story";
+        if (chapter.isEmpty() || node.isEmpty()) phase = "Content unavailable";
+        else if (node.get().storyComplete()) phase = "Completed";
+        else if (completedResultForCurrentState(state, chapter.get(), node.get(), learnerId).isPresent()) phase = "Results";
+        else if (state.assessmentSessionId() != null || node.get().readingCheck()) phase = "Reading check";
+        String route = switch (state.routeId()) {
+            case "study-first" -> "Study first";
+            case "hall-first" -> "Hall first";
+            default -> "";
+        };
+        return new SaveDescription(snapshot, chapter.map(Chapter::title).orElse("Unavailable chapter"), phase, route);
+    }
+
+    private static String checkpointLabel(String id) {
+        if (id.startsWith("study-")) return id.endsWith("first") ? "Study, first" : "Study, second";
+        if (id.startsWith("hall-")) return id.endsWith("first") ? "Hall, first" : "Hall, second";
+        return "Reading check";
+    }
     public synchronized List<ChapterSummary> availableChapters(Difficulty difficulty) {
         UUID learnerId = studentId();
         return chapters.findByDifficulty(Objects.requireNonNull(difficulty)).stream()

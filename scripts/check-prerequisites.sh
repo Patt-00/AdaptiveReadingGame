@@ -18,20 +18,26 @@ fail() {
 }
 
 command -v java >/dev/null 2>&1 || fail 'Install JDK 21 or newer and add java to PATH.'
-java_version="$(java -version 2>&1 | sed -n '1s/.*version "\([0-9][0-9]*\).*/\1/p')"
+java_version="$(java -version 2>&1 | sed -n 's/.*version "\([0-9][0-9]*\).*/\1/p' | head -n 1)"
 [[ -n "$java_version" ]] || fail 'Could not read the Java version. Run java -version to check your JDK.'
 (( java_version >= 21 )) || fail "JDK 21 or newer is required; found Java $java_version."
 printf 'OK: Java %s\n' "$java_version"
 
 command -v javac >/dev/null 2>&1 || fail 'A JDK compiler is required. Install JDK 21 or newer; a JRE alone is not enough.'
-javac_version="$(javac -version 2>&1 | sed -n '1s/.*javac \([0-9][0-9]*\).*/\1/p')"
+javac_version="$(javac -version 2>&1 | sed -n 's/.*javac \([0-9][0-9]*\).*/\1/p' | head -n 1)"
 [[ -n "$javac_version" ]] || fail 'Could not read the Java compiler version. Run javac -version to check your JDK.'
 (( javac_version >= 21 )) || fail "JDK 21 or newer is required; found javac $javac_version."
 printf 'OK: javac %s\n' "$javac_version"
 
 command -v mvn >/dev/null 2>&1 || fail 'Install Maven and add mvn to PATH.'
 maven_info="$(mvn -version 2>&1)" || fail 'Maven could not start. Check its Java setup.'
-printf 'OK: %s\n' "$(printf '%s\n' "$maven_info" | sed -n '1p')"
+maven_line="$(printf '%s\n' "$maven_info" | sed -n '/^Apache Maven /{p;q;}')"
+maven_java="$(printf '%s\n' "$maven_info" | sed -n 's/^Java version: \([0-9][0-9]*\).*/\1/p' | head -n 1)"
+maven_runtime="$(printf '%s\n' "$maven_info" | sed -n 's/^Java version: .*runtime: //p' | head -n 1)"
+[[ -n "$maven_line" && -n "$maven_java" ]] || fail 'Could not identify the Java runtime Maven uses. Run mvn -version.'
+(( maven_java >= 21 )) || fail "Maven uses Java $maven_java; configure JAVA_HOME to a JDK 21 or newer."
+[[ -n "$maven_runtime" && -x "$maven_runtime/bin/javac" ]] || fail 'Maven must use a JDK with javac. Check JAVA_HOME and mvn -version.'
+printf 'OK: %s (Maven uses JDK %s)\n' "$maven_line" "$maven_java"
 
 [[ -f "$project_root/pom.xml" ]] || fail 'pom.xml is missing. Run this script from a project checkout.'
 
@@ -48,18 +54,41 @@ else
     printf 'OK: Default story pack: %s\n' "$default_pack"
 fi
 
-db_values=("${ARG_DB_URL:-}" "${ARG_DB_USER:-}" "${ARG_DB_PASSWORD:-}")
-db_set=0
-for value in "${db_values[@]}"; do
-    [[ -z "$value" ]] || ((db_set += 1))
-done
-if (( db_set == 0 )); then
+db_url="${ARG_DB_URL:-}"
+db_user="${ARG_DB_USER:-}"
+if [[ -z "${db_url//[[:space:]]/}" && -z "${db_user//[[:space:]]/}" && -z "${ARG_DB_PASSWORD+x}" ]]; then
     printf 'OK: No MySQL settings found; the game will use temporary in-memory storage.\n'
-elif (( db_set == 3 )); then
-    printf 'OK: MySQL settings are present. Confirm migrations V001 through V005 have been applied before launching.\n'
 else
-    fail 'Set all three variables ARG_DB_URL, ARG_DB_USER, and ARG_DB_PASSWORD, or clear all three to use temporary storage.'
+    [[ "$db_url" == jdbc:mysql://* ]] || fail 'ARG_DB_URL must be a MySQL JDBC URL beginning jdbc:mysql://.'
+    [[ -n "${db_user//[[:space:]]/}" ]] || fail 'ARG_DB_USER is required when MySQL is configured.'
+    [[ -n "${ARG_DB_PASSWORD+x}" ]] || fail 'ARG_DB_PASSWORD must be set when MySQL is configured.'
+    printf 'OK: MySQL settings are present. Connectivity and migrations were not checked; apply V001 through V005 before launching.\n'
 fi
+
+asset_root="${ARG_ASSET_DIR:-$project_root/assets}"
+[[ "$asset_root" == /* ]] || asset_root="$project_root/$asset_root"
+pointer_count=0
+for asset in "$asset_root"/characters/*.png "$asset_root"/scenes/*.jpg "$asset_root"/cg/*.png \
+        "$project_root/src/main/resources/com/adaptivereadinggame/audio/comfortable-mystery.wav"; do
+    [[ -f "$asset" ]] || continue
+    (( $(wc -c < "$asset") <= 512 )) || continue
+    if [[ "$(head -n 1 "$asset")" == 'version https://git-lfs.github.com/spec/v1' ]]; then
+        ((pointer_count += 1))
+    fi
+done
+if (( pointer_count > 0 )); then
+    printf 'Warning: %s artwork or music files are Git LFS pointers; fetch game assets with Git LFS for the full presentation.\n' "$pointer_count" >&2
+fi
+for track in "$asset_root"/local-music/investigation.wav "$asset_root"/local-music/tense.wav; do
+    if [[ ! -f "$track" ]]; then
+        printf 'Info: Optional story music is missing: %s\n' "$track"
+    fi
+done
+model_weights="$project_root/model-tool/models/Qwen2.5-0.5B-Instruct/model.safetensors"
+if [[ ! -f "$model_weights" ]] || (( $(wc -c < "$model_weights") <= 512 )); then
+    printf 'Info: Optional Qwen weights are unavailable locally; Java will keep its fallback unless the helper can load the pinned model.\n'
+fi
+printf 'Info: The optional model helper is started separately; see model-tool/README.md.\n'
 
 if [[ "$check_only" == true ]]; then
     printf 'All startup prerequisites passed.\n'

@@ -117,7 +117,7 @@ class Dev1UiTest {
             submitButton.requestFocus();
             root().applyCss();
             assertTrue(submitButton.isFocused());
-            assertVisibleFocusRing(submitButton, Color.web("#655438"));
+            assertVisibleFocusRing(submitButton, Color.web("#fff1bd"));
             field("usernameField").requestFocus();
             capture(root(), "signup-form");
             field("usernameField").setText("ReaderOne");
@@ -444,6 +444,8 @@ class Dev1UiTest {
         fx(() -> { navigator.showGameplay(); return null; });
         await(() -> root().lookup("#speakerImage") instanceof ImageView image && image.getImage() != null
                 && image.getImage().getUrl().contains("Servant_B.png") && !navigator.workInProgress());
+        assertEquals("Servant Reader", fx(() -> label("speakerName").getText()));
+        assertEquals("Servant Reader", fx(() -> root().lookup("#speakerImage").getAccessibleText()));
         fx(() -> { capture(root(), "servant-dialogue"); return null; });
         game.save(1, false);
         game.logout(true);
@@ -456,6 +458,11 @@ class Dev1UiTest {
         robotClick(() -> button("CONTINUE"));
         await(() -> root().lookup("#speakerImage") instanceof ImageView image && image.getImage() != null
                 && image.getImage().getUrl().contains("Servant_B.png") && !navigator.workInProgress());
+        assertEquals("Servant Reader", fx(() -> label("speakerName").getText()));
+        advanceDraftTo(game, "amelia-task");
+        fx(() -> { navigator.showGameplay(); return null; });
+        await(() -> root().lookup("#storyText") instanceof Label text
+                && text.getText().equals("Servant Reader, was it?") && !navigator.workInProgress());
     }
 
     @Test void completedStoryChoicesReachEachEndingThroughJavaFxControls() throws Exception {
@@ -496,8 +503,14 @@ class Dev1UiTest {
                     capture(root(), investigationOrder + "-" + ending);
                     return null;
                 });
-                game.advanceStory();
-                fx(() -> { navigator.showGameplay(); return null; });
+                robotClick(() -> button("NEXT"));
+                await(() -> game.currentGame().orElseThrow().storyNodeId().equals("aftermath-"
+                        + (accuseRobert ? "correct" : "wrong") + "-" + (findAntidote ? "found" : "lost"))
+                        && !navigator.workInProgress());
+                await(() -> root().lookup("#storyText") instanceof Label text
+                        && text.getText().toLowerCase(java.util.Locale.ROOT).contains("antidote")
+                        && !navigator.workInProgress());
+                robotClick(() -> button("NEXT"));
                 await(() -> root().lookup("#resultsRoot") != null && !navigator.workInProgress());
                 assertTrue(fx(() -> label("nextChapterStatus").getText().contains("Case concluded")));
                 if (minimumWindowCase) fx(() -> {
@@ -532,25 +545,44 @@ class Dev1UiTest {
             capture(root(), "completed-story-question");
             return null;
         });
-        var prompt = game.questions(game.currentGame().orElseThrow().assessmentSessionId()).getFirst();
-        int correct = chapter.questions("study-first", Difficulty.EASY).getFirst().correctChoiceIndex();
-        robotClick(() -> root().lookup("#answer-" + correct));
-        robotClick(() -> button("SUBMIT"));
-        await(() -> root().lookup("#feedbackHeading") instanceof Label heading
-                && heading.getText().equals("CORRECT") && !navigator.workInProgress());
+        var prompts = game.questions(game.currentGame().orElseThrow().assessmentSessionId());
+        assertEquals(3, prompts.size());
+        var keys = chapter.questions("study-first", Difficulty.EASY);
+        for (int index = 0; index < prompts.size(); index++) {
+            int questionIndex = index;
+            boolean lastQuestion = questionIndex == prompts.size() - 1;
+            int correct = keys.get(index).correctChoiceIndex();
+            robotClick(() -> root().lookup("#answer-" + correct));
+            robotClick(() -> button("SUBMIT"));
+            await(() -> root().lookup("#feedbackHeading") instanceof Label heading
+                    && heading.getText().equals("CORRECT") && !navigator.workInProgress());
+            int submitted = index + 1;
+            fx(() -> {
+                assertEquals(submitted, game.currentGame().orElseThrow().firstAnswers().size());
+                if (submitted == 1) {
+                    assertTrue(label("explanationText").getText().contains("physical signet ring"));
+                    capture(root(), "completed-story-answer-feedback");
+                }
+                return null;
+            });
+            robotClick(() -> button(lastQuestion ? "VIEW RESULTS" : "NEXT QUESTION"));
+            if (!lastQuestion)
+                await(() -> root().lookup("#questionProgress") instanceof Label progress
+                        && progress.getText().startsWith("Question " + (questionIndex + 2) + " of 3")
+                        && !navigator.workInProgress());
+        }
+        await(() -> root().lookup("#resultsRoot") != null && !navigator.workInProgress());
         fx(() -> {
-            assertTrue(label("explanationText").getText().contains("physical signet ring"));
-            assertEquals(1, game.currentGame().orElseThrow().firstAnswers().size());
-            capture(root(), "completed-story-answer-feedback");
+            assertTrue(label("chapterTitle").getText().contains("Aurelium Investigation"));
+            assertTrue(label("answerCountLabel").getText().contains("3 of 3 correct"));
+            assertTrue(label("scoreLabel").getText().contains("100%"));
+            capture(root(), "completed-story-quiz-results");
             return null;
         });
-        robotClick(() -> button("VIEW RESULTS"));
-        await(() -> root().lookup("#resultsRoot") != null && !navigator.workInProgress());
-        assertTrue(fx(() -> label("chapterTitle").getText().contains("Aurelium Investigation")));
         robotClick(() -> button("CONTINUE STORY"));
         await(() -> root().lookup("#gameplayRoot") != null && !navigator.workInProgress());
         assertEquals("study-first-correct", game.currentGame().orElseThrow().storyNodeId());
-        assertNotNull(prompt);
+        assertEquals(3, prompts.size());
     }
 
     @Test void illustratedViewportStaysBoundedAcrossWindowSizesAndReadingScales() throws Exception {
@@ -847,10 +879,20 @@ class Dev1UiTest {
             ScrollPane scroll = (ScrollPane) root().lookup("#storyScroll");
             Bounds viewport = scroll.lookup(".viewport").localToScene(scroll.lookup(".viewport").getLayoutBounds());
             Bounds panel = root().lookup("#storyPanel").localToScene(root().lookup("#storyPanel").getLayoutBounds());
+            Bounds playerPortrait = root().lookup("#speakerImage").localToScene(root().lookup("#speakerImage").getBoundsInLocal());
+            Bounds supportingPortrait = root().lookup("#supportingImage").localToScene(root().lookup("#supportingImage").getBoundsInLocal());
+            assertTrue(viewport.intersects(playerPortrait), "Player portrait should remain inside the viewport: " + playerPortrait);
+            assertTrue(viewport.intersects(supportingPortrait), "Supporting portrait should remain inside the viewport: " + supportingPortrait);
             capture(root(), "authored-two-character-stage-narrow");
             assertTrue(panel.getMaxY() <= viewport.getMaxY() + 1,
                     "Short dialogue and both staged characters should fit at the minimum window size: panel="
-                            + panel + ", viewport=" + viewport);
+                            + panel + ", viewport=" + viewport + ", gameplayHeight="
+                            + root().lookup("#gameplayRoot").getBoundsInLocal().getHeight() + ", portrait="
+                            + root().lookup("#portraitFrame").getBoundsInLocal() + ", player="
+                            + root().lookup("#speakerImage").localToScene(root().lookup("#speakerImage").getBoundsInLocal())
+                            + ", supporting=" + root().lookup("#supportingImage").localToScene(
+                                    root().lookup("#supportingImage").getBoundsInLocal())
+                            + ", opacity=" + root().lookup("#speakerImage").getOpacity());
             return null;
         });
         robotClick(() -> button("NEXT"));
@@ -1502,6 +1544,113 @@ class Dev1UiTest {
         });
     }
 
+    @Test void resetSettingsIsPendingUntilApplied() throws Exception {
+        BackendContext backend = launch();
+        backend.accountGameService().signup("settings-reader", "Settings Reader", "StrongPass1!".toCharArray());
+        backend.accountGameService().login("settings-reader", "StrongPass1!".toCharArray());
+        fx(() -> {
+            navigator.setReadingFontScale(1.4);
+            navigator.setCharacterArtworkEnabled(false);
+            navigator.setReducedMotion(true);
+            navigator.showMenu();
+            return null;
+        });
+        await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
+        robotClick(() -> button("SETTINGS"));
+        awaitDialog("Adjust the reading view");
+        robotClick(() -> dialogPane().lookup("#resetReadingSettings"));
+        robotClick(() -> dialogPane().lookupButton(ButtonType.CANCEL));
+        assertEquals(1.4, navigator.readingFontScale(), 0.001);
+        assertFalse(navigator.characterArtworkEnabled());
+        assertTrue(navigator.reducedMotion());
+        robotClick(() -> button("SETTINGS"));
+        awaitDialog("Adjust the reading view");
+        robotClick(() -> dialogPane().lookup("#resetReadingSettings"));
+        robotClick(() -> dialogPane().lookupButton(ButtonType.APPLY));
+        assertEquals(1.0, navigator.readingFontScale(), 0.001);
+        assertTrue(navigator.characterArtworkEnabled());
+        assertFalse(navigator.reducedMotion());
+    }
+
+    @Test void creditsAreReadableAndScrollableAtMinimumWindowSize() throws Exception {
+        BackendContext backend = launch();
+        backend.accountGameService().signup("credits-reader", "Credits Reader", "StrongPass1!".toCharArray());
+        backend.accountGameService().login("credits-reader", "StrongPass1!".toCharArray());
+        fx(() -> { navigator.showMenu(); return null; });
+        await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
+        fx(() -> { stage.setWidth(760); stage.setHeight(520); return null; });
+        fx(() -> {
+            javafx.scene.control.ScrollPane menuScroll = (javafx.scene.control.ScrollPane) root().lookup(".menu-scroll");
+            menuScroll.setVvalue(1);
+            root().applyCss();
+            root().layout();
+            return null;
+        });
+        robotClick(() -> button("CREDITS"));
+        awaitDialog("Music, model, and provisional artwork");
+        fx(() -> {
+            assertTrue(dialogPane().getWidth() <= stage.getWidth());
+            javafx.scene.control.ScrollPane scroll = (javafx.scene.control.ScrollPane) dialogPane().lookup("#creditsScroll");
+            assertNotNull(scroll);
+            String text = dialogPane().lookupAll(".label").stream().filter(Label.class::isInstance)
+                    .map(Label.class::cast).map(Label::getText).collect(java.util.stream.Collectors.joining("\n"));
+            assertTrue(text.contains("Comfortable Mystery by Kevin MacLeod"));
+            assertTrue(text.contains("Investigation Piano by leberch"));
+            assertTrue(text.contains("Tense Atmosphere Cinematic Loop by Sonican"));
+            assertTrue(text.contains("Qwen2.5-0.5B-Instruct by Qwen"));
+            assertTrue(text.contains("Creative Commons Attribution 4.0"));
+            assertTrue(text.contains("Pixabay Content License"));
+            scroll.setVvalue(1);
+            scroll.applyCss();
+            scroll.layout();
+            assertTrue(dialogPane().lookupAll(".label").stream().filter(Label.class::isInstance)
+                    .map(Label.class::cast).anyMatch(label -> label.getText().equals("Player artwork")));
+            capture(dialogPane(), "credits-small");
+            return null;
+        });
+        robotClick(() -> dialogPane().lookupButton(ButtonType.CLOSE));
+    }
+
+    @Test void resultCanBeSavedFromMenuAndRestoredAfterLogin() throws Exception {
+        BackendContext backend = launch();
+        var game = backend.accountGameService();
+        game.signup("result-reader", "Result Reader", "StrongPass1!".toCharArray());
+        game.login("result-reader", "StrongPass1!".toCharArray());
+        var chapter = fixtureChapter("saved-result", "Saved Result Fixture");
+        backend.storyPackImporter().orElseThrow().importPack(new StoryPack(List.of(chapter)));
+        game.startChapter(chapter.chapter().id(), false);
+        game.advanceStory();
+        game.chooseStory("help");
+        game.advanceStory();
+        UUID session = game.startAssessment(chapter.chapter().id());
+        var prompts = game.questions(session);
+        game.submit(session, prompts.get(0).id(), 1);
+        game.submit(session, prompts.get(1).id(), 0);
+        var result = game.complete(session);
+        fx(() -> { navigator.showMenu(); return null; });
+        await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
+        robotClick(() -> button("SAVE/LOAD"));
+        awaitDialog("Three account-specific save slots");
+        assertFalse(fx(() -> ((Button) dialogPane().lookup("#saveSlot1")).isDisabled()));
+        robotClick(() -> dialogPane().lookup("#saveSlot1"));
+        awaitDialog("Save successful");
+        robotClick(() -> dialogPane().lookupButton(ButtonType.OK));
+        await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
+        robotClick(() -> button("SAVE/LOAD"));
+        awaitDialog("Three account-specific save slots");
+        fx(() -> {
+            String slot = ((Label) dialogPane().lookup("#slotDetails1")).getText();
+            assertTrue(slot.contains("Saved Result Fixture"));
+            assertTrue(slot.contains("Results"));
+            return null;
+        });
+        robotClick(() -> dialogPane().lookupButton(ButtonType.CLOSE));
+        game.logout(false);
+        game.login("result-reader", "StrongPass1!".toCharArray());
+        game.continueGame(false).orElseThrow();
+        assertEquals(result, game.currentResult().orElseThrow());
+    }
+
     @Test void playerCanReadChooseAnswerGetFeedbackAndReachResults() throws Exception {
         BackendContext backend = launch();
         backend.accountGameService().signup("player", "Story Player", "StrongPass1!".toCharArray());
@@ -1937,6 +2086,7 @@ class Dev1UiTest {
             DialogPane pane = dialogPane();
             String rendered = pane.lookupAll(".label").stream().filter(Label.class::isInstance)
                     .map(Label.class::cast).map(Label::getText).collect(java.util.stream.Collectors.joining("\n"));
+            assertTrue(rendered.contains("UI test fixture only · Reading check"));
             assertTrue(rendered.contains("1 / 2 correct — 50%"));
             assertTrue(rendered.contains("Next difficulty: EASY"));
             capture(pane, "reading-history");
@@ -1989,7 +2139,8 @@ class Dev1UiTest {
             Label details = (Label) pane.lookup("#slotDetails1");
             assertTrue(details.getHeight() >= details.prefHeight(details.getWidth()) - 1,
                     "All populated-slot details must be visible without truncation.");
-            assertTrue(details.getText().contains("Story progress saved"));
+            assertTrue(details.getText().contains("UI test fixture only"));
+            assertTrue(details.getText().contains("Content unavailable"));
             assertFalse(details.getText().contains("chapter-introduction"));
             ((Button) pane.lookupButton(ButtonType.CLOSE)).fire();
             return null;

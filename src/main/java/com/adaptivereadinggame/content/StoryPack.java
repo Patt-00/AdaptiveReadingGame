@@ -11,7 +11,7 @@ import java.util.UUID;
 
 /** Validated, code-independent story content ready for repository import. */
 public record StoryPack(int formatVersion, List<ChapterPack> chapters) {
-    public static final int CURRENT_FORMAT_VERSION = 2;
+    public static final int CURRENT_FORMAT_VERSION = 3;
 
     public StoryPack(List<ChapterPack> chapters) {
         this(1, chapters);
@@ -30,7 +30,12 @@ public record StoryPack(int formatVersion, List<ChapterPack> chapters) {
         }
     }
 
-    public record ChapterPack(String sourceId, Chapter chapter, String startNodeId, List<StoryNode> nodes) {
+    public record ChapterPack(String sourceId, Chapter chapter, String startNodeId, List<StoryNode> nodes,
+                              boolean availableForNewGame) {
+        public ChapterPack(String sourceId, Chapter chapter, String startNodeId, List<StoryNode> nodes) {
+            this(sourceId, chapter, startNodeId, nodes, true);
+        }
+
         public ChapterPack {
             if (sourceId == null || sourceId.isBlank()) throw new IllegalArgumentException("A chapter needs a stable content ID.");
             Objects.requireNonNull(chapter, "chapter");

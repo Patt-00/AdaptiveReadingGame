@@ -2,9 +2,12 @@ package com.adaptivereadinggame.controller;
 
 import com.adaptivereadinggame.model.AssessmentResult;
 import com.adaptivereadinggame.service.AccountGameService.ChapterSummary;
+import com.adaptivereadinggame.service.AccountGameService.SaveDescription;
+import com.adaptivereadinggame.service.AccountGameService.HistoryDescription;
 import com.adaptivereadinggame.service.ConfirmationRequiredException;
 import com.adaptivereadinggame.model.Difficulty;
 import com.adaptivereadinggame.model.SaveSnapshot;
+import com.adaptivereadinggame.settings.PlayerPreferences;
 import com.adaptivereadinggame.view.MenuArtworkPane;
 import javafx.concurrent.Task;
 import javafx.scene.Group;
@@ -29,6 +32,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -38,7 +43,8 @@ public final class MenuController {
             .withZone(ZoneId.systemDefault());
     private final AppNavigator navigator;
     private List<SaveSnapshot> slots = List.of();
-    private List<AssessmentResult> history = List.of();
+    private List<SaveDescription> slotDescriptions = List.of();
+    private List<HistoryDescription> history = List.of();
     @FXML private StackPane menuRoot;
     @FXML private MenuArtworkPane menuArtwork;
     @FXML private Group menuFlourish;
@@ -75,9 +81,12 @@ public final class MenuController {
         run("Read progress", () -> {
             var accountGame = navigator.backend().accountGameService();
             boolean activeGame = accountGame.currentGame().isPresent();
-            return new MenuState(accountGame.snapshots(), accountGame.history(), activeGame);
+            List<SaveSnapshot> snapshots = accountGame.snapshots();
+            return new MenuState(snapshots, snapshots.stream().map(accountGame::describeSnapshot).toList(),
+                    accountGame.historyDescriptions(), activeGame);
         }, state -> {
             slots = List.copyOf(state.slots());
+            slotDescriptions = List.copyOf(state.slotDescriptions());
             history = List.copyOf(state.history());
             continueButton.setText(state.activeGame() ? "RETURN TO GAME" : "CONTINUE");
             continueButton.setDisable(!state.activeGame() && slots.isEmpty());
@@ -95,8 +104,11 @@ public final class MenuController {
         run("New Game", () -> {
             List<AssessmentResult> completed = navigator.backend().accountGameService().history();
             Difficulty nextDifficulty = completed.isEmpty() ? Difficulty.EASY : completed.getLast().nextDifficulty();
-            return navigator.backend().accountGameService().availableChapters(nextDifficulty);
-        }, chapters -> {
+            Set<UUID> completedIds = completed.stream().map(result -> result.attempt().materialId())
+                    .collect(java.util.stream.Collectors.toUnmodifiableSet());
+            return new NewGameState(navigator.backend().accountGameService().availableChapters(nextDifficulty), completedIds);
+        }, options -> {
+            List<ChapterSummary> chapters = options.chapters();
             if (chapters.isEmpty()) {
                 navigator.notice("No chapter available", "No prepared chapter is available at the recommended difficulty. "
                         + "Load approved story content and prepare a chapter for that level. No pretend story or score has been created.");
@@ -104,8 +116,13 @@ public final class MenuController {
             }
             Dialog<Void> dialog = dialog("New Game", "Choose an available chapter");
             VBox content = new VBox(12);
+            Label replayNote = new Label("Replaying a chapter keeps your recorded first answers and scores.");
+            replayNote.setWrapText(true);
+            content.getChildren().add(replayNote);
             for (ChapterSummary chapter : chapters) {
-                Button button = new Button(chapter.title() + " — " + chapter.difficulty());
+                boolean replay = options.completedChapterIds().contains(chapter.id());
+                Button button = new Button(chapter.title() + " — " + chapter.difficulty()
+                        + (replay ? " — Replay" : ""));
                 button.setMaxWidth(Double.MAX_VALUE);
                 button.setOnAction(event -> {
                     dialog.close();
@@ -137,13 +154,18 @@ public final class MenuController {
         VBox content = new VBox(14);
         var accountGame = navigator.backend().accountGameService();
         boolean hasActiveGame = accountGame.currentGame().isPresent();
-        boolean hasGame = hasActiveGame && accountGame.currentResult().isEmpty();
+        boolean hasGame = hasActiveGame;
         for (int slot = 1; slot <= 3; slot++) {
             final int chosenSlot = slot;
             Optional<SaveSnapshot> snapshot = slots.stream().filter(item -> item.checkpoint().slot() == chosenSlot).findFirst();
-            Label details = new Label(snapshot.map(item -> "Slot " + chosenSlot + " — " + item.checkpoint().difficulty()
-                    + "\nSaved " + TIME.format(item.checkpoint().savedAt())
-                    + "\nStory progress saved").orElse("Slot " + chosenSlot + " — Empty"));
+            Optional<SaveDescription> description = slotDescriptions.stream()
+                    .filter(item -> item.snapshot().checkpoint().slot() == chosenSlot).findFirst();
+            Label details = new Label(snapshot.map(item -> "Slot " + chosenSlot + " — "
+                    + description.map(SaveDescription::chapterTitle).orElse("Unavailable chapter")
+                    + "\n" + description.map(SaveDescription::phase).orElse("Content unavailable")
+                    + " · " + item.checkpoint().difficulty()
+                    + description.filter(value -> !value.route().isEmpty()).map(value -> " · " + value.route()).orElse("")
+                    + "\nSaved " + TIME.format(item.checkpoint().savedAt())).orElse("Slot " + chosenSlot + " — Empty"));
             details.setWrapText(true);
             details.setId("slotDetails" + chosenSlot);
             details.setPrefWidth(400);
@@ -186,8 +208,6 @@ public final class MenuController {
             content.getChildren().add(row);
         }
         String saveNote = hasGame ? navigator.storageDescription()
-                : hasActiveGame ? "This chapter result is already recorded. Start the next challenge before saving a new checkpoint.\n"
-                    + navigator.storageDescription()
                 : "No active chapter. Saving becomes available after a prepared story is started.\n"
                     + navigator.storageDescription();
         Label explanation = new Label(saveNote);
@@ -216,8 +236,10 @@ public final class MenuController {
             empty.getStyleClass().add("dialog-empty-state");
             rows.getChildren().add(empty);
         }
-        for (AssessmentResult result : history) {
-            String text = TIME.format(result.attempt().completedAt()) + "\n"
+        for (HistoryDescription item : history) {
+            AssessmentResult result = item.result();
+            String text = item.chapterTitle() + " · " + item.checkpointTitle() + "\n"
+                    + TIME.format(result.attempt().completedAt()) + "\n"
                     + result.attempt().correctAnswers() + " / " + result.attempt().totalQuestions()
                     + " correct — " + Math.round(result.attempt().score() * 100) + "%\n"
                     + "Assessed difficulty: " + result.assessedDifficulty()
@@ -284,7 +306,14 @@ public final class MenuController {
         reducedMotion.setAccessibleHelp("Show story artwork and dialogue without animated transitions.");
         Label textSizeLabel = new Label("Reading text size");
         textSizeLabel.setLabelFor(textSize);
-        VBox content = new VBox(14, textSizeLabel, textSize, artwork, reducedMotion);
+        Button reset = new Button("Reset to defaults");
+        reset.setId("resetReadingSettings");
+        reset.setOnAction(event -> {
+            textSize.setValue(PlayerPreferences.DEFAULT_TEXT_SCALE);
+            artwork.setSelected(true);
+            reducedMotion.setSelected(false);
+        });
+        VBox content = new VBox(14, textSizeLabel, textSize, artwork, reducedMotion, reset);
         if (!navigator.fontNotice().isEmpty()) {
             Label fontNotice = new Label(navigator.fontNotice());
             fontNotice.setWrapText(true);
@@ -308,6 +337,46 @@ public final class MenuController {
     }
 
     @FXML private void audioSettings() { navigator.showAudioSettings(); }
+
+    @FXML private void credits() {
+        Dialog<Void> dialog = dialog("Credits", "Music, model, and provisional artwork");
+        VBox entries = new VBox(12);
+        entries.setPadding(new Insets(8));
+        entries.setFillWidth(true);
+        entries.getChildren().addAll(
+                credit("Menu music", "Comfortable Mystery by Kevin MacLeod. Licensed under Creative Commons Attribution 4.0.\n"
+                        + "https://incompetech.com/music/royalty-free/index.html?Search=Search&isrc=USUAN1100287\n"
+                        + "https://creativecommons.org/licenses/by/4.0/"),
+                credit("Optional story music", "Investigation Piano by leberch and Tense Atmosphere Cinematic Loop by Sonican. "
+                        + "Both tracks are subject to the Pixabay Content License. Local files are optional.\n"
+                        + "https://pixabay.com/music/crime-scene-investigation-piano-611639/\n"
+                        + "https://pixabay.com/music/crime-scene-tense-atmosphere-cinematic-loop-piano-mystery-343445/\n"
+                        + "https://pixabay.com/service/license-summary/"),
+                credit("Difficulty helper", "Qwen2.5-0.5B-Instruct by Qwen, licensed under Apache 2.0. "
+                        + "The model is an optional general instruction model, not a validated reading-level classifier.\n"
+                        + "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct"),
+                credit("Player artwork", "The two player portraits are provisional generated art for this project. "
+                        + "Review them with the group before treating them as final."));
+        ScrollPane scroll = new ScrollPane(entries);
+        scroll.setId("creditsScroll");
+        scroll.setFitToWidth(true);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scroll.setPrefViewportHeight(Math.min(390, Math.max(220, navigator.stage().getHeight() * 0.62)));
+        dialog.getDialogPane().setContent(scroll);
+        dialog.showAndWait();
+    }
+
+    private static VBox credit(String heading, String details) {
+        Label title = new Label(heading);
+        title.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #681729;");
+        Label text = new Label(details);
+        text.setWrapText(true);
+        text.setMinHeight(Region.USE_PREF_SIZE);
+        text.setMaxWidth(Double.MAX_VALUE);
+        VBox entry = new VBox(4, title, text);
+        entry.setMaxWidth(Double.MAX_VALUE);
+        return entry;
+    }
 
     @FXML private void characterSettings() {
         try { navigator.showAppearanceSelection(); }
@@ -380,5 +449,7 @@ public final class MenuController {
         accountActions.setDisable(false);
     }
 
-    private record MenuState(List<SaveSnapshot> slots, List<AssessmentResult> history, boolean activeGame) {}
+    private record MenuState(List<SaveSnapshot> slots, List<SaveDescription> slotDescriptions,
+                             List<HistoryDescription> history, boolean activeGame) {}
+    private record NewGameState(List<ChapterSummary> chapters, Set<UUID> completedChapterIds) {}
 }

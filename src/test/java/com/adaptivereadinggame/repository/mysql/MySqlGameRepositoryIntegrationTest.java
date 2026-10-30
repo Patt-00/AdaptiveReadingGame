@@ -430,10 +430,16 @@ final class MySqlGameRepositoryIntegrationTest {
         var pack = new StoryPackLoader().read(java.nio.file.Path.of("assets/content/hailey-investigation-complete.json"));
         var draft = pack.chapters().getFirst();
         var complete = pack.chapters().get(1);
+        var finalEdition = pack.chapters().get(2);
         String username = "versions-" + shortId();
         char[] password = "versioned-story-test".toCharArray();
         var first = BackendContext.mysql(connections);
         first.storyPackImporter().orElseThrow().importPack(pack);
+        var selectableIds = first.chapters().findByDifficulty(Difficulty.EASY).stream()
+                .map(Chapter::id).collect(java.util.stream.Collectors.toSet());
+        assertFalse(selectableIds.contains(draft.chapter().id()));
+        assertFalse(selectableIds.contains(complete.chapter().id()));
+        assertTrue(selectableIds.contains(finalEdition.chapter().id()));
         var player = first.accountGameService();
         player.signup(username, "Versioned Reader", password.clone());
         player.login(username, password.clone());
