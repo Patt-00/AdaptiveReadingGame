@@ -12,6 +12,8 @@ command -v proot-distro >/dev/null 2>&1 \
     || fail 'Run scripts/termux-setup-x11.sh first to install the launcher requirements.'
 command -v termux-x11 >/dev/null 2>&1 \
     || fail 'Run scripts/termux-setup-x11.sh first to install the Termux:X11 package.'
+command -v xdpyinfo >/dev/null 2>&1 \
+    || fail 'Run scripts/termux-setup-x11.sh first to install the X11 display checker.'
 command -v am >/dev/null 2>&1 \
     || fail 'Android Activity Manager am is unavailable in this Termux session.'
 
@@ -22,10 +24,14 @@ project_root="$(cd -- "$script_dir/.." && pwd)"
     || fail "Run this script from a complete project checkout. Expected pom.xml under $project_root."
 
 display="${ARG_TERMUX_X11_DISPLAY:-}"
+display_ready=false
 if [[ -z "$display" ]]; then
     for display_number in 0 1; do
-        if [[ -S "$PREFIX/tmp/.X11-unix/X$display_number" ]]; then
+        candidate_display=":$display_number"
+        if [[ -S "$PREFIX/tmp/.X11-unix/X$display_number" ]] \
+                && DISPLAY="$candidate_display" xdpyinfo >/dev/null 2>&1; then
             display=":$display_number"
+            display_ready=true
             break
         fi
     done
@@ -36,6 +42,10 @@ display="${display:-:0}"
 
 display_number="${display#:}"
 display_socket="$PREFIX/tmp/.X11-unix/X$display_number"
+if [[ "$display_ready" != true ]] && [[ -S "$display_socket" ]] \
+        && DISPLAY="$display" xdpyinfo >/dev/null 2>&1; then
+    display_ready=true
+fi
 log_dir="$HOME/.local/state/adaptive-reading-game"
 mkdir -p "$log_dir"
 x11_log_file="$log_dir/x11.log"
@@ -54,15 +64,17 @@ if command -v pidof >/dev/null 2>&1; then
     done
 fi
 
-if [[ ! -S "$display_socket" ]]; then
-    if [[ -n "$running_display" && "$running_display" != "$display" ]]; then
-        fail "Termux:X11 is already running on $running_display. Set ARG_TERMUX_X11_DISPLAY=$running_display or stop that X11 session."
+if [[ -n "$running_display" && "$running_display" != "$display" ]]; then
+    fail "Termux:X11 is already running on $running_display. Set ARG_TERMUX_X11_DISPLAY=$running_display or stop that X11 session."
+fi
+if [[ "$display_ready" != true && -z "$running_display" ]]; then
+    if [[ -S "$display_socket" ]]; then
+        printf 'Removing stale Termux:X11 socket %s.\n' "$display_socket"
+        rm -f -- "$display_socket"
     fi
-    if [[ -z "$running_display" ]]; then
-        printf 'Starting Termux:X11 on display %s.\n' "$display"
-        : >"$x11_log_file"
-        TERMUX_X11_DEBUG=1 termux-x11 "$display" >"$x11_log_file" 2>&1 &
-    fi
+    printf 'Starting Termux:X11 on display %s.\n' "$display"
+    : >"$x11_log_file"
+    TERMUX_X11_DEBUG=1 termux-x11 "$display" >"$x11_log_file" 2>&1 &
 fi
 
 activity_start_result=""
@@ -84,16 +96,21 @@ if [[ "$activity_start_result" != *"Starting: Intent"* \
     printf 'Warning: Android did not confirm Termux:X11 activity startup. Continuing with the active X11 display.\n' >&2
 fi
 
-# The Android app must be open before waiting for its display socket. Starting
-# the server and waiting first can time out while the app is still closed.
-if [[ ! -S "$display_socket" ]]; then
-    for ((attempt = 0; attempt < 30; attempt++)); do
-        [[ -S "$display_socket" ]] && break
-        sleep 1
-    done
-fi
-if [[ ! -S "$display_socket" ]]; then
-    printf 'Termux:X11 did not create the expected display socket: %s\n' "$display_socket" >&2
+# The Android app must be open before waiting for the display. A stale socket
+# can remain after Termux:X11 exits, so readiness requires an X11 client reply.
+for ((attempt = 0; attempt < 30; attempt++)); do
+    if [[ -S "$display_socket" ]] && DISPLAY="$display" xdpyinfo >/dev/null 2>&1; then
+        display_ready=true
+        break
+    fi
+    sleep 1
+done
+if [[ "$display_ready" != true ]]; then
+    if [[ -S "$display_socket" ]]; then
+        printf 'Termux:X11 created %s, but the display did not answer an X11 request.\n' "$display_socket" >&2
+    else
+        printf 'Termux:X11 did not create the expected display socket: %s\n' "$display_socket" >&2
+    fi
     printf 'Activity Manager response: %s\n' "${activity_start_result:-none}" >&2
     printf 'Termux:X11 log: %s\n' "$x11_log_file" >&2
     if [[ -s "$x11_log_file" ]]; then

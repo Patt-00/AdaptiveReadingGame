@@ -9,5 +9,9 @@ import java.util.UUID;
 public interface ChapterRepository {
     Optional<Chapter> findChapter(UUID id);
     List<Chapter> findByDifficulty(Difficulty difficulty);
-    Chapter saveChapter(Chapter chapter);
+    Chapter saveChapter(Chapter chapter, boolean availableForNewGame);
+
+    default Chapter saveChapter(Chapter chapter) {
+        return saveChapter(chapter, true);
+    }
 }

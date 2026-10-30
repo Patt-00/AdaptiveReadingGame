@@ -26,7 +26,7 @@ py -3.14 -m venv model-tool\.venv
 
 Run the server with `model-tool\.venv\Scripts\python.exe model-tool\server.py`. macOS users should select a Python and processor combination that has an available PyTorch CPU wheel.
 
-The `test-merge` branch includes the pinned snapshot in `model-tool/models/Qwen2.5-0.5B-Instruct/`. Its 988,097,824-byte `model.safetensors` file is stored through Git LFS because GitHub limits regular Git files to 100 MiB: [GitHub large-file guidance](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github).
+This repository tracks the pinned snapshot in `model-tool/models/Qwen2.5-0.5B-Instruct/`. Its 988,097,824-byte `model.safetensors` file is stored through Git LFS because GitHub limits regular Git files to 100 MiB: [GitHub large-file guidance](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github).
 
 Clone the branch with Git LFS enabled, or run `git lfs pull` after cloning, to retrieve the weight file. The helper validates the local manifest, revision, weight size, and checksum before using the bundled snapshot. If those files are absent, it falls back to the pinned Hugging Face revision and may need internet access.
 

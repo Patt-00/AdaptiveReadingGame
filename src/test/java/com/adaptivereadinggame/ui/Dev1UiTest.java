@@ -503,8 +503,14 @@ class Dev1UiTest {
                     capture(root(), investigationOrder + "-" + ending);
                     return null;
                 });
-                game.advanceStory();
-                fx(() -> { navigator.showGameplay(); return null; });
+                robotClick(() -> button("NEXT"));
+                await(() -> game.currentGame().orElseThrow().storyNodeId().equals("aftermath-"
+                        + (accuseRobert ? "correct" : "wrong") + "-" + (findAntidote ? "found" : "lost"))
+                        && !navigator.workInProgress());
+                await(() -> root().lookup("#storyText") instanceof Label text
+                        && text.getText().toLowerCase(java.util.Locale.ROOT).contains("antidote")
+                        && !navigator.workInProgress());
+                robotClick(() -> button("NEXT"));
                 await(() -> root().lookup("#resultsRoot") != null && !navigator.workInProgress());
                 assertTrue(fx(() -> label("nextChapterStatus").getText().contains("Case concluded")));
                 if (minimumWindowCase) fx(() -> {
@@ -539,25 +545,44 @@ class Dev1UiTest {
             capture(root(), "completed-story-question");
             return null;
         });
-        var prompt = game.questions(game.currentGame().orElseThrow().assessmentSessionId()).getFirst();
-        int correct = chapter.questions("study-first", Difficulty.EASY).getFirst().correctChoiceIndex();
-        robotClick(() -> root().lookup("#answer-" + correct));
-        robotClick(() -> button("SUBMIT"));
-        await(() -> root().lookup("#feedbackHeading") instanceof Label heading
-                && heading.getText().equals("CORRECT") && !navigator.workInProgress());
+        var prompts = game.questions(game.currentGame().orElseThrow().assessmentSessionId());
+        assertEquals(3, prompts.size());
+        var keys = chapter.questions("study-first", Difficulty.EASY);
+        for (int index = 0; index < prompts.size(); index++) {
+            int questionIndex = index;
+            boolean lastQuestion = questionIndex == prompts.size() - 1;
+            int correct = keys.get(index).correctChoiceIndex();
+            robotClick(() -> root().lookup("#answer-" + correct));
+            robotClick(() -> button("SUBMIT"));
+            await(() -> root().lookup("#feedbackHeading") instanceof Label heading
+                    && heading.getText().equals("CORRECT") && !navigator.workInProgress());
+            int submitted = index + 1;
+            fx(() -> {
+                assertEquals(submitted, game.currentGame().orElseThrow().firstAnswers().size());
+                if (submitted == 1) {
+                    assertTrue(label("explanationText").getText().contains("physical signet ring"));
+                    capture(root(), "completed-story-answer-feedback");
+                }
+                return null;
+            });
+            robotClick(() -> button(lastQuestion ? "VIEW RESULTS" : "NEXT QUESTION"));
+            if (!lastQuestion)
+                await(() -> root().lookup("#questionProgress") instanceof Label progress
+                        && progress.getText().startsWith("Question " + (questionIndex + 2) + " of 3")
+                        && !navigator.workInProgress());
+        }
+        await(() -> root().lookup("#resultsRoot") != null && !navigator.workInProgress());
         fx(() -> {
-            assertTrue(label("explanationText").getText().contains("physical signet ring"));
-            assertEquals(1, game.currentGame().orElseThrow().firstAnswers().size());
-            capture(root(), "completed-story-answer-feedback");
+            assertTrue(label("chapterTitle").getText().contains("Aurelium Investigation"));
+            assertTrue(label("answerCountLabel").getText().contains("3 of 3 correct"));
+            assertTrue(label("scoreLabel").getText().contains("100%"));
+            capture(root(), "completed-story-quiz-results");
             return null;
         });
-        robotClick(() -> button("VIEW RESULTS"));
-        await(() -> root().lookup("#resultsRoot") != null && !navigator.workInProgress());
-        assertTrue(fx(() -> label("chapterTitle").getText().contains("Aurelium Investigation")));
         robotClick(() -> button("CONTINUE STORY"));
         await(() -> root().lookup("#gameplayRoot") != null && !navigator.workInProgress());
         assertEquals("study-first-correct", game.currentGame().orElseThrow().storyNodeId());
-        assertNotNull(prompt);
+        assertEquals(3, prompts.size());
     }
 
     @Test void illustratedViewportStaysBoundedAcrossWindowSizesAndReadingScales() throws Exception {

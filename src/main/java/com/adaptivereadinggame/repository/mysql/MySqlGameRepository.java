@@ -46,8 +46,9 @@ public final class MySqlGameRepository implements ChapterRepository, AssessmentR
         return SqlSupport.read(connections, "chapter list", connection -> {
             List<UUID> ids = new ArrayList<>();
             try (var statement = connection.prepareStatement(
-                    "SELECT c.id FROM chapters c WHERE c.difficulty = ? OR EXISTS ("
-                            + "SELECT 1 FROM questions q WHERE q.chapter_id = c.id AND q.question_difficulty = ?) "
+                    "SELECT c.id FROM chapters c WHERE c.available_for_new_game = TRUE AND "
+                            + "(c.difficulty = ? OR EXISTS ("
+                            + "SELECT 1 FROM questions q WHERE q.chapter_id = c.id AND q.question_difficulty = ?)) "
                             + "ORDER BY c.title, c.id")) {
                 statement.setString(1, difficulty.name());
                 statement.setString(2, difficulty.name());
@@ -62,20 +63,28 @@ public final class MySqlGameRepository implements ChapterRepository, AssessmentR
     }
 
     /** Published chapter IDs are immutable; edited content must receive a new stable ID. */
-    @Override public Chapter saveChapter(Chapter chapter) {
+    @Override public Chapter saveChapter(Chapter chapter, boolean availableForNewGame) {
         Objects.requireNonNull(chapter);
         return SqlSupport.transaction(connections, "chapter write", connection -> {
             Optional<Chapter> existing = loadChapter(connection, chapter.id());
             if (existing.isPresent()) {
-                if (existing.get().equals(chapter)) return chapter;
-                throw new IllegalStateException("Prepared chapter content is immutable after it is stored.");
+                if (!existing.get().equals(chapter))
+                    throw new IllegalStateException("Prepared chapter content is immutable after it is stored.");
+                try (var statement = connection.prepareStatement(
+                        "UPDATE chapters SET available_for_new_game = ? WHERE id = ?")) {
+                    statement.setBoolean(1, availableForNewGame);
+                    statement.setString(2, SqlSupport.id(chapter.id()));
+                    statement.executeUpdate();
+                }
+                return chapter;
             }
             try (var statement = connection.prepareStatement(
-                    "INSERT INTO chapters(id, title, passage, difficulty) VALUES (?, ?, ?, ?)")) {
+                    "INSERT INTO chapters(id, title, passage, difficulty, available_for_new_game) VALUES (?, ?, ?, ?, ?)")) {
                 statement.setString(1, SqlSupport.id(chapter.id()));
                 statement.setString(2, chapter.title());
                 statement.setString(3, chapter.passage());
                 statement.setString(4, chapter.difficulty().name());
+                statement.setBoolean(5, availableForNewGame);
                 statement.executeUpdate();
             }
             int order = 1;

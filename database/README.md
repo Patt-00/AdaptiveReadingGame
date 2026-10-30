@@ -58,18 +58,18 @@ Set `ARG_DB_PASSWORD` before running either command below.
 
 ## Apply the schema and start the app
 
-Run the migration before the first database-backed launch. If an existing database has V001 through V004, run it again to apply V005 before using character selection:
+Run the migration before the first database-backed launch. Existing databases should run the migration command again to apply any missing versions through V006:
 
 ```sh
 mvn compile -Dexec.cleanupDaemonThreads=false -Dexec.mainClass=com.adaptivereadinggame.repository.mysql.MySqlSchemaMigrator exec:java
 mvn javafx:run
 ```
 
-The migration creates `schema_migrations` and applies V001 through V005. V004 adds checkpoint-specific question variants and outcomes, route IDs, scene asset keys, and checkpoint progress fields. V005 stores one cosmetic servant appearance per account. Versions recorded as applied are skipped on later runs. Future schema changes need a new numbered file. Back up a database before running any later migration that changes existing records. If a migration fails partway through, inspect the schema before retrying because MySQL DDL may already have taken effect.
+The migration creates `schema_migrations` and applies V001 through V006. V004 adds checkpoint-specific question variants and outcomes, route IDs, scene asset keys, and checkpoint progress fields. V005 stores one cosmetic servant appearance per account. V006 adds `chapters.available_for_new_game`; older chapters remain available for save restoration but are excluded from new-game selection when the content pack marks them unavailable. Versions recorded as applied are skipped on later runs. Future schema changes need a new numbered file. Back up a database before running any later migration that changes existing records. If a migration fails partway through, inspect the schema before retrying because MySQL DDL may already have taken effect.
 
 V004 retains a default-empty `voice_asset_key` column for schema compatibility. The text-only application does not read or write it.
 
-The application expects three save slots. Full saves store a version-2 `GameState` JSON snapshot with its current route, checkpoint, difficulty, prior checkpoint result ID, and first answers. The codec still reads version-1 saves. See the [version-2 save example](examples/game-state-v2.json) and the [version-1 save example](examples/game-state-v1.json). A basic checkpoint overwrite clears an older full snapshot in that slot. The app loads `assets/content/hailey-investigation-complete.json` by default. This pack includes the original draft chapter and a completed chapter with a distinct stable ID. Set `ARG_CONTENT_PACK` to select another local JSON file. See [the content-pack guide](../assets/README.md).
+The application expects three save slots. Full saves store a version-2 `GameState` JSON snapshot with its current route, checkpoint, difficulty, prior checkpoint result ID, and first answers. The codec still reads version-1 saves. See the [version-2 save example](examples/game-state-v2.json) and the [version-1 save example](examples/game-state-v1.json). A basic checkpoint overwrite clears an older full snapshot in that slot. The app loads `assets/content/hailey-investigation-complete.json` by default. This version-3 pack preserves two earlier editions for save restoration and offers only the new edition for new games. Set `ARG_CONTENT_PACK` to select another local JSON file. See [the content-pack guide](../assets/README.md).
 
 ## Run the MySQL integration test
 

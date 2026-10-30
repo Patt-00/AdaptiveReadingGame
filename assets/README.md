@@ -1,6 +1,6 @@
 # Story content and art
 
-The JavaFX application loads `assets/content/hailey-investigation-complete.json` by default. It preserves the original draft chapter and adds a team-authored continuation under a new chapter ID. The protagonist remains a palace servant, and gameplay uses the signed-in account's registered display name for the character's name. The pack uses Prince Owen consistently, identifies Lord Robert, and has four suspect and antidote outcomes. This is a working team version, not an author or teacher-approved conclusion. The Study hard question uses described evidence instead of the absent revoked-knighthood clue. See [completed story decisions](../docs/requirements/Completed-Story-Decisions.md) for the answer reasoning and creative decisions.
+The JavaFX application loads `assets/content/hailey-investigation-complete.json` by default. The pack preserves the original draft and previous completed edition for old saves, and adds a new selectable edition under a new chapter ID. The supplied story wording is unchanged. The new edition keeps the palace-servant role, Prince Owen, the Lord Robert reveal, and four investigation outcomes, adds fuller aftermath scenes, and provides three questions per difficulty at each checkpoint. The new conclusion and questions are project-authored and have not been reviewed by the group or teacher. See [completed story decisions](../docs/requirements/Completed-Story-Decisions.md) for the evidence reasoning and creative decisions.
 
 ## Run the story pack
 
@@ -56,6 +56,14 @@ The version 2 loader rejects unknown fields, missing difficulty variants, invali
 
 Story choices change the narrative route and do not affect the score. The first submitted answer is stored and scored. Java chooses the next checkpoint level after the saved result. The optional local model can suggest a level; Java validates the suggestion and keeps its fallback. It does not choose the correct answer.
 
+## Pack format version 3
+
+Version 3 adds a required `availableForNewGame` boolean to each chapter while retaining the version 2 adaptive chapter and checkpoint fields. `true` makes a chapter appear in New Game selection. `false` keeps the chapter and its content available to restore old saves but hides it from new play. Versions 1 and 2 remain supported and default chapters to `true`.
+
+Use a new stable chapter ID for changed story or question content once learner records refer to an older version. Keep the older chapter in the pack and set `availableForNewGame` to `false`. Its existing chapter, checkpoint, question, node, and choice IDs must remain unchanged. The MySQL importer stores this availability state; save restoration still loads archived chapter IDs directly.
+
+The default final edition has four route-specific checkpoint records, each with three questions at Easy, Medium, and Hard. That produces 36 stored question entries and six answers in a normal two-checkpoint route. Each checkpoint score is based on its three first-submitted answers. Explanations identify the supporting evidence and distinguish an inference from a proven culprit.
+
 ## Art folders and asset keys
 
 Keep only the key in the story pack. Do not store absolute paths. Keys use letters, numbers, dots, underscores, and hyphens. The resolvers check only the matching project subfolder and treat missing or invalid files as optional.
@@ -108,10 +116,10 @@ A supporting image appears only when the node has a named speaker with available
 
 ## Content review boundary
 
-The original storyboard leaves the player identity, culprit, and ending open. The completed chapter is a team-authored continuation that presents the protagonist under the registered display name in the servant role, identifies Lord Robert, and provides four outcomes. Review these choices and the six answer keys with the group and teacher before treating them as approved. The original draft remains available for existing learner records.
+The original storyboard leaves the player identity, culprit, and ending open. The new playable edition retains the existing servant role, Lord Robert reveal, and four outcomes. Its conclusion scenes and expanded question bank are project-authored; the group and teacher have not approved them. The original draft and previous completed edition remain in the pack for existing records but are not offered in New Game. The supplied story wording remains unchanged at the user's direction.
 
 ## Replacing the team-authored conclusion
 
-Replace the team-authored conclusion with approved scenes as ordinary nodes after both investigation outcomes. Keep every path finite and reachable. The terminal node uses `storyComplete: true`; its `dialogueText` appears on the section results screen. Replace the current completion messages and retain the killer-reveal image only if the author confirms its use.
+If the group later revises the new ending or questions, create another chapter version with a new stable chapter ID. Keep earlier versions loadable, mark them unavailable for new games, and verify all four outcomes and both investigation orders. The terminal node uses `storyComplete: true`; its `dialogueText` appears on the completion screen. Keep the supplied story wording unchanged unless the story owner requests edits.
 
 Publish revised story content with a new chapter ID if learner records already reference the current completed chapter. Keep the original draft and its IDs unchanged so existing saves remain readable. Reimport the pack and verify both route orders before using revised content in a review.

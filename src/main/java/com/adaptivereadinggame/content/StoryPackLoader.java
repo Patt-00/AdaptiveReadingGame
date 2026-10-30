@@ -32,12 +32,15 @@ import java.util.UUID;
 public final class StoryPackLoader {
     public static final int FORMAT_VERSION = 1;
     public static final int ADAPTIVE_FORMAT_VERSION = 2;
+    public static final int AVAILABILITY_FORMAT_VERSION = 3;
     public static final long MAX_FILE_BYTES = 5_242_880;
     private static final Set<String> ROOT_FIELDS = Set.of("formatVersion", "chapters");
     private static final Set<String> CHAPTER_FIELDS = Set.of("id", "title", "difficulty", "passage",
             "startNodeId", "nodes", "questions");
     private static final Set<String> ADAPTIVE_CHAPTER_FIELDS = Set.of("id", "title", "difficulty", "passage",
             "startNodeId", "nodes", "checkpoints");
+    private static final Set<String> AVAILABLE_CHAPTER_FIELDS = Set.of("id", "title", "difficulty", "passage",
+            "startNodeId", "nodes", "checkpoints", "availableForNewGame");
     private static final Set<String> NODE_FIELDS = Set.of("id", "speakerName", "dialogueText", "thought",
             "readingCheck", "nextNodeId", "choices");
     private static final Set<String> CHOICE_FIELDS = Set.of("id", "text", "nextNodeId");
@@ -66,7 +69,7 @@ public final class StoryPackLoader {
             JsonNode root = MAPPER.readTree(json);
             requireFields(root, ROOT_FIELDS, Set.of(), "pack");
             int version = integer(root.get("formatVersion"), "formatVersion");
-            if (version != FORMAT_VERSION && version != ADAPTIVE_FORMAT_VERSION)
+            if (version < FORMAT_VERSION || version > AVAILABILITY_FORMAT_VERSION)
                 throw new IllegalArgumentException("This story-pack version is not supported.");
             List<JsonNode> sourceChapters = array(root.get("chapters"), "chapters", 200);
             if (sourceChapters.isEmpty()) throw new IllegalArgumentException("A story pack must contain at least one chapter.");
@@ -74,7 +77,7 @@ public final class StoryPackLoader {
             List<StoryPack.ChapterPack> chapters = new ArrayList<>(sourceChapters.size());
             for (JsonNode source : sourceChapters) {
                 StoryPack.ChapterPack chapter = version == FORMAT_VERSION
-                        ? readChapter(source) : readAdaptiveChapter(source);
+                        ? readChapter(source) : readAdaptiveChapter(source, version >= AVAILABILITY_FORMAT_VERSION);
                 if (!chapterIds.add(chapter.sourceId()))
                     throw new IllegalArgumentException("Chapter IDs must be unique within a story pack.");
                 chapters.add(chapter);
@@ -85,13 +88,16 @@ public final class StoryPackLoader {
         }
     }
 
-    private StoryPack.ChapterPack readAdaptiveChapter(JsonNode source) {
-        requireFields(source, ADAPTIVE_CHAPTER_FIELDS, Set.of(), "adaptive chapter");
+    private StoryPack.ChapterPack readAdaptiveChapter(JsonNode source, boolean availabilityVersion) {
+        requireFields(source, availabilityVersion ? AVAILABLE_CHAPTER_FIELDS : ADAPTIVE_CHAPTER_FIELDS,
+                Set.of(), "adaptive chapter");
         String sourceId = identifier(source.get("id"), "chapter ID");
         String title = boundedText(source.get("title"), "chapter title", 200, false);
         String passage = boundedText(source.get("passage"), "chapter passage", 1_000_000, false);
         Difficulty initialDifficulty = parseDifficulty(source.get("difficulty"));
         String startNodeId = identifier(source.get("startNodeId"), "start node ID");
+        boolean availableForNewGame = !availabilityVersion
+                || bool(source.get("availableForNewGame"), "availableForNewGame");
 
         List<JsonNode> sourceNodes = array(source.get("nodes"), "story nodes", 1000);
         List<StoryNode> nodes = sourceNodes.stream().map(node -> readNode(node, true)).toList();
@@ -145,7 +151,7 @@ public final class StoryPackLoader {
 
         Chapter chapter = Chapter.adaptive(stableId("chapter", sourceId), title, passage,
                 initialDifficulty, questions, checkpoints);
-        return new StoryPack.ChapterPack(sourceId, chapter, startNodeId, nodes);
+        return new StoryPack.ChapterPack(sourceId, chapter, startNodeId, nodes, availableForNewGame);
     }
 
     private StoryPack.ChapterPack readChapter(JsonNode source) {

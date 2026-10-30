@@ -108,7 +108,7 @@ if ! package_installed x11-repo; then
 fi
 
 host_packages=()
-for package in git git-lfs proot-distro procps pulseaudio termux-x11-nightly; do
+for package in git git-lfs proot-distro procps pulseaudio termux-x11-nightly xorg-xdpyinfo; do
     package_installed "$package" || host_packages+=("$package")
 done
 if ((${#host_packages[@]} > 0)); then
@@ -120,6 +120,7 @@ fi
 
 command -v proot-distro >/dev/null 2>&1 || fail 'proot-distro is unavailable after installation.'
 command -v termux-x11 >/dev/null 2>&1 || fail 'termux-x11 is unavailable after installation.'
+command -v xdpyinfo >/dev/null 2>&1 || fail 'xdpyinfo is unavailable after installing the Termux X11 packages.'
 if prepare_termux_audio_bridge; then
     printf 'Termux PulseAudio output is ready for Debian PRoot.\n'
 else

@@ -11,6 +11,7 @@ public final class InMemoryGameRepository implements ChapterRepository, Assessme
     private record AssessmentKey(UUID studentId, UUID chapterId, String checkpointId) {}
     private record SlotKey(UUID studentId, int slot) {}
     private final Map<UUID, Chapter> chapters = new ConcurrentHashMap<>();
+    private final Set<UUID> unavailableForNewGame = ConcurrentHashMap.newKeySet();
     private final Map<AssessmentKey, AssessmentResult> results = new ConcurrentHashMap<>();
     private final Map<SlotKey, SaveGame> saves = new ConcurrentHashMap<>();
     private final Map<UUID, Map<String, StoryNode>> storyNodes = new ConcurrentHashMap<>();
@@ -20,13 +21,16 @@ public final class InMemoryGameRepository implements ChapterRepository, Assessme
         return chapters.values().stream().filter(c -> c.difficulty() == difficulty
                         || c.adaptive() && c.checkpoints().stream()
                                 .allMatch(checkpoint -> checkpoint.questionsByDifficulty().containsKey(difficulty)))
+                .filter(c -> !unavailableForNewGame.contains(c.id()))
                 .sorted(Comparator.comparing(Chapter::title).thenComparing(Chapter::id)).toList();
     }
-    @Override public Chapter saveChapter(Chapter chapter) {
+    @Override public Chapter saveChapter(Chapter chapter, boolean availableForNewGame) {
         Objects.requireNonNull(chapter);
         Chapter existing = chapters.putIfAbsent(chapter.id(), chapter);
         if (existing != null && !existing.equals(chapter))
             throw new IllegalStateException("Prepared chapter content is immutable after it is stored.");
+        if (availableForNewGame) unavailableForNewGame.remove(chapter.id());
+        else unavailableForNewGame.add(chapter.id());
         return existing == null ? chapter : existing;
     }
     @Override public synchronized void saveStoryNodes(UUID chapterId, List<StoryNode> nodes, String firstNodeId) {
