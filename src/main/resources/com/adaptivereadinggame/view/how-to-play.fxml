@@ -26,7 +26,7 @@
             <Label text="READ THE STORY" styleClass="instructions-heading"/>
             <Label text="Use Next to move through narration, dialogue, and thoughts. A story choice changes what happens in the narrative." styleClass="instructions-text" wrapText="true"/>
             <Label text="ANSWER THE READING CHECK" styleClass="instructions-heading"/>
-            <Label text="Read the passage, select one answer, and submit it. You may change your selection before submitting." styleClass="instructions-text" wrapText="true"/>
+            <Label text="Read the passage, select one answer, and submit it. You may change your selection before submitting. The questions change level as you answer, but the story stays the same for every player." styleClass="instructions-text" wrapText="true"/>
             <Label text="YOUR SCORE" styleClass="instructions-heading"/>
             <Label text="Only the first submitted answer counts toward your comprehension score. Story choices do not change your score." styleClass="instructions-text" wrapText="true"/>
             <Label text="SAVE YOUR PROGRESS" styleClass="instructions-heading"/>

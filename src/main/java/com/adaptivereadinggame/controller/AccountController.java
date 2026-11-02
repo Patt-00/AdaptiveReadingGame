@@ -31,8 +31,6 @@ public final class AccountController {
     @FXML private PasswordField passwordField;
     @FXML private Label passwordLabel;
     @FXML private Label statusLabel;
-    @FXML private Label storageLabel;
-    @FXML private Label fontLabel;
     @FXML private Label formTitle;
     @FXML private Button submitButton;
 
@@ -44,8 +42,6 @@ public final class AccountController {
         usernameLabel.setLabelFor(usernameField);
         displayNameLabel.setLabelFor(displayNameField);
         passwordLabel.setLabelFor(passwordField);
-        storageLabel.setText(navigator.storageDescription());
-        fontLabel.setText(navigator.fontNotice());
         showSelection();
     }
 
@@ -157,7 +153,7 @@ public final class AccountController {
         }, failure -> {
             formBox.setDisable(false);
             navigator.backend().accountGameService().logout(true);
-            status("The player appearance could not be loaded. Check the database setup and try again.", true);
+            status("Your character could not be loaded. Please try again.", true);
         });
     }
 

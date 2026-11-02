@@ -12,8 +12,12 @@ import java.util.*;
  * A UI confirmation never grants access to a different account's data.
  */
 public final class AccountGameService {
-    /** Chapter picker data deliberately excludes passages, questions, and answer keys. */
-    public record ChapterSummary(UUID id, String title, Difficulty difficulty) {}
+    /**
+     * Chapter picker data deliberately excludes passages, questions, and answer keys.
+     * {@code adaptive} tells a screen whether {@code difficulty} describes the chapter itself or
+     * only the level its reading-check questions start at.
+     */
+    public record ChapterSummary(UUID id, String title, Difficulty difficulty, boolean adaptive) {}
     /** Current screen data excludes question answer keys and is scoped to the signed-in learner. */
     public record GameView(GameState state, ChapterSummary chapter, StoryNode storyNode, String passage,
                            Optional<AssessmentResult> completedResult) {}
@@ -73,7 +77,7 @@ public final class AccountGameService {
                 : chapter.passage();
         return Optional.of(new GameView(currentGame,
                 new ChapterSummary(chapter.id(), chapter.title(), currentGame.activeDifficulty() == null
-                        ? chapter.difficulty() : currentGame.activeDifficulty()), node,
+                        ? chapter.difficulty() : currentGame.activeDifficulty(), chapter.adaptive()), node,
                 passage, completedResultForCurrentState(currentGame, chapter, node, studentId)));
     }
     public synchronized boolean hasUnsavedProgress() { studentId(); return hasUnsavedProgress; }
@@ -128,7 +132,7 @@ public final class AccountGameService {
     public synchronized List<AssessmentResult> history() { return List.copyOf(progress.history(studentId())); }
     public synchronized List<HistoryDescription> historyDescriptions() {
         return history().stream().map(result -> new HistoryDescription(result,
-                chapters.findChapter(result.attempt().materialId()).map(Chapter::title).orElse("Unavailable chapter"),
+                chapters.findChapter(result.attempt().materialId()).map(Chapter::title).orElse("Chapter not available"),
                 checkpointLabel(result.attempt().checkpointId()))).toList();
     }
 
@@ -140,7 +144,7 @@ public final class AccountGameService {
         Optional<Chapter> chapter = chapters.findChapter(state.chapterId());
         Optional<StoryNode> node = nodes.findNode(state.chapterId(), state.storyNodeId());
         String phase = "Story";
-        if (chapter.isEmpty() || node.isEmpty()) phase = "Content unavailable";
+        if (chapter.isEmpty() || node.isEmpty()) phase = "Story not available";
         else if (node.get().storyComplete()) phase = "Completed";
         else if (completedResultForCurrentState(state, chapter.get(), node.get(), learnerId).isPresent()) phase = "Results";
         else if (state.assessmentSessionId() != null || node.get().readingCheck()) phase = "Reading check";
@@ -149,7 +153,7 @@ public final class AccountGameService {
             case "hall-first" -> "Hall first";
             default -> "";
         };
-        return new SaveDescription(snapshot, chapter.map(Chapter::title).orElse("Unavailable chapter"), phase, route);
+        return new SaveDescription(snapshot, chapter.map(Chapter::title).orElse("Chapter not available"), phase, route);
     }
 
     private static String checkpointLabel(String id) {
@@ -161,7 +165,7 @@ public final class AccountGameService {
         UUID learnerId = studentId();
         return chapters.findByDifficulty(Objects.requireNonNull(difficulty)).stream()
                 .filter(chapter -> chapter.adaptive() || results.resultsForChapter(learnerId, chapter.id()).isEmpty())
-                .map(chapter -> new ChapterSummary(chapter.id(), chapter.title(), difficulty)).toList();
+                .map(chapter -> new ChapterSummary(chapter.id(), chapter.title(), difficulty, chapter.adaptive())).toList();
     }
     public synchronized List<SaveSnapshot> snapshots() {
         UUID studentId = studentId();

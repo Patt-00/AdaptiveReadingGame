@@ -82,11 +82,11 @@ public final class AppearanceController {
             try { navigator.showMenu(); }
             catch (IOException failure) {
                 appearanceRoot.setDisable(false);
-                navigator.notice("Menu unavailable", "Your appearance was saved. Please restart and sign in again.");
+                navigator.notice("Could not open the menu", "Your appearance was saved. Please restart and sign in again.");
             }
         }, failure -> {
             appearanceRoot.setDisable(false);
-            navigator.notice("Appearance unavailable", "Your choice could not be saved. Check the database setup and try again.");
+            navigator.notice("Could not open your character", "Your choice could not be saved. Please try again.");
         });
     }
 
@@ -94,16 +94,16 @@ public final class AppearanceController {
         if (navigator.workInProgress()) return;
         if (navigator.playerAppearance().isPresent()) {
             try { navigator.showMenu(); }
-            catch (IOException failure) { navigator.notice("Menu unavailable", "Please restart the game."); }
+            catch (IOException failure) { navigator.notice("Could not open the menu", "Please restart the game."); }
             return;
         }
         appearanceRoot.setDisable(true);
         navigator.runAsync("Sign out", () -> { navigator.backend().accountGameService().logout(true); return null; }, ignored -> {
             try { navigator.showAccount(); }
-            catch (IOException failure) { navigator.notice("Welcome unavailable", "Please restart the game."); }
+            catch (IOException failure) { navigator.notice("Could not open the welcome screen", "Please close the game and open it again."); }
         }, failure -> {
             appearanceRoot.setDisable(false);
-            navigator.notice("Sign out unavailable", "Please try again.");
+            navigator.notice("Could not sign you out", "Please try again.");
         });
     }
 }

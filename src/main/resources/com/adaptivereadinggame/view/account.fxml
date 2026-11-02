@@ -41,8 +41,6 @@
                 <Button text="BACK" onAction="#showSelection" styleClass="auth-secondary" prefWidth="200"/>
             </VBox>
             <Button text="AUDIO SETTINGS" onAction="#audioSettings" styleClass="account-link"/>
-            <Label fx:id="storageLabel" alignment="CENTER" wrapText="true" minHeight="-Infinity" styleClass="runtime-note"/>
-            <Label fx:id="fontLabel" alignment="CENTER" wrapText="true" minHeight="-Infinity" styleClass="runtime-note"/>
         </VBox>
       </content>
     </ScrollPane>

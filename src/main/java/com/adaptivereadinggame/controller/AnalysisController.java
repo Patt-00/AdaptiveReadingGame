@@ -19,14 +19,14 @@ public final class AnalysisController {
                     .assessmentSessionId();
             if (sessionId == null) throw new IllegalStateException("No reading check is ready to complete.");
         } catch (RuntimeException unavailable) {
-            navigator.notice("Results unavailable", "The current reading check could not be found.");
+            navigator.notice("Could not open your result", "The current reading check could not be found.");
             returnToGame();
             return;
         }
         navigator.runAsync("Complete reading check",
                 () -> navigator.backend().accountGameService().complete(sessionId),
                 this::showResults, failure -> {
-                    navigator.notice("Results unavailable", "The result could not be stored. Your first answers remain saved.");
+                    navigator.notice("Could not open your result", "The result could not be stored. Your first answers remain saved.");
                     returnToGame();
                 });
     }
@@ -34,7 +34,7 @@ public final class AnalysisController {
     private void showResults(AssessmentResult ignored) {
         try { navigator.showResults(); }
         catch (IOException failure) {
-            navigator.notice("Results screen unavailable", "Your result was stored. Open Reading History from the main menu.");
+            navigator.notice("Could not open your result", "Your result was stored. Open Reading History from the main menu.");
             returnToGame();
         }
     }
@@ -43,7 +43,7 @@ public final class AnalysisController {
         try { navigator.showGameplay(); }
         catch (IOException failure) {
             try { navigator.showMenu(); }
-            catch (IOException ignored) { navigator.notice("Screen unavailable", "Please restart the application."); }
+            catch (IOException ignored) { navigator.notice("Could not open the screen", "Please restart the application."); }
         }
     }
 }

@@ -43,8 +43,6 @@
                 <Button text="CHARACTER" onAction="#characterSettings" styleClass="account-link"/>
                 <Button text="LOG OUT" onAction="#logout" styleClass="account-link"/>
             </HBox>
-            <Label fx:id="runtimeLabel" alignment="CENTER" wrapText="true" minHeight="-Infinity" styleClass="runtime-note"/>
-            <Label fx:id="fontLabel" alignment="CENTER" wrapText="true" minHeight="-Infinity" styleClass="runtime-note"/>
         </VBox>
       </content>
     </ScrollPane>

@@ -94,7 +94,6 @@ public final class GameplayController {
     @FXML private Label correctAnswerText;
     @FXML private Label explanationText;
     @FXML private Label footerText;
-    @FXML private Label fontNotice;
     @FXML private ImageView speakerImage;
     @FXML private ImageView supportingImage;
     @FXML private Button storyNextButton;
@@ -138,7 +137,6 @@ public final class GameplayController {
             if (previous != null) previous.removeEventFilter(KeyEvent.KEY_RELEASED, releaseShortcut);
             if (current != null) current.addEventFilter(KeyEvent.KEY_RELEASED, releaseShortcut);
         });
-        fontNotice.setText(navigator.fontNotice());
         reload();
     }
 
@@ -215,7 +213,6 @@ public final class GameplayController {
                 return;
             }
             chapterTitle.setText(data.view().chapter().title());
-            difficultyLabel.setText(data.view().chapter().difficulty().name());
             if (data.view().state().assessmentSessionId() == null) showStory(data.view().storyNode());
             else showAssessment(data.view(), data.questions());
         }, failure -> {
@@ -227,6 +224,10 @@ public final class GameplayController {
     private void showStory(StoryNode node) {
         navigator.audio().setTrack(StoryMusicCues.forNode(loaded.view().state().chapterId(), node));
         setStoryPresentation(true);
+        // The narrative has no levels; only the reading-check questions adapt.
+        difficultyLabel.setText("");
+        difficultyLabel.setVisible(false);
+        difficultyLabel.setManaged(false);
         storyScroll.setVisible(true);
         storyScroll.setManaged(true);
         assessmentScroll.setVisible(false);
@@ -513,8 +514,6 @@ public final class GameplayController {
         storyLogButton.setManaged(true);
         footerText.setVisible(!story);
         footerText.setManaged(!story);
-        fontNotice.setVisible(!story && !fontNotice.getText().isEmpty());
-        fontNotice.setManaged(!story && !fontNotice.getText().isEmpty());
         gameplayFooter.setAlignment(story ? Pos.CENTER_RIGHT : Pos.CENTER);
         gameplayFooter.setVisible(true);
         gameplayFooter.setManaged(true);
@@ -529,6 +528,9 @@ public final class GameplayController {
                                 List<AssessmentService.QuestionPrompt> questions) {
         navigator.audio().setTrack(com.adaptivereadinggame.audio.GameAudio.Track.SILENT);
         setStoryPresentation(false);
+        difficultyLabel.setText(LevelCopy.questionLevel(view.chapter().difficulty()));
+        difficultyLabel.setVisible(true);
+        difficultyLabel.setManaged(true);
         clearSceneAssets();
         storyScroll.setVisible(false);
         storyScroll.setManaged(false);
@@ -564,8 +566,7 @@ public final class GameplayController {
         }
 
         activeQuestion = questions.get(index);
-        questionProgress.setText("Question " + (index + 1) + " of " + questions.size()
-                + "  ·  " + view.chapter().difficulty().name());
+        questionProgress.setText("Question " + (index + 1) + " of " + questions.size());
         questionPrompt.setText(activeQuestion.prompt());
         for (int option = 0; option < activeQuestion.choices().size(); option++) {
             RadioButton choice = new RadioButton(letter(option) + ".  " + activeQuestion.choices().get(option));
@@ -709,7 +710,6 @@ public final class GameplayController {
     private void renderLoaded(LoadedGame data) {
         if (data.view().completedResult().isPresent()) { openResults(); return; }
         chapterTitle.setText(data.view().chapter().title());
-        difficultyLabel.setText(data.view().chapter().difficulty().name());
         if (data.view().state().assessmentSessionId() == null) showStory(data.view().storyNode());
         else showAssessment(data.view(), data.questions());
     }
@@ -729,23 +729,22 @@ public final class GameplayController {
     @FXML private void openMenu() {
         if (navigator.workInProgress()) return;
         try { navigator.showMenu(); }
-        catch (IOException failure) { navigator.notice("Menu unavailable", "The main menu could not open."); }
+        catch (IOException failure) { navigator.notice("Could not open the menu", "The main menu could not open."); }
     }
 
     private void openAnalysis() {
         try { navigator.showAnalysis(); }
-        catch (IOException failure) { navigator.notice("Analysis unavailable", "The reading result could not be opened."); }
+        catch (IOException failure) { navigator.notice("Could not open your result", "The reading result could not be opened."); }
     }
 
     private void openResults() {
         try { navigator.showResults(); }
-        catch (IOException failure) { navigator.notice("Results unavailable", "Open Reading History from the main menu."); }
+        catch (IOException failure) { navigator.notice("Could not open your result", "Open Reading History from the main menu."); }
     }
 
     private void showLoadFailure(Throwable failure) {
-        String message = failure instanceof IllegalStateException || failure instanceof IllegalArgumentException
-                ? failure.getMessage() : "The requested game action could not be completed. Stored progress has not been replaced.";
-        navigator.notice("Game action unavailable", message == null ? "The game action could not be completed." : message);
+        System.err.println("Game action failed: " + failure);
+        navigator.notice("That did not work", "That action isn't available right now. Your saved progress is unchanged.");
     }
 
     private static String initials(String name) {

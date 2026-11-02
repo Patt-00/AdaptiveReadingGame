@@ -20,12 +20,12 @@ public final class InstructionsController {
     @FXML private void initialize() {
         chapter = navigator.pendingChapter().orElse(null);
         if (chapter == null) {
-            navigator.notice("Chapter unavailable", "Choose a prepared chapter before opening its instructions.");
+            navigator.notice("Could not open that chapter", "Choose a chapter before opening its instructions.");
             backToMenu();
             return;
         }
         chapterLabel.setText(chapter.title());
-        difficultyLabel.setText("Starting difficulty: " + titleCase(chapter.difficulty().name()));
+        difficultyLabel.setText(LevelCopy.startsAt(chapter.difficulty()));
     }
 
     @FXML private void startChapter() {
@@ -45,23 +45,18 @@ public final class InstructionsController {
                     navigator.clearStoryLog();
                     try { navigator.showGameplay(); }
                     catch (IOException failure) {
-                        navigator.notice("Game screen unavailable", "The chapter started, but its screen could not open.");
+                        navigator.notice("Could not open the story", "The chapter started, but its screen could not open.");
                         backToMenu();
                     }
                 }, failure -> {
                     instructionsRoot.setDisable(false);
-                    navigator.notice("Chapter unavailable", "The selected chapter could not be started. Your existing progress remains unchanged.");
+                    navigator.notice("Could not open that chapter", "The chapter could not be started. Your saved progress is unchanged.");
                 });
     }
 
     @FXML private void backToMenu() {
         navigator.clearPendingChapter();
         try { navigator.showMenu(); }
-        catch (IOException failure) { navigator.notice("Menu unavailable", "The main menu could not open."); }
-    }
-
-    private static String titleCase(String value) {
-        String lower = value.toLowerCase(java.util.Locale.ROOT);
-        return Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
+        catch (IOException failure) { navigator.notice("Could not open the menu", "The main menu could not open."); }
     }
 }

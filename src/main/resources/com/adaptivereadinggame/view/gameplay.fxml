@@ -19,7 +19,7 @@
         <HBox fx:id="gameplayHeader" alignment="CENTER_LEFT" spacing="12" styleClass="gameplay-header">
             <VBox spacing="3" minWidth="0" HBox.hgrow="ALWAYS">
                 <Label fx:id="chapterTitle" styleClass="gameplay-chapter-title" text="CHAPTER" wrapText="true"/>
-                <Label fx:id="difficultyLabel" styleClass="gameplay-difficulty" text="EASY"/>
+                <Label fx:id="difficultyLabel" styleClass="gameplay-difficulty" text="" visible="false" managed="false"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
             <Button fx:id="illustrationButton" text="VIEW ILLUSTRATION" minWidth="-Infinity" styleClass="gameplay-menu-button"
@@ -114,7 +114,6 @@
                     onAction="#advanceStory"/>
             <Label fx:id="footerText" wrapText="true" minHeight="-Infinity" styleClass="gameplay-footer-text"
                    text="Story choices change the narrative. Reading Check answers determine the score."/>
-            <Label fx:id="fontNotice" styleClass="gameplay-font-notice"/>
         </VBox>
     </bottom>
     </BorderPane>

@@ -152,7 +152,7 @@ class Dev1UiTest {
             assertTrue(label("continueStatusLabel").isVisible());
             assertTrue(label("continueStatusLabel").getText().contains("Save progress"));
             assertTrue(continueButton.getAccessibleHelp().contains("Open Save/Load"));
-            assertTrue(label("runtimeLabel").getText().contains("Temporary storage"));
+            assertNull(root().lookup("#runtimeLabel"));
             assertNotNull(button("LOG OUT").getOnAction());
             assertNotNull(button("READING HISTORY").getOnAction());
             Button historyButton = button("READING HISTORY");
@@ -190,7 +190,7 @@ class Dev1UiTest {
     @Test void splashUsesTheAvailableArtworkAndLetsThePlayerBegin() throws Exception {
         fx(() -> {
             stage = new Stage();
-            navigator = new AppNavigator(stage, BackendContext.inMemory(), "Temporary storage");
+            navigator = new AppNavigator(stage, BackendContext.inMemory());
             navigator.audio().setVolumes(0, 0);
             navigator.setReducedMotion(true);
             stage.setWidth(760);
@@ -240,7 +240,7 @@ class Dev1UiTest {
     @Test void splashMotionCanBeReducedOrSkippedWithoutBlockingNavigation() throws Exception {
         fx(() -> {
             stage = new Stage();
-            navigator = new AppNavigator(stage, BackendContext.inMemory(), "Temporary storage");
+            navigator = new AppNavigator(stage, BackendContext.inMemory());
             navigator.audio().setVolumes(0, 0);
             navigator.start();
             stage.toFront();
@@ -267,7 +267,7 @@ class Dev1UiTest {
     @Test void splashBeginWorksWhileTheIntroIsPlaying() throws Exception {
         fx(() -> {
             stage = new Stage();
-            navigator = new AppNavigator(stage, BackendContext.inMemory(), "Temporary storage");
+            navigator = new AppNavigator(stage, BackendContext.inMemory());
             navigator.audio().setVolumes(0, 0);
             navigator.start();
             stage.toFront();
@@ -284,7 +284,7 @@ class Dev1UiTest {
     @Test void splashIntroAnimatesAndSettlesOnItsTitle() throws Exception {
         fx(() -> {
             stage = new Stage();
-            navigator = new AppNavigator(stage, BackendContext.inMemory(), "Temporary storage");
+            navigator = new AppNavigator(stage, BackendContext.inMemory());
             navigator.audio().setVolumes(0, 0);
             navigator.start();
             assertEquals(0, root().lookup("#heroPortrait").getOpacity(), 0.001);
@@ -585,6 +585,91 @@ class Dev1UiTest {
         assertEquals(3, prompts.size());
     }
 
+    @Test void storyNarrationShowsNoQuestionLevelChip() throws Exception {
+        BackendContext backend = launch();
+        var game = backend.accountGameService();
+        game.signup("chip-story-reader", "Chip Story Reader", "StrongPass1!".toCharArray());
+        game.login("chip-story-reader", "StrongPass1!".toCharArray());
+        backend.storyPackImporter().orElseThrow().importFile(Path.of("assets/content/hailey-investigation-complete.json"));
+        Chapter chapter = backend.chapters().findByDifficulty(Difficulty.EASY).stream()
+                .filter(item -> item.title().equals("Aurelium Investigation")).findFirst().orElseThrow();
+        game.startChapter(chapter.id(), Difficulty.EASY, false);
+        fx(() -> { navigator.showGameplay(); return null; });
+        await(() -> root().lookup("#storyText") != null && !navigator.workInProgress());
+        fx(() -> {
+            Label chip = label("difficultyLabel");
+            assertFalse(chip.isVisible(), "story narration must not advertise a reading level");
+            assertFalse(chip.isManaged(), "a hidden level chip must not reserve header space");
+            assertTrue(chip.getText().isBlank(), "the level chip must carry no stale default");
+            return null;
+        });
+    }
+
+    @Test void readingCheckHeaderNamesTheQuestionLevel() throws Exception {
+        BackendContext backend = launch();
+        var game = backend.accountGameService();
+        game.signup("chip-check-reader", "Chip Check Reader", "StrongPass1!".toCharArray());
+        game.login("chip-check-reader", "StrongPass1!".toCharArray());
+        backend.storyPackImporter().orElseThrow().importFile(Path.of("assets/content/hailey-investigation-complete.json"));
+        Chapter chapter = backend.chapters().findByDifficulty(Difficulty.EASY).stream()
+                .filter(item -> item.title().equals("Aurelium Investigation")).findFirst().orElseThrow();
+        game.startChapter(chapter.id(), Difficulty.EASY, false);
+        advanceCompletedTo(game, "study-first-check", "study-first");
+        fx(() -> { navigator.showGameplay(); return null; });
+        await(() -> root().lookup("#questionPrompt") != null && !navigator.workInProgress());
+        fx(() -> {
+            assertTrue(visible(label("difficultyLabel")), "the level of the questions on screen must be shown");
+            assertEquals("Question level: Easy", label("difficultyLabel").getText());
+            assertEquals("Question 1 of 3", label("questionProgress").getText(),
+                    "the level belongs on the chip, not repeated in the progress line");
+            return null;
+        });
+    }
+
+    @Test void levelCopyIsAboutQuestionsWhereverThePlayerMeetsIt() throws Exception {
+        BackendContext backend = launch();
+        backend.accountGameService().signup("copy-reader", "Copy Reader", "StrongPass1!".toCharArray());
+        backend.accountGameService().login("copy-reader", "StrongPass1!".toCharArray());
+        backend.storyPackImporter().orElseThrow().importPack(new StoryPack(List.of(fixtureChapter("copy-fixture", "Copy Fixture"))));
+        fx(() -> { navigator.showMenu(); return null; });
+        await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
+        Platform.runLater(() -> click("NEW GAME"));
+        await(() -> Window.getWindows().stream().anyMatch(window -> window != stage && window.isShowing()));
+        fx(() -> {
+            dialogButtonContaining("Reading checks start at Easy").fire();
+            return null;
+        });
+        await(() -> root().lookup("#instructionsRoot") != null && !navigator.workInProgress());
+        fx(() -> {
+            assertEquals("Reading checks start at Easy", label("difficultyLabel").getText());
+            assertEquals("Copy Fixture", label("chapterLabel").getText());
+            click("START CHAPTER");
+            return null;
+        });
+        await(() -> root().lookup("#gameplayRoot") != null && !navigator.workInProgress());
+        await(() -> root().lookup("#storyText") != null && !navigator.workInProgress());
+        fx(() -> {
+            assertFalse(visible(label("difficultyLabel")));
+            click("MENU");
+            return null;
+        });
+        await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
+        robotClick(() -> button("SAVE/LOAD"));
+        awaitDialog("Three save slots for your account");
+        robotClick(() -> dialogPane().lookup("#saveSlot1"));
+        awaitDialog("Save successful");
+        robotClick(() -> dialogPane().lookupButton(ButtonType.OK));
+        robotClick(() -> button("SAVE/LOAD"));
+        awaitDialog("Three save slots for your account");
+        fx(() -> {
+            String slot = ((Label) dialogPane().lookup("#slotDetails1")).getText();
+            assertTrue(slot.contains("Question level: Easy"),
+                    "a save slot describes its question level, never a raw difficulty enum");
+            return null;
+        });
+        robotClick(() -> dialogPane().lookupButton(ButtonType.CLOSE));
+    }
+
     @Test void illustratedViewportStaysBoundedAcrossWindowSizesAndReadingScales() throws Exception {
         BackendContext backend = launch();
         var game = backend.accountGameService();
@@ -848,7 +933,7 @@ class Dev1UiTest {
                 ]}
                 """);
         BackendContext backend = BackendContext.inMemory();
-        launch(backend, "Temporary storage - test accounts close with the app.", directions);
+        launch(backend, directions);
         var game = backend.accountGameService();
         game.signup("stage-reader", "Stage Reader", "StrongPass1!".toCharArray());
         game.login("stage-reader", "StrongPass1!".toCharArray());
@@ -978,18 +1063,18 @@ class Dev1UiTest {
         robotClick(() -> button("MENU"));
         await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
         robotClick(() -> button("SAVE/LOAD"));
-        awaitDialog("Three account-specific save slots");
+        awaitDialog("Three save slots for your account");
         assertTrue(fx(() -> ((Button) dialogPane().lookup("#loadSlot1")).isDisabled()));
         robotClick(() -> dialogPane().lookup("#saveSlot1"));
         awaitDialog("Save successful");
         robotClick(() -> dialogPane().lookupButton(ButtonType.OK));
         await(() -> !navigator.workInProgress());
         robotClick(() -> button("SAVE/LOAD"));
-        awaitDialog("Three account-specific save slots");
+        awaitDialog("Three save slots for your account");
         robotClick(() -> dialogPane().lookup("#saveSlot1"));
         awaitDialog("Overwrite slot 1?");
         robotClick(() -> dialogPane().lookupButton(ButtonType.NO));
-        awaitDialog("Three account-specific save slots");
+        awaitDialog("Three save slots for your account");
         robotClick(() -> dialogPane().lookup("#saveSlot1"));
         awaitDialog("Overwrite slot 1?");
         robotClick(() -> dialogPane().lookupButton(ButtonType.YES));
@@ -1047,11 +1132,11 @@ class Dev1UiTest {
         robotClick(() -> button("BACK TO MENU"));
         await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
         robotClick(() -> button("SAVE/LOAD"));
-        awaitDialog("Three account-specific save slots");
+        awaitDialog("Three save slots for your account");
         robotClick(() -> dialogPane().lookup("#loadSlot1"));
         awaitDialog("Load slot 1?");
         robotClick(() -> dialogPane().lookupButton(ButtonType.NO));
-        awaitDialog("Three account-specific save slots");
+        awaitDialog("Three save slots for your account");
         assertEquals("choice", game.currentGame().orElseThrow().storyNodeId());
         assertEquals(2, fx(() -> navigator.storyLog().size()));
         robotClick(() -> dialogPane().lookup("#loadSlot1"));
@@ -1300,8 +1385,7 @@ class Dev1UiTest {
             assertEquals("No chapter available", pane.getHeaderText());
             String message = pane.lookupAll(".label").stream().filter(Label.class::isInstance)
                     .map(Label.class::cast).map(Label::getText).collect(java.util.stream.Collectors.joining("\n"));
-            assertTrue(message.contains("No prepared chapter is available at the recommended difficulty."));
-            assertTrue(message.contains("No pretend story or score has been created."));
+            assertTrue(message.contains("There is no chapter available at your recommended level yet."));
             ((Button) pane.lookupButton(ButtonType.OK)).fire();
             return null;
         });
@@ -1587,7 +1671,7 @@ class Dev1UiTest {
             return null;
         });
         robotClick(() -> button("CREDITS"));
-        awaitDialog("Music, model, and provisional artwork");
+        awaitDialog("Music, helper, and artwork");
         fx(() -> {
             assertTrue(dialogPane().getWidth() <= stage.getWidth());
             javafx.scene.control.ScrollPane scroll = (javafx.scene.control.ScrollPane) dialogPane().lookup("#creditsScroll");
@@ -1630,14 +1714,14 @@ class Dev1UiTest {
         fx(() -> { navigator.showMenu(); return null; });
         await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
         robotClick(() -> button("SAVE/LOAD"));
-        awaitDialog("Three account-specific save slots");
+        awaitDialog("Three save slots for your account");
         assertFalse(fx(() -> ((Button) dialogPane().lookup("#saveSlot1")).isDisabled()));
         robotClick(() -> dialogPane().lookup("#saveSlot1"));
         awaitDialog("Save successful");
         robotClick(() -> dialogPane().lookupButton(ButtonType.OK));
         await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
         robotClick(() -> button("SAVE/LOAD"));
-        awaitDialog("Three account-specific save slots");
+        awaitDialog("Three save slots for your account");
         fx(() -> {
             String slot = ((Label) dialogPane().lookup("#slotDetails1")).getText();
             assertTrue(slot.contains("Saved Result Fixture"));
@@ -1664,7 +1748,7 @@ class Dev1UiTest {
         Platform.runLater(() -> click("NEW GAME"));
         await(() -> Window.getWindows().stream().anyMatch(window -> window != stage && window.isShowing()));
         fx(() -> {
-            dialogButton("Fixture Chapter One — EASY").fire();
+            dialogButtonContaining("Fixture Chapter One").fire();
             return null;
         });
 
@@ -1781,7 +1865,7 @@ class Dev1UiTest {
                 && score.getText().contains("50%") && !navigator.workInProgress());
         fx(() -> {
             assertEquals("1 of 2 first answers correct", label("answerCountLabel").getText());
-            assertEquals("Next difficulty: Easy", label("nextDifficultyLabel").getText());
+            assertEquals("Next question level: Easy", label("nextDifficultyLabel").getText());
             assertFalse(button("NEXT CHALLENGE").isDisabled());
             capture(root(), "game-results");
             return null;
@@ -1809,7 +1893,7 @@ class Dev1UiTest {
         String username = "mysql-ui-" + shortId();
         String passwordValue = "StrongPass1!";
 
-        launch(firstBackend, "MySQL storage - disposable test database.");
+        launch(firstBackend);
         fx(() -> {
             click("SIGN UP");
             field("usernameField").setText(username);
@@ -1828,7 +1912,7 @@ class Dev1UiTest {
         choosePlayerAppearanceIfNeeded();
         await(() -> root().lookup("#menuOptions") != null && !navigator.workInProgress());
         fx(() -> {
-            assertTrue(label("runtimeLabel").getText().contains("MySQL storage"));
+            assertNull(root().lookup("#runtimeLabel"));
             click("NEW GAME");
             return null;
         });
@@ -1862,7 +1946,7 @@ class Dev1UiTest {
         fx(() -> { ((Button) dialogPane().lookupButton(ButtonType.OK)).fire(); stage.hide(); return null; });
 
         BackendContext reopenedBackend = BackendContext.mysql(connections);
-        launch(reopenedBackend, "MySQL storage - disposable test database.");
+        launch(reopenedBackend);
         fx(() -> {
             click("LOG IN");
             field("usernameField").setText(username);
@@ -1943,10 +2027,37 @@ class Dev1UiTest {
         await(() -> root().lookup("#decisionSourceLabel") instanceof Label source
                 && source.getText().contains("reading helper was unavailable") && !navigator.workInProgress());
         fx(() -> {
-            assertTrue(label("decisionSourceLabel").getText().contains("usual rule"));
+            assertTrue(label("decisionSourceLabel").getText().contains("chose your level from your recent results"));
             capture(root(), "game-results-model-fallback");
             return null;
         });
+    }
+
+    @Test void analysisScreenShowsPlayerFacingProgressCopy() throws Exception {
+        BackendContext backend = launch();
+        var player = backend.accountGameService();
+        var account = player.signup("analysis-reader", "Analysis Reader", "StrongPass1!".toCharArray());
+        player.login(account.username(), "StrongPass1!".toCharArray());
+        var fixture = fixtureChapter("analysis-fixture", "Analysis Fixture");
+        backend.storyPackImporter().orElseThrow().importPack(new StoryPack(List.of(fixture)));
+        player.startChapter(fixture.chapter().id(), false);
+        for (int step = 0; step < 10 && !player.currentGameView().orElseThrow().storyNode().readingCheck(); step++) {
+            var node = player.currentGameView().orElseThrow().storyNode();
+            if (node.storyChoices().isEmpty()) player.advanceStory();
+            else player.chooseStory(node.storyChoices().getFirst().choiceId());
+        }
+        UUID session = player.startAssessment(fixture.chapter().id());
+        for (var question : player.questions(session)) player.submit(session, question.id(), 0);
+
+        fx(() -> {
+            navigator.showAnalysis();
+            Label message = (Label) root().lookup(".analysis-message");
+            assertNotNull(message);
+            assertEquals("Checking your reading results and choosing your next challenge.", message.getText());
+            capture(root(), "analysis");
+            return null;
+        });
+        await(() -> root().lookup("#resultsRoot") != null);
     }
 
     @Test void blankCredentialsStayInFormAndBackClearsPassword() throws Exception {
@@ -2088,7 +2199,8 @@ class Dev1UiTest {
                     .map(Label.class::cast).map(Label::getText).collect(java.util.stream.Collectors.joining("\n"));
             assertTrue(rendered.contains("UI test fixture only · Reading check"));
             assertTrue(rendered.contains("1 / 2 correct — 50%"));
-            assertTrue(rendered.contains("Next difficulty: EASY"));
+            assertTrue(rendered.contains("Question level: Medium"));
+            assertTrue(rendered.contains("Next question level: Easy"));
             capture(pane, "reading-history");
             ((Button) pane.lookupButton(ButtonType.CLOSE)).fire();
             return null;
@@ -2140,7 +2252,7 @@ class Dev1UiTest {
             assertTrue(details.getHeight() >= details.prefHeight(details.getWidth()) - 1,
                     "All populated-slot details must be visible without truncation.");
             assertTrue(details.getText().contains("UI test fixture only"));
-            assertTrue(details.getText().contains("Content unavailable"));
+            assertTrue(details.getText().contains("Story not available"));
             assertFalse(details.getText().contains("chapter-introduction"));
             ((Button) pane.lookupButton(ButtonType.CLOSE)).fire();
             return null;
@@ -2171,6 +2283,30 @@ class Dev1UiTest {
         });
         await(() -> root().lookup("#selectionBox") != null && !navigator.workInProgress());
         assertTrue(backend.accountGameService().currentAccount().isEmpty());
+    }
+
+    @Test void logoutWarnsOnlyWhenProgressIsUnsaved() throws Exception {
+        BackendContext backend = launch();
+        var player = backend.accountGameService();
+        var account = player.signup("unsaved-reader", "Unsaved Reader", "StrongPass1!".toCharArray());
+        player.login(account.username(), "StrongPass1!".toCharArray());
+        var fixture = fixtureChapter("unsaved-fixture", "Unsaved Fixture");
+        backend.storyPackImporter().orElseThrow().importPack(new StoryPack(List.of(fixture)));
+        player.startChapter(fixture.chapter().id(), false);
+        player.advanceStory();
+        fx(() -> { navigator.showMenu(); return null; });
+        await(() -> !navigator.workInProgress());
+        Platform.runLater(() -> click("LOG OUT"));
+        await(() -> Window.getWindows().stream().anyMatch(window -> window != stage && window.isShowing()));
+        fx(() -> {
+            DialogPane pane = dialogPane();
+            assertEquals("Log out?", pane.getHeaderText());
+            assertTrue(pane.getContentText().contains("unsaved progress that will be lost"));
+            capture(pane, "logout-confirmation-unsaved");
+            ((Button) pane.lookupButton(ButtonType.NO)).fire();
+            assertTrue(backend.accountGameService().currentAccount().isPresent());
+            return null;
+        });
     }
 
     @Test void failedGameCleanupStillReturnsLoggedOutUserToAuthentication() throws Exception {
@@ -2219,18 +2355,13 @@ class Dev1UiTest {
     }
 
     private BackendContext launch(BackendContext backend) throws Exception {
-        return launch(backend, "Temporary storage - test accounts close with the app.");
+        return launch(backend, StoryStageDirections.empty());
     }
 
-    private BackendContext launch(BackendContext backend, String storageDescription) throws Exception {
-        return launch(backend, storageDescription, StoryStageDirections.empty());
-    }
-
-    private BackendContext launch(BackendContext backend, String storageDescription,
-                                  StoryStageDirections stageDirections) throws Exception {
+    private BackendContext launch(BackendContext backend, StoryStageDirections stageDirections) throws Exception {
         fx(() -> {
             stage = new Stage();
-            navigator = new AppNavigator(stage, backend, storageDescription, stageDirections);
+            navigator = new AppNavigator(stage, backend, stageDirections);
             navigator.audio().setVolumes(0, 0);
             navigator.start();
             navigator.showAccount();

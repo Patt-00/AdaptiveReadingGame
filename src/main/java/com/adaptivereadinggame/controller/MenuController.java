@@ -53,8 +53,6 @@ public final class MenuController {
     @FXML private Button continueButton;
     @FXML private Label accountLabel;
     @FXML private Label continueStatusLabel;
-    @FXML private Label runtimeLabel;
-    @FXML private Label fontLabel;
 
     public MenuController(AppNavigator navigator) { this.navigator = Objects.requireNonNull(navigator); }
 
@@ -64,8 +62,6 @@ public final class MenuController {
         menuRoot.heightProperty().addListener((observable, before, after) -> updateCompactLayout(after.doubleValue()));
         accountLabel.setText(navigator.backend().accountGameService().currentAccount()
                 .map(account -> "Welcome, " + account.displayName()).orElse("No account signed in"));
-        runtimeLabel.setText(navigator.storageDescription());
-        fontLabel.setText(navigator.fontNotice());
         refresh();
     }
 
@@ -96,7 +92,7 @@ public final class MenuController {
                             : "Continue resumes your most recently saved progress.");
             continueButton.setAccessibleHelp(state.activeGame() ? "Return to the active story or results."
                     : slots.isEmpty() ? "Open Save/Load and save progress to enable Continue."
-                            : "Resume the most recently saved checkpoint.");
+                            : "Resume your most recently saved progress.");
         });
     }
 
@@ -110,8 +106,8 @@ public final class MenuController {
         }, options -> {
             List<ChapterSummary> chapters = options.chapters();
             if (chapters.isEmpty()) {
-                navigator.notice("No chapter available", "No prepared chapter is available at the recommended difficulty. "
-                        + "Load approved story content and prepare a chapter for that level. No pretend story or score has been created.");
+                navigator.notice("No chapter available",
+                        "There is no chapter available at your recommended level yet. Please try again later.");
                 return;
             }
             Dialog<Void> dialog = dialog("New Game", "Choose an available chapter");
@@ -121,13 +117,13 @@ public final class MenuController {
             content.getChildren().add(replayNote);
             for (ChapterSummary chapter : chapters) {
                 boolean replay = options.completedChapterIds().contains(chapter.id());
-                Button button = new Button(chapter.title() + " — " + chapter.difficulty()
-                        + (replay ? " — Replay" : ""));
+                Button button = new Button(chapter.title() + "  ·  " + LevelCopy.startsAt(chapter.difficulty())
+                        + (replay ? "  ·  Replay" : ""));
                 button.setMaxWidth(Double.MAX_VALUE);
                 button.setOnAction(event -> {
                     dialog.close();
                     try { navigator.showInstructions(chapter); }
-                    catch (IOException failure) { navigator.notice("Instructions unavailable", "The chapter instructions could not open."); }
+                    catch (IOException failure) { navigator.notice("Could not open the instructions", "The chapter instructions could not open."); }
                 });
                 content.getChildren().add(button);
             }
@@ -144,13 +140,13 @@ public final class MenuController {
         }
         if (!allowDiscard("Continue saved progress?")) return;
         run("Continue", () -> navigator.backend().accountGameService().continueGame(true), state -> {
-            if (state.isEmpty()) navigator.notice("No saved progress", "Create a checkpoint in Save/Load first.");
+            if (state.isEmpty()) navigator.notice("No saved progress", "Save your progress in Save/Load first.");
             else { navigator.clearStoryLog(); showGameplay(); }
         });
     }
 
     @FXML private void saveLoad() {
-        Dialog<Void> dialog = dialog("Save / Load", "Three account-specific save slots");
+        Dialog<Void> dialog = dialog("Save/Load", "Three save slots for your account");
         VBox content = new VBox(14);
         var accountGame = navigator.backend().accountGameService();
         boolean hasActiveGame = accountGame.currentGame().isPresent();
@@ -161,9 +157,9 @@ public final class MenuController {
             Optional<SaveDescription> description = slotDescriptions.stream()
                     .filter(item -> item.snapshot().checkpoint().slot() == chosenSlot).findFirst();
             Label details = new Label(snapshot.map(item -> "Slot " + chosenSlot + " — "
-                    + description.map(SaveDescription::chapterTitle).orElse("Unavailable chapter")
-                    + "\n" + description.map(SaveDescription::phase).orElse("Content unavailable")
-                    + " · " + item.checkpoint().difficulty()
+                    + description.map(SaveDescription::chapterTitle).orElse("Chapter not available")
+                    + "\n" + description.map(SaveDescription::phase).orElse("Story not available")
+                    + " · " + LevelCopy.questionLevel(item.checkpoint().difficulty())
                     + description.filter(value -> !value.route().isEmpty()).map(value -> " · " + value.route()).orElse("")
                     + "\nSaved " + TIME.format(item.checkpoint().savedAt())).orElse("Slot " + chosenSlot + " — Empty"));
             details.setWrapText(true);
@@ -177,15 +173,14 @@ public final class MenuController {
             save.setAccessibleText("Save progress to slot " + chosenSlot);
             save.setDisable(!hasGame);
             save.setAccessibleHelp(hasGame ? "Save current progress to slot " + chosenSlot
-                    : "Start a playable chapter before saving.");
+                    : "Start a story before saving.");
             save.setOnAction(event -> {
                 if (snapshot.isPresent() && !navigator.confirm("Overwrite slot " + chosenSlot + "?",
-                        "Replace the existing checkpoint in this slot?")) return;
+                        "Replace the existing save in this slot?")) return;
                 dialog.close();
                 run("Save", () -> navigator.backend().accountGameService().save(chosenSlot, snapshot.isPresent()), saved -> {
                     refresh();
-                    navigator.notice("Save successful", "Your checkpoint was stored in slot " + chosenSlot + ".\n"
-                            + navigator.storageDescription());
+                    navigator.notice("Save successful", "Your progress was saved in slot " + chosenSlot + ".");
                 });
             });
             Button load = new Button("LOAD");
@@ -198,7 +193,7 @@ public final class MenuController {
                 if (!allowDiscard("Load slot " + chosenSlot + "?")) return;
                 dialog.close();
                 run("Load", () -> navigator.backend().accountGameService().load(chosenSlot, true), state -> {
-                    if (state.isEmpty()) navigator.notice("Empty slot", "There is no checkpoint in this slot.");
+                    if (state.isEmpty()) navigator.notice("Empty slot", "There is no save in this slot.");
                     else { navigator.clearStoryLog(); showGameplay(); }
                 });
             });
@@ -207,9 +202,8 @@ public final class MenuController {
             row.setPadding(new Insets(16));
             content.getChildren().add(row);
         }
-        String saveNote = hasGame ? navigator.storageDescription()
-                : "No active chapter. Saving becomes available after a prepared story is started.\n"
-                    + navigator.storageDescription();
+        String saveNote = hasGame ? "Your progress is saved to this account."
+                : "Start a story before saving.";
         Label explanation = new Label(saveNote);
         explanation.setWrapText(true);
         explanation.setId("saveExplanation");
@@ -229,6 +223,8 @@ public final class MenuController {
     @FXML private void history() {
         Dialog<Void> dialog = dialog("Reading History", "Completed comprehension checks");
         VBox rows = new VBox(14);
+        rows.setFillWidth(true);
+        rows.setMaxWidth(Double.MAX_VALUE);
         if (history.isEmpty()) {
             Label empty = new Label("No completed reading checks yet.");
             empty.setWrapText(true);
@@ -242,15 +238,18 @@ public final class MenuController {
                     + TIME.format(result.attempt().completedAt()) + "\n"
                     + result.attempt().correctAnswers() + " / " + result.attempt().totalQuestions()
                     + " correct — " + Math.round(result.attempt().score() * 100) + "%\n"
-                    + "Assessed difficulty: " + result.assessedDifficulty()
-                    + "  ·  Next difficulty: " + result.nextDifficulty();
+                    + LevelCopy.questionLevel(result.assessedDifficulty())
+                    + "  ·  " + LevelCopy.nextQuestionLevel(result.nextDifficulty());
             Label record = new Label(text);
             record.setWrapText(true);
+            record.setMinWidth(0);
+            record.setMaxWidth(Double.MAX_VALUE);
             record.getStyleClass().add("history-record");
             rows.getChildren().add(record);
         }
         Label rule = new Label("Story choices do not affect scores. Only the first submitted answer is scored.");
         rule.setWrapText(true);
+        rule.setMaxWidth(Double.MAX_VALUE);
         rule.getStyleClass().add("dialog-note");
         rows.getChildren().add(rule);
         ScrollPane scroll = new ScrollPane(rows);
@@ -263,23 +262,24 @@ public final class MenuController {
     @FXML private void logout() {
         boolean unsaved = navigator.backend().accountGameService().hasUnsavedProgress();
         if (!navigator.confirm("Log out?", unsaved
-                ? "Unsaved progress will be lost. Log out of this account?" : "Return to the login screen?")) return;
+                ? "You have unsaved progress that will be lost. Log out anyway?"
+                : "Return to the login screen? Your saved progress is kept.")) return;
         run("Logout", () -> {
             navigator.backend().accountGameService().logout(true);
             return true;
         }, ignored -> {
             try { navigator.showAccount(); }
-            catch (IOException failure) { navigator.notice("Screen unavailable", "The login screen could not open."); }
+            catch (IOException failure) { navigator.notice("Could not open the screen", "The login screen could not open."); }
         }, failure -> {
             if (navigator.backend().accountGameService().currentAccount().isEmpty()) {
                 try { navigator.showAccount(); }
                 catch (IOException unavailable) {
-                    navigator.notice("Screen unavailable", "The login screen could not open. Please restart the application.");
+                    navigator.notice("Could not open the screen", "The login screen could not open. Please restart the application.");
                     return;
                 }
                 navigator.notice("Logged out", "Your account was signed out, but game cleanup could not finish. "
                         + "Please restart before beginning a new game.");
-            } else navigator.notice("Logout unavailable", "The account could not be signed out. Please try again.");
+            } else navigator.notice("Could not sign you out", "The account could not be signed out. Please try again.");
         });
     }
 
@@ -290,6 +290,7 @@ public final class MenuController {
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
         Slider textSize = new Slider(0.8, 1.6, navigator.readingFontScale());
         textSize.setId("readingTextSize");
+        textSize.setPrefWidth(420);
         textSize.setShowTickMarks(true);
         textSize.setShowTickLabels(true);
         textSize.setMajorTickUnit(0.2);
@@ -314,12 +315,8 @@ public final class MenuController {
             reducedMotion.setSelected(false);
         });
         VBox content = new VBox(14, textSizeLabel, textSize, artwork, reducedMotion, reset);
-        if (!navigator.fontNotice().isEmpty()) {
-            Label fontNotice = new Label(navigator.fontNotice());
-            fontNotice.setWrapText(true);
-            fontNotice.getStyleClass().add("dialog-note");
-            content.getChildren().add(fontNotice);
-        }
+        content.setPrefWidth(460);
+        content.setMinWidth(460);
         if (!navigator.stageDirectionsNotice().isEmpty()) {
             Label stageNotice = new Label(navigator.stageDirectionsNotice());
             stageNotice.setWrapText(true);
@@ -327,6 +324,7 @@ public final class MenuController {
             content.getChildren().add(stageNotice);
         }
         content.setPadding(new Insets(8));
+        dialog.getDialogPane().setPrefWidth(520);
         dialog.getDialogPane().setContent(content);
         navigator.styleDialog(dialog);
         if (dialog.showAndWait().filter(ButtonType.APPLY::equals).isPresent()) {
@@ -339,7 +337,7 @@ public final class MenuController {
     @FXML private void audioSettings() { navigator.showAudioSettings(); }
 
     @FXML private void credits() {
-        Dialog<Void> dialog = dialog("Credits", "Music, model, and provisional artwork");
+        Dialog<Void> dialog = dialog("Credits", "Music, helper, and artwork");
         VBox entries = new VBox(12);
         entries.setPadding(new Insets(8));
         entries.setFillWidth(true);
@@ -352,11 +350,10 @@ public final class MenuController {
                         + "https://pixabay.com/music/crime-scene-investigation-piano-611639/\n"
                         + "https://pixabay.com/music/crime-scene-tense-atmosphere-cinematic-loop-piano-mystery-343445/\n"
                         + "https://pixabay.com/service/license-summary/"),
-                credit("Difficulty helper", "Qwen2.5-0.5B-Instruct by Qwen, licensed under Apache 2.0. "
-                        + "The model is an optional general instruction model, not a validated reading-level classifier.\n"
+                credit("Reading helper", "Optional helper: Qwen2.5-0.5B-Instruct by Qwen, licensed under Apache 2.0. "
+                        + "The game always chooses the final level.\n"
                         + "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct"),
-                credit("Player artwork", "The two player portraits are provisional generated art for this project. "
-                        + "Review them with the group before treating them as final."));
+                credit("Player artwork", "The two player portraits are generated artwork for this project."));
         ScrollPane scroll = new ScrollPane(entries);
         scroll.setId("creditsScroll");
         scroll.setFitToWidth(true);
@@ -380,19 +377,19 @@ public final class MenuController {
 
     @FXML private void characterSettings() {
         try { navigator.showAppearanceSelection(); }
-        catch (IOException failure) { navigator.notice("Appearance unavailable", "Please try again."); }
+        catch (IOException failure) { navigator.notice("Could not open your character", "Please try again."); }
     }
 
     @FXML private void quit() { navigator.requestQuit(); }
 
     private boolean allowDiscard(String title) {
         return !navigator.backend().accountGameService().hasUnsavedProgress()
-                || navigator.confirm(title, "Unsaved progress will be lost. Continue?");
+                || navigator.confirm(title, "You have unsaved progress that will be lost. Continue?");
     }
 
     private void showGameplay() {
         try { navigator.showCurrentGame(); }
-        catch (IOException failure) { navigator.notice("Game screen unavailable", "The game screen could not open."); }
+        catch (IOException failure) { navigator.notice("Could not open the story", "The game screen could not open."); }
     }
 
     private Dialog<Void> dialog(String title, String header) {
@@ -412,13 +409,13 @@ public final class MenuController {
             if (failure instanceof ConfirmationRequiredException)
                 message = "This action needs confirmation. Reopen Save/Load and try again.";
             else if (failure instanceof UnsupportedOperationException)
-                message = "The requested story action is not available. Your existing progress is unchanged.";
+                message = "That story action isn't available right now. Your saved progress is unchanged.";
             else if (failure instanceof IllegalArgumentException)
-                message = "The selected chapter or checkpoint is not valid for this action. Your existing progress is unchanged.";
+                message = "That chapter or checkpoint isn't available for this action. Your saved progress is unchanged.";
             else if (failure instanceof IllegalStateException)
-                message = "The selected progress is not available for this action. Check your account or chapter state.";
-            else message = "The operation failed. Your previous progress has not been replaced.";
-            navigator.notice(action + " unavailable", message);
+                message = "That saved progress isn't available right now. Your saved progress is unchanged.";
+            else message = "That didn't work. Your saved progress is unchanged.";
+            navigator.notice("Could not do that", message);
         });
     }
 

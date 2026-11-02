@@ -57,7 +57,7 @@ class OpeningScreenUiTest {
                 stage = new Stage();
                 new OpeningScreen(stage, audio, reporter -> {
                     reporter.update(4, 4, "Ready");
-                    return new OpeningScreen.Loaded(BackendContext.inMemory(), "Temporary storage");
+                    return new OpeningScreen.Loaded(BackendContext.inMemory());
                 }, preferences).start();
                 return null;
             });
@@ -85,7 +85,7 @@ class OpeningScreenUiTest {
             stage = new Stage();
             new OpeningScreen(stage, new GameAudio(new SilentOutput()), reporter -> {
                 reporter.update(4, 4, "Ready");
-                return new OpeningScreen.Loaded(BackendContext.inMemory(), "Temporary storage");
+                return new OpeningScreen.Loaded(BackendContext.inMemory());
             }, preferences, true).start();
             return null;
         });
@@ -103,7 +103,7 @@ class OpeningScreenUiTest {
                 reporter.update(1, 4, "Preparing test content");
                 if (!release.await(20, TimeUnit.SECONDS)) throw new IllegalStateException("Test loader timed out");
                 reporter.update(4, 4, "Ready");
-                return new OpeningScreen.Loaded(BackendContext.inMemory(), "Temporary storage");
+                return new OpeningScreen.Loaded(BackendContext.inMemory());
             }).start();
             stage.toFront(); stage.requestFocus();
             return null;
@@ -167,7 +167,7 @@ class OpeningScreenUiTest {
                 if (attempts.getAndIncrement() == 0)
                     throw new OpeningScreen.LoadFailure("Default story pack is missing. Restore it or set ARG_CONTENT_PACK.");
                 reporter.update(4, 4, "Ready");
-                return new OpeningScreen.Loaded(BackendContext.inMemory(), "Temporary storage");
+                return new OpeningScreen.Loaded(BackendContext.inMemory());
             }).start();
             stage.toFront(); stage.requestFocus();
             return null;
@@ -182,7 +182,7 @@ class OpeningScreenUiTest {
         assertEquals(2, attempts.get());
     }
 
-    @Test void completedTaskCannotBeEnteredUntilTheLoadingAnimationFinishes() throws Exception {
+    @Test void startupCannotBeEnteredBeforeTheLoadingTaskCompletes() throws Exception {
         CountDownLatch finishStartup = new CountDownLatch(1);
         fx(() -> {
             stage = new Stage();
@@ -191,15 +191,18 @@ class OpeningScreenUiTest {
                 if (!finishStartup.await(20, TimeUnit.SECONDS))
                     throw new IllegalStateException("Test loader timed out");
                 reporter.update(4, 4, "Startup work complete");
-                return new OpeningScreen.Loaded(BackendContext.inMemory(), "Temporary storage");
+                return new OpeningScreen.Loaded(BackendContext.inMemory());
             }).start();
             stage.toFront(); stage.requestFocus();
             return null;
         });
         await(() -> ((Label) root("#loadingStatus")).getText().equals("Preparing account services"));
         click("#skipOpening");
-        finishStartup.countDown();
-        await(() -> ((Label) root("#loadingStatus")).getText().equals("Finishing the loading sequence..."));
+        assertTrue(fx(() -> root("#loadingScreen").isVisible()));
+        assertFalse(fx(() -> root("#enterGame").isVisible()),
+                "Enter must stay hidden while the startup task is still running.");
+        assertTrue(fx(() -> ((ProgressBar) root("#startupProgress")).getProgress() < 1),
+                "The progress bar must not claim completion before the startup work is done.");
         fx(() -> {
             new Robot().keyPress(KeyCode.SPACE);
             new Robot().keyRelease(KeyCode.SPACE);
@@ -207,9 +210,10 @@ class OpeningScreenUiTest {
             new Robot().keyRelease(KeyCode.ENTER);
             return null;
         });
+        assertNull(fx(() -> root("#accountRoot")),
+                "Neither Space nor Enter may enter the game before the startup task completes.");
         assertTrue(fx(() -> root("#loadingScreen").isVisible()));
-        assertFalse(fx(() -> root("#enterGame").isVisible()),
-                "The game must stay on the loading screen until its bar animation completes.");
+        finishStartup.countDown();
         await(() -> root("#enterGame").isVisible());
         assertEquals(1, fx(() -> ((ProgressBar) root("#startupProgress")).getProgress()), 0.001);
         fx(() -> {

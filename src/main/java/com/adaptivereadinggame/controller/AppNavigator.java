@@ -48,7 +48,6 @@ public final class AppNavigator {
             "(?i)(^|[.!?,;:]\\s+)servant(?=\\s*[,;:.!?])");
     private final Stage stage;
     private final BackendContext backend;
-    private final String storageDescription;
     private final StoryStageDirections stageDirections;
     private final GameAudio audio;
     private final PlayerPreferences preferences;
@@ -69,30 +68,27 @@ public final class AppNavigator {
     private UUID storyLogChapter;
     private ChapterSummary pendingChapter;
 
-    public AppNavigator(Stage stage, BackendContext backend, String storageDescription) {
-        this(stage, backend, storageDescription, loadStageDirections(), new GameAudio(new JavaFxAudioOutput()), PlayerPreferences.temporary());
+    public AppNavigator(Stage stage, BackendContext backend) {
+        this(stage, backend, loadStageDirections(), new GameAudio(new JavaFxAudioOutput()), PlayerPreferences.temporary());
     }
 
-    public AppNavigator(Stage stage, BackendContext backend, String storageDescription, GameAudio audio) {
-        this(stage, backend, storageDescription, loadStageDirections(), audio, PlayerPreferences.temporary());
+    public AppNavigator(Stage stage, BackendContext backend, GameAudio audio) {
+        this(stage, backend, loadStageDirections(), audio, PlayerPreferences.temporary());
     }
 
-    public AppNavigator(Stage stage, BackendContext backend, String storageDescription, GameAudio audio,
-                        PlayerPreferences preferences) {
-        this(stage, backend, storageDescription, loadStageDirections(), audio, preferences);
+    public AppNavigator(Stage stage, BackendContext backend, GameAudio audio, PlayerPreferences preferences) {
+        this(stage, backend, loadStageDirections(), audio, preferences);
     }
 
-    public AppNavigator(Stage stage, BackendContext backend, String storageDescription,
-                        StoryStageDirections stageDirections) {
-        this(stage, backend, storageDescription, new StageDirectionsLoad(Objects.requireNonNull(stageDirections), ""),
+    public AppNavigator(Stage stage, BackendContext backend, StoryStageDirections stageDirections) {
+        this(stage, backend, new StageDirectionsLoad(Objects.requireNonNull(stageDirections), ""),
                 new GameAudio(new JavaFxAudioOutput()), PlayerPreferences.temporary());
     }
 
-    private AppNavigator(Stage stage, BackendContext backend, String storageDescription,
-                         StageDirectionsLoad stageLoad, GameAudio audio, PlayerPreferences preferences) {
+    private AppNavigator(Stage stage, BackendContext backend, StageDirectionsLoad stageLoad,
+                         GameAudio audio, PlayerPreferences preferences) {
         this.stage = Objects.requireNonNull(stage);
         this.backend = Objects.requireNonNull(backend);
-        this.storageDescription = Objects.requireNonNull(storageDescription);
         this.stageDirections = stageLoad.directions();
         this.stageDirectionsNotice = stageLoad.notice();
         this.audio = Objects.requireNonNull(audio);
@@ -104,7 +100,6 @@ public final class AppNavigator {
 
     public BackendContext backend() { return backend; }
     public Stage stage() { return stage; }
-    public String storageDescription() { return storageDescription; }
     public StoryStageDirections stageDirections() { return stageDirections; }
     public String stageDirectionsNotice() { return stageDirectionsNotice; }
     public boolean workInProgress() { return workInProgress; }
@@ -311,8 +306,7 @@ public final class AppNavigator {
         Label effectsLabel = new Label("Sound effects volume (zero mutes effects)");
         effectsLabel.setLabelFor(effects);
         Label credit = new Label("Music: Comfortable Mystery by Kevin MacLeod (incompetech.com), "
-                + "licensed under Creative Commons Attribution 4.0 (creativecommons.org/licenses/by/4.0/). "
-                + "Converted to WAV.");
+                + "licensed under Creative Commons Attribution 4.0 (creativecommons.org/licenses/by/4.0/).");
         credit.setId("musicCredit");
         credit.setWrapText(true);
         credit.setMinWidth(0);
@@ -338,6 +332,8 @@ public final class AppNavigator {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, ButtonType.YES, ButtonType.NO);
         alert.setTitle(title);
         alert.setHeaderText(title);
+        alert.getDialogPane().setContent(wrappingContent(message));
+        alert.getDialogPane().setPrefWidth(500);
         styleDialog(alert);
         return alert.showAndWait().filter(ButtonType.YES::equals).isPresent();
     }
@@ -346,8 +342,18 @@ public final class AppNavigator {
         Alert alert = new Alert(Alert.AlertType.INFORMATION, message, ButtonType.OK);
         alert.setTitle(title);
         alert.setHeaderText(title);
+        alert.getDialogPane().setContent(wrappingContent(message));
+        alert.getDialogPane().setPrefWidth(500);
         styleDialog(alert);
         alert.showAndWait();
+    }
+
+    private static Label wrappingContent(String message) {
+        Label content = new Label(message);
+        content.setWrapText(true);
+        content.setMinWidth(0);
+        content.setMaxWidth(440);
+        return content;
     }
 
     public void requestQuit() {
@@ -358,7 +364,7 @@ public final class AppNavigator {
         boolean signedIn = backend.accountGameService().currentAccount().isPresent();
         boolean unsaved = signedIn && backend.accountGameService().hasUnsavedProgress();
         String message = unsaved
-                ? "Unsaved progress will be lost. Close Adaptive Reading Game?"
+                ? "You have unsaved progress that will be lost. Close the game?"
                 : "Close Adaptive Reading Game?";
         if (!confirm("Quit the game?", message)) return;
         try {
@@ -395,7 +401,7 @@ public final class AppNavigator {
         } catch (IOException | RuntimeException unavailable) {
             System.err.println("Optional character staging could not be loaded; story dialogue remains available.");
             return new StageDirectionsLoad(StoryStageDirections.empty(),
-                    "Character staging could not be loaded. The story remains available.");
+                    "Some character images could not be loaded. The story is still available.");
         }
     }
 }

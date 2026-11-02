@@ -1,8 +1,8 @@
 # Adaptive Reading Game
 
-A school project for a story-driven reading game for elementary students. Players read stories, make story decisions, and answer comprehension questions. The application saves progress per account and adjusts reading difficulty after a completed checkpoint.
+A school project for a story-driven reading game for elementary students. Players read stories, make story decisions, and answer comprehension questions. The game supports account-based save slots and adjusts question difficulty after a completed checkpoint.
 
-This version connects account services, adaptive story checkpoints, MySQL repositories, the optional difficulty helper, and live JavaFX screens. The default story pack preserves two earlier chapter versions for existing saves and adds a new playable edition with a fuller conclusion and three questions at each difficulty for every checkpoint. It keeps the supplied story wording, Prince Owen, the Lord Robert reveal, and all four outcomes. The new conclusion and question set are project-authored and still need group and teacher review. The student game uses written dialogue and images. See [story content and art](assets/README.md) and the [Dev 1 handoff](docs/requirements/Dev1-Handoff.md).
+The JavaFX game includes account services, versioned story content, MySQL repositories, and an optional local difficulty helper. See [story content and art](assets/README.md) and the [Dev 1 handoff](docs/requirements/Dev1-Handoff.md).
 
 ## Requirements and running the app
 
@@ -27,7 +27,7 @@ Windows PowerShell, from the project root:
 
 To install missing tools and run the check without launching the game, add `--install-only` on Linux or macOS, or `-InstallOnly` in PowerShell. Automatic installation requires Homebrew on macOS and WinGet on Windows. On Linux the script supports DNF and APT.
 
-The setup script does not install or create a MySQL server, database, or user. Without MySQL variables the game runs with temporary in-memory storage. To use persistent storage, configure MySQL and apply the migrations in [database setup](database/README.md). Preflight checks the Java and Maven runtimes, story-pack path, and MySQL setting shape; it does not connect to MySQL or apply migrations.
+The setup script does not install or create a MySQL server, database, or user. To use persistent storage, configure MySQL and apply the migrations in [database setup](database/README.md). Preflight checks the Java and Maven runtimes, story-pack path, and MySQL setting shape; it does not connect to MySQL or apply migrations.
 
 You can run the preflight check by itself to confirm Java 21 or newer, including the runtime Maven uses, the selected story-pack file, and MySQL settings without changing the database. The check also reports missing optional Git LFS assets, story music, and model weights. If the check passes, use the launch script:
 
@@ -76,9 +76,9 @@ Launch the game from the same project root:
 
 The launcher checks that `xdpyinfo` can reach an X11 server before using a display socket. If a socket remains after its server exits, it removes that stale socket and starts a new display. It opens the Termux:X11 app before waiting for the display to answer. X11 startup diagnostics are written to `$HOME/.local/state/adaptive-reading-game/x11.log`. The game runs in a detached Debian PRoot session and requests fullscreen mode. The launcher writes a separate startup log to `target/termux-game-<timestamp>-<pid>.log` for each launch; `target/termux-game.log` points to the latest log. It uses Maven to compile changed Java sources, caches the runtime classpath under `target`, and starts Java directly with the JavaFX version configured in `pom.xml`. Setup prepares this cache so later launches do not need the JavaFX Maven launcher. Set `ARG_TERMUX_X11_DISPLAY=:1` to choose another display. JavaFX uses software rendering by default; set `ARG_TERMUX_PRISM_ORDER=es2` to request its accelerated pipeline. Set `ARG_TERMUX_MEDIA_DEBUG=true` to show detailed JavaFX media logs.
 
-The game uses temporary in-memory storage when MySQL settings are absent. The Java difficulty fallback works when the optional Python model helper is not running.
+Java's difficulty fallback keeps the game playable when the optional Python model helper is not running.
 
-Alpine 3.24.3 with OpenJDK 21 was tested on a Xiaomi Pad 7. Both normal JVM startup and `java -Xint` failed before JavaFX could run with `Failed to mark memory page as executable`. The Termux:X11 scripts therefore continue to use Debian PRoot on this device. The Alpine launch path is not supported until a Java runtime passes the same device test.
+The supported Termux:X11 launcher uses Debian PRoot. Alpine PRoot is not a supported launch target.
 
 The Termux launcher does not change Android's media-volume setting. If PulseAudio reports an active stream but the game sounds silent, raise the device's media volume and check its selected audio output.
 
@@ -88,7 +88,7 @@ Run `./scripts/termux-build-check.sh` from a Termux checkout when you only need 
 
 The launch class is `com.adaptivereadinggame.AdaptiveReadingGameApp`. It opens an animated text introduction and a loading screen. Once startup finishes, press Space or select Enter to open authentication. A new account selects a servant appearance before reaching the main menu.
 
-With no database settings, the app uses visibly labeled in-memory development storage. To use MySQL, set `ARG_DB_URL`, `ARG_DB_USER`, and `ARG_DB_PASSWORD`, then apply the schema described in [database setup](database/README.md).
+With no database settings, the app uses temporary in-memory storage and logs the storage mode at startup. To use MySQL, set `ARG_DB_URL`, `ARG_DB_USER`, and `ARG_DB_PASSWORD`, then apply the migrations described in [database setup](database/README.md). Migrations V001 through V006 are in `database/migrations/`.
 
 The app loads `assets/content/hailey-investigation-complete.json` when `ARG_CONTENT_PACK` is not set. That version-3 pack contains the unchanged review draft, the previous completed edition, and the new selectable edition under separate stable IDs. The new edition has 36 question entries across its four route-specific checkpoints, with three questions at each difficulty; a normal route answers six questions. Version-1 and version-2 packs remain supported, and older pack versions default to selectable chapters. See [the content-pack guide](assets/README.md).
 
@@ -100,43 +100,21 @@ For commands without Maven, see [Manual Compilation](Module%20Guide/Manual%20Com
 
 ## Current status
 
-- The text introduction includes a headphone recommendation and can be skipped. The loading screen rotates available artwork and reports startup progress; Reduce Motion is available during both stages.
-- Each account can select or change a provisional servant appearance. It applies to all saves for that account and does not affect story outcomes or scores.
-- The welcome and main menu show character artwork beside their controls on wider windows. On smaller windows, the artwork panel is hidden to keep the controls usable.
-- Main menu layout: title, decorative divider, New Game, Continue, Save/Load, Settings, Credits, and Quit.
-- Menus keep readable text as the window changes size and scroll when needed. Hover and keyboard focus states remain available.
-- Working signup/login/logout with normalized usernames, protected password verifiers, and matching account/student IDs.
-- Account-safe history, full-save, load, Continue, and assessment coordination; no controller-supplied student IDs.
-- Continue is enabled when the signed-in account has a full save. If an episode is active, the button becomes Return to Game and resumes its story, checkpoint, or result view. A new account has no saved progress.
-- Save/Load shows three account-specific slots with chapter, progress phase, difficulty, investigation order, and save time. Players can save and restore story, reading-check, results, and completed states; overwrite and unsaved-progress confirmations remain in place.
-- New Game labels previously assessed chapters as replays and explains that recorded answers and scores remain. It offers only the latest story edition for new play; earlier editions remain available to restore saved progress.
-- The playable story supports Study-first and Hall-first investigations, three questions per checkpoint and difficulty, and four conclusion outcomes. Narrative choices remain separate from comprehension scores.
-- Quit displays a confirmation before closing the window.
-- The earlier FXML dashboard remains in the project but is not the opening screen.
-- The older standalone backend demo may use synthetic records for local checks; it is not the player-facing story source. The JavaFX app loads story and question text from versioned JSON packs.
-- Shared story, checkpoint, game-state, and full-save records support story-pack versions 1 through 3. Save encoding uses version 2 and still reads version-1 snapshots.
-- Java owns first-answer scoring and the final difficulty decision. `ModelAssistedDifficultyPolicy` summarizes stored history, asks the optional local helper, validates the recommendation, and keeps the deterministic fallback.
-- The app selects MySQL when all three `ARG_DB_*` settings are present. It uses in-memory development storage when all three settings are absent.
-- MySQL adapters persist accounts, servant appearances, episodes, route choices, checkpoints, first-answer drafts, checkpoint results, decision sources, chapter availability, and three full-save slots. The schema migrations V001 through V006 are in `database/migrations/`.
-- Generic story transitions keep narrative choices separate from comprehension scoring. MySQL and in-memory adapters store chapter graphs and first-answer drafts; unfinished assessments can restore from their stored first answers.
-- The live app uses `how-to-play.fxml`, `gameplay.fxml`, `results.fxml`, and `analysis.fxml` for the adaptive story and checkpoint flow. The 40 `uiux-*.fxml` files remain visual references. The player can make story choices and answer the separate checkpoint question.
-- Reading and audio settings persist on the device through Java preferences. Players can change text size, character artwork, reduced motion, music, and sound-effect volume; Reset to defaults stays pending until Apply.
-- The opening, welcome, login, and main menu play optional background music. Button actions can play a click sound. Story scenes use optional local investigation and tense music; reading checks remain quiet. See [music and sound effects](assets/README.md#music-and-sound-effects).
-- Story Log shows up to 500 previously viewed story lines in the current session. Starting a chapter, loading saved progress, or signing out starts a fresh log. Reading questions and answers are not added.
-- Optional author-supplied stage directions can show a supporting character beside the current speaker. The [story content and art guide](assets/README.md) describes the cue file and fallback behavior.
-- Java integrates an optional local Qwen recommendation behind `DifficultyPolicy`. Java scores first answers, summarizes stored history, validates the recommendation, and applies the fallback. The Python helper returns one label and receives no account IDs or raw answers.
-- Qwen stays experimental and is not a trained reading-level classifier. Java holds the current level until three consecutive sections at the same difficulty exist, checks model suggestions, and applies its fallback. The pinned weight uses Git LFS, and the supplied image paths have Git LFS rules.
+- Startup shows the animated opening and loading progress. Space or Enter enters the game after loading; Reduce Motion is available.
+- Players can sign up, log in, select a servant appearance, adjust reading and audio settings, play stories, save and load progress, view Reading History, manage their account, and quit.
+- The default version-3 pack preserves earlier editions for saved progress and offers a new edition for new games. It supports both investigation orders and four story outcomes.
+- Each checkpoint stores three questions at every difficulty. A normal route presents six questions. Only each question's first submitted answer counts; story choices do not affect comprehension scores.
+- Reading level wording describes questions, not story scenes. Java owns scoring, persistence coordination, and the final difficulty choice. The optional Qwen helper suggests a level; Java applies its safeguards and fallback.
+- The game uses written dialogue and images. Menu music and a click effect are bundled; optional story tracks remain local under their distribution terms. The 40 `uiux-*.fxml` files are visual references; the running game uses `how-to-play.fxml`, `gameplay.fxml`, `results.fxml`, and `analysis.fxml`.
+- See the [integration verification report](docs/requirements/Final-Integration-Verification-2026-11-02.md) for test results and platform limits. The new story conclusion and question set need group and teacher review. Educational quality of the optional model has not been evaluated; teacher and parent reporting remains deferred.
 
-Java unit tests, JavaFX input tests, disposable-MySQL tests, Python helper tests, and an opt-in real-model smoke test cover their respective code paths. The new chapter edition is authored and playable, but the group and teacher have not reviewed its conclusion or answer keys. The existing supplied story text was kept unchanged at the user's direction, so this release does not claim an age-suitability review. The model has not been evaluated for reading outcomes. Teacher and parent/guardian reporting are deferred. See [game finalization QA](docs/requirements/Game-Finalization-QA-2026-10-30.md) for the current test results and limits, alongside the [player experience update verification](docs/requirements/Player-Experience-Update-2026-10-30.md).
+## Backend development
 
-## Current implementation ownership
+Java owns account boundaries, answer scoring, save and load coordination, and difficulty decisions. Player-facing controllers call `AccountGameService`; repository adapters provide temporary in-memory or MySQL storage. See the [Backend Development Guide](docs/requirements/Backend-Development-Guide.md) for the implementation guide and the [Dev 1 handoff](docs/requirements/Dev1-Handoff.md) for current interfaces.
 
-The backend implementation is consolidated in the Dev1 workstream. The [Backend Development Guide](docs/requirements/Backend-Development-Guide.md) records the original service plan; the [Dev 1 handoff](docs/requirements/Dev1-Handoff.md) describes the current implementation and remaining group inputs.
+Story and question text comes from the versioned content pack.
 
-- Backend implementation: accounts, gameplay, MySQL persistence, content-pack loading, and optional model integration are connected in this branch.
-- Remaining review inputs: review the newly authored ending and question set, confirm the player-character presentation and answer keys, and review final UI/UX details. The app loads story material through the versioned content pack rather than story-specific Java classes.
-
-Run the baseline backend without Python or a database:
+Run the backend tests and baseline console demo without Python or a database:
 
 ```sh
 mvn test
@@ -171,7 +149,6 @@ AdaptiveReadingGame/
 |-- Module Guide/                   Compilation instructions
 |-- src/main/
 |   |-- java/
-|   |   |-- MainController.java     Deprecated launcher forwarding to the main app
 |   |   `-- com/adaptivereadinggame/
 |   |       |-- ai/                 Java model client and recommendation service
 |   |       |-- audio/              Music and click sound playback
@@ -185,7 +162,7 @@ AdaptiveReadingGame/
 |   |       |   |-- GameplayController.java
 |   |       |   |-- ResultsController.java
 |   |       |   |-- AnalysisController.java
-|   |       |   `-- MainController.java
+|   |       |   `-- LevelCopy.java          Shared reading-level wording
 |   |       |-- model/
 |   |       |   |-- Account.java
 |   |       |   |-- AssessmentResult.java
@@ -230,7 +207,6 @@ AdaptiveReadingGame/
 |       |   |-- results.fxml
 |       |   |-- analysis.fxml
 |       |   |-- how-to-play.fxml
-|       |   |-- dashboard.fxml
 |       |   `-- uiux-*.fxml        Visual-only screen references
 |       `-- style/
 |           `-- application.css
@@ -299,8 +275,6 @@ When gameplay calls assessment completion, `ModelAssistedDifficultyPolicy` reads
 
 Gameplay can return to the main menu and resume the active story or reading check. Additional states include answer feedback and explanations, quit and overwrite confirmations, account validation errors, empty save slots, and disabled Continue when neither active nor saved progress exists.
 
-Story choices affect story events. Reading Checks assess understanding using the first submitted answer. A retry after the answer is revealed must not increase the assessment score.
-
-The new backend's `Difficulty` enum uses Easy, Medium, and Hard. Each current checkpoint has one question at each level, so one checkpoint score is 0% or 100%. Java stores each first answer and validates the recommendation before applying the next level. The optional model waits for three consecutive sections at the same level. This small draft cannot establish that the rule or model measures reading ability. The older four-band `ReadingLevel` enum is separate and does not affect checkpoint difficulty.
+The `Difficulty` enum uses Easy, Medium, and Hard. Each checkpoint in the new edition asks three questions at the selected level, so its score can be 0%, 33%, 67%, or 100%. Java stores first answers and validates difficulty recommendations. The optional model requires three consecutive completed sections at the same level, while the story has two checkpoints per route, so a normal playthrough uses Java's fallback. The model smoke test checks the request contract; it does not establish that the rule or model measures reading ability. The older four-band `ReadingLevel` enum does not affect checkpoint difficulty.
 
 The [concept proposal](https://docs.google.com/document/d/1XHok_fuPZJek9GvWUSSv_Bs5QgfURQUb/edit) asks for educator diagnostic reports and transparent parent/guardian progress views. It does not define viewing roles, report fields, or a student-skill taxonomy. Those decisions are needed before implementing the views.

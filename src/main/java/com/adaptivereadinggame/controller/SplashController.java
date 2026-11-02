@@ -151,7 +151,7 @@ public final class SplashController {
     @FXML private void begin() {
         finishIntro();
         try { navigator.showAccount(); }
-        catch (IOException failure) { navigator.notice("Welcome unavailable", "The welcome screen could not open. Please restart the game."); }
+        catch (IOException failure) { navigator.notice("Could not open the welcome screen", "Please close the game and open it again."); }
     }
 
     @FXML private void audioSettings() { navigator.showAudioSettings(); }

@@ -53,7 +53,7 @@ public final class ResultsController {
             return new ResultsData(result, game.chapter().title(), next, adaptive, sectionEnd, terminal, game.storyNode().dialogueText(),
                     totalCorrect, totalQuestions, episodeResults.size());
         }, this::render, failure -> {
-            navigator.notice("Results unavailable", "The saved chapter result could not be opened.");
+            navigator.notice("Could not open your result", "The saved chapter result could not be opened.");
             mainMenu();
         });
     }
@@ -67,14 +67,14 @@ public final class ResultsController {
                 ? "Story section score: " + percent(data.totalCorrect(), data.totalQuestions()) + "%"
                 : "Comprehension score: " + Math.round(result.attempt().score() * 100) + "%");
         answerCountLabel.setText(data.adaptive() && !data.terminal()
-                ? checkpointTitle(result.attempt().checkpointId()) + " checkpoint: "
+                ? checkpointTitle(result.attempt().checkpointId()) + " reading check: "
                         + result.attempt().correctAnswers() + " of " + result.attempt().totalQuestions() + " correct"
                 : data.totalCorrect() + " of " + data.totalQuestions() + " first answers correct");
         episodeProgressLabel.setVisible(data.adaptive());
         episodeProgressLabel.setManaged(data.adaptive());
         if (data.adaptive()) episodeProgressLabel.setText("Reading checks completed: " + data.checkpointCount()
                 + "  ·  Story choices do not affect your score.");
-        nextDifficultyLabel.setText("Next difficulty: " + titleCase(result.nextDifficulty().name()));
+        nextDifficultyLabel.setText(LevelCopy.nextQuestionLevel(result.nextDifficulty()));
         decisionSourceLabel.setText(sourceMessage(result.decisionSource()));
         nextChapters = List.copyOf(data.nextChapters());
         boolean adaptiveAction = data.adaptive();
@@ -89,11 +89,11 @@ public final class ResultsController {
                 ? data.terminal()
                     ? data.completionMessage()
                     : data.sectionEnd()
-                        ? "This is the last available checkpoint. Continue to the end of this story section."
-                        : "Your first answer is recorded. Continue to the other investigation area at the recommended difficulty."
+                        ? "This is the last reading check. Continue to the end of this story section."
+                        : "Your answer is recorded. Continue to the other investigation area."
                 : available
-                    ? "Your result is recorded. Choose a prepared chapter at the recommended difficulty."
-                    : "Your result is recorded. No chapter is loaded at the recommended difficulty yet.");
+                    ? "Your result is saved. Choose the next chapter at your recommended level."
+                    : "Your result is saved. There is no chapter at your recommended level yet.");
     }
 
     @FXML private void nextChapter() {
@@ -104,19 +104,19 @@ public final class ResultsController {
             if (current.storyNode().storyComplete()) { mainMenu(); return; }
             navigator.runAsync("Continue story", accountGame::continueAfterCheckpoint, ignored -> {
                 showGameplay();
-            }, failure -> navigator.notice("Story unavailable", "The saved checkpoint outcome could not be opened."));
+            }, failure -> navigator.notice("Could not open the story", "Your saved progress could not be opened."));
             return;
         }
         if (nextChapters.isEmpty()) return;
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Next challenge");
-        dialog.setHeaderText("Choose a " + titleCase(nextChapters.getFirst().difficulty().name()) + " chapter");
+        dialog.setHeaderText("Choose your next chapter");
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
         dialog.getDialogPane().setPrefWidth(620);
         VBox choices = new VBox(12);
         ChapterSummary[] selectedChapter = new ChapterSummary[1];
         for (ChapterSummary chapter : nextChapters) {
-            Button button = new Button(chapter.title() + "  ·  " + titleCase(chapter.difficulty().name()));
+            Button button = new Button(chapter.title() + "  ·  " + LevelCopy.questionLevel(chapter.difficulty()));
             button.setMaxWidth(Double.MAX_VALUE);
             button.getStyleClass().add("chapter-choice-button");
             button.setOnAction(event -> {
@@ -130,30 +130,30 @@ public final class ResultsController {
         dialog.showAndWait();
         ChapterSummary selected = selectedChapter[0];
         if (selected == null || !navigator.confirm("Start next chapter?",
-                "Your result is saved. Starting a new chapter replaces any remaining unsaved story state.")) return;
+                "Your result is saved. Starting a new chapter will replace any unsaved story progress.")) return;
         navigator.runAsync("Start next chapter",
                 () -> navigator.backend().accountGameService().startChapter(selected.id(), true),
                 ignored -> { navigator.clearStoryLog(); showGameplay(); }, failure -> {
-                    navigator.notice("Chapter unavailable", "The selected chapter could not be started.");
+                    navigator.notice("Could not open that chapter", "The selected chapter could not be started.");
                 });
     }
 
     @FXML private void mainMenu() {
         try { navigator.showMenu(); }
-        catch (IOException failure) { navigator.notice("Screen unavailable", "The main menu could not open."); }
+        catch (IOException failure) { navigator.notice("Could not open the screen", "The main menu could not open."); }
     }
 
     private void showGameplay() {
         try { navigator.showGameplay(); }
-        catch (IOException failure) { navigator.notice("Game screen unavailable", "Return to the main menu and resume the game."); }
+        catch (IOException failure) { navigator.notice("Could not open the story", "Return to the main menu and resume the game."); }
     }
 
     private static String sourceMessage(DifficultyDecisionSource source) {
         return switch (source) {
-            case MODEL -> "The game checked a reading helper's suggestion before choosing this level.";
-            case JAVA_FALLBACK -> "The reading helper was unavailable, so the game used its usual rule.";
-            case JAVA_GUARDRAIL -> "Your level stayed the same after the game checked the suggestion.";
-            case JAVA_RULES -> "Your next reading level is based on your reading-check results.";
+            case MODEL -> "The reading helper suggested this level after checking your recent results.";
+            case JAVA_FALLBACK -> "The reading helper was unavailable, so the game chose your level from your recent results.";
+            case JAVA_GUARDRAIL -> "The game kept your current level after checking the suggestion.";
+            case JAVA_RULES -> "Your next level is based on your reading-check results.";
         };
     }
 

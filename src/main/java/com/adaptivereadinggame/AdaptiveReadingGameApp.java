@@ -28,32 +28,35 @@ public class AdaptiveReadingGameApp extends Application {
     private static OpeningScreen.Loaded loadGame(OpeningScreen.Reporter progress) throws Exception {
         progress.update(0, 4, "Checking the game settings...");
         var database = MySqlConfig.fromEnvironment();
-        progress.update(1, 4, "Preparing account and game services...");
+        progress.update(1, 4, "Getting your saves ready...");
         BackendContext backend = database.map(BackendContext::mysql)
                 .orElseGet(BackendContext::inMemoryWithModel);
-        progress.update(2, 4, "Finding the story content...");
+        System.err.println(database.isPresent()
+                ? "Storage: MySQL"
+                : "Storage: temporary in-memory (accounts and saves are lost when the app closes)");
+        progress.update(2, 4, "Finding the story...");
         String configuredContentPack = System.getenv("ARG_CONTENT_PACK");
         Path contentPack;
         try {
             contentPack = resolveContentPack(configuredContentPack, Path.of("."));
         } catch (IOException failure) {
-            throw new OpeningScreen.LoadFailure(failure.getMessage(), failure);
+            System.err.println("Story content unavailable: " + failure.getMessage());
+            throw new OpeningScreen.LoadFailure(
+                    "The story could not be found. Please close the game and open it again.", failure);
         }
-        progress.update(3, 4, "Loading the story and reading checks...");
+        progress.update(3, 4, "Opening the story...");
         var importer = backend.storyPackImporter().orElseThrow(() ->
                 new IllegalStateException("The selected storage adapter cannot import prepared story content."));
         try {
             int loadedChapters = importer.importFile(contentPack);
             System.out.println("Loaded " + loadedChapters + " story chapter(s) from " + contentPack + ".");
         } catch (IOException | IllegalArgumentException | IllegalStateException failure) {
-            throw new OpeningScreen.LoadFailure("The story pack could not be loaded from " + contentPack
-                    + ". Check its JSON format and the ARG_CONTENT_PACK path.", failure);
+            System.err.println("Story pack load failed: " + contentPack + " - " + failure);
+            throw new OpeningScreen.LoadFailure(
+                    "The story could not be opened. Please close the game and open it again.", failure);
         }
-        String storage = database.isPresent()
-                ? "MySQL storage — accounts, assessments, and saves persist across restarts."
-                : "Temporary storage — accounts and saves disappear when the app closes.";
         progress.update(4, 4, "Game ready.");
-        return new OpeningScreen.Loaded(backend, storage);
+        return new OpeningScreen.Loaded(backend);
     }
 
     static Path resolveContentPack(String configuredContentPack, Path projectRoot) throws IOException {

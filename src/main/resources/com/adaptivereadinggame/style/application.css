@@ -56,7 +56,7 @@
 .main-menu .menu-scroll, .main-menu .menu-scroll .viewport { -fx-background-color: linear-gradient(to bottom right, #35101f, #692036); }
 .main-menu .menu-title { -fx-text-fill: #fff3d1; }
 .main-menu .menu-section-label { -fx-text-fill: #f0d493; }
-.main-menu .account-note, .main-menu .runtime-note { -fx-text-fill: #f7e8cf; }
+.main-menu .account-note { -fx-text-fill: #f7e8cf; }
 .main-menu .account-link { -fx-text-fill: #fff0cc; }
 .main-menu .account-link:hover { -fx-background-color: #862a3d; -fx-text-fill: white; }
 .main-menu .account-link:focused { -fx-border-color: #f4db92; -fx-border-width: 2px; }
@@ -136,7 +136,7 @@
 .game-title { -fx-font-size: 68px; }
 .auth-heading { -fx-font-family: "Times New Roman"; -fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #5b1427; }
 .auth-body, .auth-input, .auth-action, .auth-secondary, .auth-status,
-.account-link, .account-note, .runtime-note { -fx-font-family: "Georgia"; }
+.account-link, .account-note { -fx-font-family: "Georgia"; }
 .auth-body { -fx-font-size: 16px; -fx-text-fill: #4a3d39; }
 .auth-input { -fx-font-size: 16px; -fx-background-color: white; -fx-border-color: #c9b68a; -fx-border-radius: 8px; -fx-padding: 10px 13px; }
 .auth-input:focused { -fx-border-color: #6e1428; -fx-border-width: 2px; }
@@ -156,7 +156,6 @@
 .account-screen .account-link:hover { -fx-background-color: rgba(212, 175, 55, 0.14); -fx-text-fill: white; }
 .account-screen .account-link:focused { -fx-border-color: #f2d783; -fx-border-width: 2px; }
 .account-note { -fx-font-size: 16px; -fx-text-fill: #f2e4cf; }
-.runtime-note { -fx-font-size: 13px; -fx-text-fill: #e0d0b9; }
 .reference-dialog { -fx-background-color: #fff8ed; -fx-background-radius: 16px; -fx-border-color: #d4af37; -fx-border-radius: 16px; -fx-font-family: "Georgia"; -fx-font-size: 15px; }
 .reference-dialog .header-panel { -fx-background-color: #6e1428; -fx-border-color: #b89845; -fx-border-width: 0 0 2px 0; }
 .reference-dialog .header-panel .label { -fx-font-family: "Times New Roman"; -fx-text-fill: white; -fx-font-size: 23px; }
@@ -231,7 +230,7 @@
 .gameplay-footer { -fx-padding: 9px 18px 12px 18px; -fx-background-color: rgba(38, 12, 24, 0.92); -fx-border-color: #9c7426 transparent transparent transparent; -fx-border-width: 1px 0 0 0; }
 .gameplay-footer.story-footer { -fx-padding: 6px 16px; -fx-background-color: rgba(39, 12, 24, 0.72); -fx-border-color: rgba(212, 175, 55, 0.55) transparent transparent transparent; -fx-border-width: 1px 0 0 0; }
 .story-footer .gold-button { -fx-padding: 7px 26px; -fx-font-size: 19px; }
-.gameplay-footer-text, .gameplay-font-notice { -fx-font-family: "Georgia"; -fx-font-size: 13px; -fx-text-fill: #eee0c5; }
+.gameplay-footer-text { -fx-font-family: "Georgia"; -fx-font-size: 13px; -fx-text-fill: #eee0c5; }
 .story-log-speaker { -fx-font-family: "Times New Roman"; -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #73121f; }
 .story-log-text { -fx-font-family: "Times New Roman"; -fx-font-size: 18px; -fx-text-fill: #262626; }
 .results-root { -fx-background-color: linear-gradient(to bottom right, #28121c, #4d1827 52%, #261421); }
@@ -266,7 +265,6 @@
 .responsive-option { -fx-font-size: 20px; -fx-min-height: 46px; -fx-padding: 10px 18px; }
 .menu-content .account-note { -fx-font-size: 15px; }
 .menu-content .account-link { -fx-font-size: 14px; }
-.menu-content .runtime-note, .account-content .runtime-note { -fx-font-size: 14px; }
 .compact-menu .menu-title { -fx-font-size: 34px; }
 .compact-menu .menu-content { -fx-padding: 10px 20px; -fx-spacing: 7px; }
 .compact-menu .menu-options-card { -fx-padding: 10px; }

@@ -12,6 +12,7 @@ import javafx.animation.PauseTransition;
 import javafx.animation.SequentialTransition;
 import javafx.animation.Timeline;
 import javafx.animation.Transition;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -46,7 +47,7 @@ import java.util.Objects;
 
 /** A skippable text opening followed by actual startup progress and optional artwork. */
 public final class OpeningScreen {
-    public record Loaded(BackendContext backend, String storageDescription) {}
+    public record Loaded(BackendContext backend) {}
     public static final class LoadFailure extends Exception {
         public LoadFailure(String message, Throwable cause) { super(message, cause); }
         public LoadFailure(String message) { super(message); }
@@ -358,23 +359,27 @@ public final class OpeningScreen {
         task.progressProperty().addListener((observable, previous, next) -> {
             double target = next.doubleValue();
             if (target < 0) return;
-            if (reduceMotion.isSelected()) {
-                progress.setProgress(target);
-                return;
-            }
-            if (progressAnimation != null) progressAnimation.stop();
-            double start = Math.max(0, progress.getProgress());
-            Transition animation = new Transition() {
-                { setCycleDuration(Duration.millis(1200)); }
-                @Override protected void interpolate(double fraction) {
-                    progress.setProgress(start + (target - start) * fraction);
+            // Task reports progress from its worker thread; animations and nodes belong to the FX thread.
+            Platform.runLater(() -> {
+                if (closed) return;
+                if (reduceMotion.isSelected()) {
+                    progress.setProgress(target);
+                    return;
                 }
-            };
-            progressAnimation = animation;
-            animation.setOnFinished(event -> {
-                if (progressAnimation == animation && loaded != null) updateReady();
+                if (progressAnimation != null) progressAnimation.stop();
+                double start = Math.max(0, progress.getProgress());
+                Transition animation = new Transition() {
+                    { setCycleDuration(Duration.millis(1200)); }
+                    @Override protected void interpolate(double fraction) {
+                        progress.setProgress(start + (target - start) * fraction);
+                    }
+                };
+                progressAnimation = animation;
+                animation.setOnFinished(event -> {
+                    if (progressAnimation == animation && loaded != null) updateReady();
+                });
+                animation.play();
             });
-            animation.play();
         });
         status.textProperty().unbind();
         status.textProperty().bind(task.messageProperty());
@@ -384,10 +389,11 @@ public final class OpeningScreen {
             Throwable failure = task.getException();
             status.setText(failure instanceof LoadFailure loadFailure
                     ? loadFailure.getMessage()
-                    : "The game could not finish loading. Check the database and story content setup, then retry.");
+                    : "The game could not finish loading. Please retry, or restart the game.");
             retry.setVisible(true); retry.setManaged(true);
             retry.requestFocus();
             System.err.println("Game startup failed: " + task.getException().getClass().getSimpleName());
+            task.getException().printStackTrace();
         });
         Thread thread = new Thread(task, "game-startup");
         thread.setDaemon(true);
@@ -439,7 +445,7 @@ public final class OpeningScreen {
         scene.removeEventFilter(ActionEvent.ACTION, soundFilter);
         scene.removeEventFilter(KeyEvent.KEY_PRESSED, keyFilter);
         try {
-            AppNavigator navigator = new AppNavigator(stage, loaded.backend(), loaded.storageDescription(), audio, preferences);
+            AppNavigator navigator = new AppNavigator(stage, loaded.backend(), audio, preferences);
             navigator.setReducedMotion(reduceMotion.isSelected());
             navigator.startAtAccount();
         } catch (IOException failure) {
