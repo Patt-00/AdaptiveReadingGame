@@ -118,7 +118,7 @@ install_loopback_config() {
 install_apt_mysql() {
     local architecture package
     architecture="$(dpkg --print-architecture)"
-    [[ "$architecture" == amd64 || "$architecture" == i386 ]] \
+    [[ "$architecture" == amd64 ]] \
         || fail "The MySQL APT repository does not publish server packages for $architecture. Use the Termux setup for Termux or install a supported local server manually."
 
     command -v curl >/dev/null 2>&1 || {

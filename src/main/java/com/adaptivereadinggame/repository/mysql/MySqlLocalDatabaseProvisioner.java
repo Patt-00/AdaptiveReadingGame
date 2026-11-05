@@ -120,7 +120,7 @@ public final class MySqlLocalDatabaseProvisioner {
         if (Boolean.parseBoolean(System.getenv().getOrDefault("ARG_DB_ADMIN_USE_SUDO", "false")))
             command.add("sudo");
         command.add(client);
-        command.addAll(List.of("--protocol=socket", "--user=root", "--batch", "--skip-column-names"));
+        command.addAll(List.of("--no-defaults", "--protocol=socket", "--user=root", "--batch", "--skip-column-names"));
         Process process = new ProcessBuilder(command)
                 .redirectErrorStream(true).start();
         try (OutputStream input = process.getOutputStream()) {

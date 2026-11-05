@@ -71,7 +71,7 @@ class MySqlLocalDatabaseProvisionerIntegrationTest {
     }
 
     private static void removeWithLocalSocket(String sql) throws IOException, InterruptedException {
-        Process process = new ProcessBuilder("mariadb", "--protocol=socket", "--user=root", "--batch")
+        Process process = new ProcessBuilder("mariadb", "--no-defaults", "--protocol=socket", "--user=root", "--batch")
                 .redirectErrorStream(true).start();
         try (OutputStream input = process.getOutputStream()) {
             input.write(sql.getBytes(StandardCharsets.UTF_8));
