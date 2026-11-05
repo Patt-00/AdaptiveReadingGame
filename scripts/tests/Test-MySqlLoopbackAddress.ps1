@@ -15,6 +15,9 @@ try {
     if ($Configured -notmatch '(?im)^mysqlx-bind-address\s*=\s*127\.0\.0\.1\s*$') {
         throw 'The config file does not bind MySQL X Protocol to loopback.'
     }
+    if ($Configured -notmatch '(?im)^skip-networking\s*=\s*OFF\s*$') {
+        throw 'The config file does not enable the local TCP listener after safe initial configuration.'
+    }
     if ($Configured -notmatch '(?im)^\[MySQL84\]\s*$') {
         throw 'The config file does not add the Windows service option group.'
     }
@@ -23,6 +26,9 @@ try {
     }
     if (([regex]::Matches($Configured, '(?im)^mysqlx-bind-address\s*=\s*127\.0\.0\.1\s*$')).Count -lt 2) {
         throw 'Both the default and named service groups must restrict MySQL X Protocol.'
+    }
+    if (([regex]::Matches($Configured, '(?im)^skip-networking\s*=\s*OFF\s*$')).Count -lt 2) {
+        throw 'Both the default and named service groups must allow the local TCP connection.'
     }
 
     $ChangedAgain = Set-MySqlLoopbackAddress -ConfigFile $ConfigFile -ServiceName 'MySQL84'

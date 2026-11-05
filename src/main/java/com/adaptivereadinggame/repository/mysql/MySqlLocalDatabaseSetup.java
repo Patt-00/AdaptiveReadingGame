@@ -111,8 +111,12 @@ public final class MySqlLocalDatabaseSetup {
         if ("socket".equalsIgnoreCase(environment.get("ARG_DB_ADMIN_MODE"))) {
             MySqlLocalDatabaseProvisioner.provisionUsingSocket(jdbcUrl, applicationUser, applicationPassword, configFile);
         } else {
-            String administratorUser = readLine(console, "Local MySQL administrator username", DEFAULT_ADMIN_USER);
-            char[] administratorPassword = console.readPassword("Local MySQL administrator password (blank if not set): ");
+            String administratorDefault = environment.getOrDefault("ARG_DB_ADMIN_USER", DEFAULT_ADMIN_USER);
+            String administratorUser = readLine(console, "Local MySQL administrator username", administratorDefault);
+            String administratorPasswordOverride = environment.get("ARG_DB_ADMIN_PASSWORD");
+            char[] administratorPassword = administratorPasswordOverride == null
+                    ? console.readPassword("Local MySQL administrator password (blank if not set): ")
+                    : administratorPasswordOverride.toCharArray();
             if (administratorPassword == null) {
                 Arrays.fill(applicationPassword, '\0');
                 throw new IllegalStateException("No administrator password was entered.");

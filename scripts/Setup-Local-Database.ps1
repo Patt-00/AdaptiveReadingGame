@@ -6,6 +6,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 . (Join-Path $PSScriptRoot 'Set-MySqlLoopbackAddress.ps1')
+. (Join-Path $PSScriptRoot 'MySqlFirewallGuard.ps1')
 
 function Invoke-DatabaseWizard([string[]]$ExtraArguments) {
     $Arguments = @('-q', '-Dexec.mainClass=com.adaptivereadinggame.repository.mysql.MySqlLocalDatabaseSetup')
@@ -20,6 +21,111 @@ function Invoke-DatabaseWizard([string[]]$ExtraArguments) {
     } finally {
         Pop-Location
     }
+}
+
+function Assert-MySqlDefaultPortsAvailable {
+    $Listeners = @(Get-NetTCPConnection -State Listen -LocalPort @(3306, 33060) -ErrorAction SilentlyContinue)
+    if ($Listeners.Count -gt 0) {
+        $BusyPorts = ($Listeners | Select-Object -ExpandProperty LocalPort -Unique) -join ', '
+        throw "MySQL default ports $BusyPorts are already in use. Stop the listener before installing the local server."
+    }
+}
+
+function Get-MySqlConfiguredPorts([string]$ConfigFile, [string]$ServiceName) {
+    $ClassicPort = 3306
+    $XProtocolPort = 33060
+    $ServerGroups = @('mysqld', $ServiceName.ToLowerInvariant())
+    $CurrentGroup = ''
+    foreach ($Line in [IO.File]::ReadLines($ConfigFile)) {
+        if ($Line -match '^\s*\[([^\]]+)\]\s*(?:[#;].*)?$') {
+            $CurrentGroup = $Matches[1].ToLowerInvariant()
+            continue
+        }
+        if ($ServerGroups -notcontains $CurrentGroup) { continue }
+        if ($Line -match '^\s*port\s*=\s*([0-9]+)\s*(?:[#;].*)?$') {
+            $ClassicPort = [int]$Matches[1]
+        } elseif ($Line -match '^\s*mysqlx[-_]port\s*=\s*([0-9]+)\s*(?:[#;].*)?$') {
+            $XProtocolPort = [int]$Matches[1]
+        }
+    }
+    [pscustomobject]@{ Classic = $ClassicPort; XProtocol = $XProtocolPort }
+}
+
+function Assert-MySqlListenersAreLocal($Ports) {
+    $ClassicListeners = @()
+    for ($Attempt = 0; $Attempt -lt 30; $Attempt++) {
+        $ClassicListeners = @(Get-NetTCPConnection -State Listen -LocalPort $Ports.Classic -ErrorAction SilentlyContinue)
+        if ($ClassicListeners.Count -gt 0) { break }
+        Start-Sleep -Seconds 1
+    }
+    if ($ClassicListeners.Count -eq 0) {
+        throw "MySQL did not open its configured local TCP port $($Ports.Classic)."
+    }
+
+    $AllListeners = @(Get-NetTCPConnection -State Listen -LocalPort @($Ports.Classic, $Ports.XProtocol) -ErrorAction SilentlyContinue)
+    $LoopbackAddresses = @('127.0.0.1', '::1', '::ffff:127.0.0.1')
+    $RemoteListeners = @($AllListeners | Where-Object { $LoopbackAddresses -notcontains $_.LocalAddress })
+    if ($RemoteListeners.Count -gt 0) {
+        $Addresses = ($RemoteListeners | Select-Object -ExpandProperty LocalAddress -Unique) -join ', '
+        throw "MySQL is still listening outside loopback ($Addresses); inbound firewall blocks remain in place."
+    }
+}
+
+function Get-MySqlOptionFile([string]$ServiceName) {
+    $ServiceDetails = Get-CimInstance Win32_Service -Filter ("Name='{0}'" -f $ServiceName)
+    if ($ServiceDetails.PathName -match '(?i)--defaults-file=(?:"([^"]+)"|([^\s]+))') {
+        $Candidate = if ($Matches[1]) { $Matches[1] } else { $Matches[2] }
+        if (Test-Path -LiteralPath $Candidate -PathType Leaf) { return $Candidate }
+    }
+
+    $VersionedOptionFile = Join-Path $env:ProgramData 'MySQL/MySQL Server 8.4/my.ini'
+    if (Test-Path -LiteralPath $VersionedOptionFile -PathType Leaf) { return $VersionedOptionFile }
+    throw "Could not locate the MySQL option file used by $ServiceName. Finish MySQL Configurator, then rerun setup."
+}
+
+function Invoke-NewMySqlConfigurator {
+    $ConfiguratorCandidates = @(
+        (Join-Path $env:ProgramFiles 'MySQL/MySQL Server 8.4/bin/mysql_configurator.exe'),
+        (Join-Path $env:ProgramFiles 'MySQL/MySQL Server 8.4/bin/mysql-configurator.exe')
+    )
+    $Configurator = $ConfiguratorCandidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+    if (-not $Configurator) {
+        throw 'MySQL Configurator was not found. Complete MySQL Configurator with TCP disabled, then rerun setup.'
+    }
+
+    Write-Host 'Set the MySQL administrator password. This password is not saved by the game.'
+    $FirstSecure = Read-Host 'New MySQL root password' -AsSecureString
+    $SecondSecure = Read-Host 'Confirm MySQL root password' -AsSecureString
+    $FirstPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($FirstSecure)
+    $SecondPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecondSecure)
+    try {
+        $RootPassword = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($FirstPointer)
+        $ConfirmedPassword = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($SecondPointer)
+    } finally {
+        [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($FirstPointer)
+        [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($SecondPointer)
+        $FirstSecure.Dispose()
+        $SecondSecure.Dispose()
+    }
+    if ([string]::IsNullOrWhiteSpace($RootPassword) -or $RootPassword -cne $ConfirmedPassword) {
+        $RootPassword = $null
+        $ConfirmedPassword = $null
+        throw 'The MySQL root password must be non-empty and match its confirmation.'
+    }
+
+    $HadMysqlPwd = Test-Path Env:MYSQL_PWD
+    $PreviousMysqlPwd = $env:MYSQL_PWD
+    try {
+        $env:MYSQL_PWD = $RootPassword
+        & $Configurator --console --action=configure --enable-tcp-ip=false --open-win-firewall=false
+        $ConfiguratorExitCode = $LASTEXITCODE
+    } finally {
+        if ($HadMysqlPwd) { $env:MYSQL_PWD = $PreviousMysqlPwd }
+        else { Remove-Item Env:MYSQL_PWD -ErrorAction SilentlyContinue }
+        $ConfirmedPassword = $null
+    }
+    if ($ConfiguratorExitCode -ne 0) { throw 'MySQL Configurator could not initialize the server with TCP disabled.' }
+    return $RootPassword
 }
 
 if ($CheckOnly) {
@@ -52,34 +158,30 @@ if (-not $CurrentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Adm
     return
 }
 
+$RootAdminPassword = $null
 $Services = @(Get-Service -Name 'MySQL*' -ErrorAction SilentlyContinue | Sort-Object Name -Descending)
 if ($Services.Count -eq 0) {
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
         throw 'Install MySQL Server 8.4 with its MySQL Configurator, then rerun this script.'
     }
-    Write-Host 'Installing MySQL Server. Complete the vendor configuration window and set a local root password when prompted.'
+    Assert-MySqlDefaultPortsAvailable
+    Add-MySqlSetupFirewallGuard -Ports @(3306, 33060) | Out-Null
+    Write-Host 'Installing MySQL Server. When the MSI asks, choose Configure later; setup will initialize it with TCP disabled before enabling loopback-only access. Keep the default ports if prompted.'
     & winget install --id Oracle.MySQL --exact --accept-source-agreements --accept-package-agreements --interactive
     if ($LASTEXITCODE -ne 0) { throw 'WinGet could not complete MySQL installation.' }
     $Services = @(Get-Service -Name 'MySQL*' -ErrorAction SilentlyContinue | Sort-Object Name -Descending)
+    if ($Services.Count -eq 0) {
+        $RootAdminPassword = Invoke-NewMySqlConfigurator
+        $Services = @(Get-Service -Name 'MySQL*' -ErrorAction SilentlyContinue | Sort-Object Name -Descending)
+    }
 }
-if ($Services.Count -eq 0) {
-    throw 'No MySQL Windows service was found. Finish MySQL Configurator, then rerun this script.'
-}
+if ($Services.Count -eq 0) { throw 'No MySQL Windows service was found. Finish MySQL Configurator, then rerun this script.' }
 
 $Service = $Services | Where-Object Status -eq 'Running' | Select-Object -First 1
 if (-not $Service) { $Service = $Services | Select-Object -First 1 }
-$ServiceDetails = Get-CimInstance Win32_Service -Filter ("Name='{0}'" -f $Service.Name)
-$OptionFile = $null
-if ($ServiceDetails.PathName -match '(?i)--defaults-file=(?:"([^"]+)"|([^\s]+))') {
-    $OptionFile = if ($Matches[1]) { $Matches[1] } else { $Matches[2] }
-}
-if ([string]::IsNullOrWhiteSpace($OptionFile) -or -not (Test-Path -LiteralPath $OptionFile -PathType Leaf)) {
-    $VersionedOptionFile = Join-Path $env:ProgramData 'MySQL/MySQL Server 8.4/my.ini'
-    if (Test-Path -LiteralPath $VersionedOptionFile -PathType Leaf) { $OptionFile = $VersionedOptionFile }
-}
-if ([string]::IsNullOrWhiteSpace($OptionFile) -or -not (Test-Path -LiteralPath $OptionFile -PathType Leaf)) {
-    throw "Could not locate the MySQL option file used by $($Service.Name). Finish MySQL Configurator, then rerun setup."
-}
+$OptionFile = Get-MySqlOptionFile -ServiceName $Service.Name
+$MySqlPorts = Get-MySqlConfiguredPorts -ConfigFile $OptionFile -ServiceName $Service.Name
+Add-MySqlSetupFirewallGuard -Ports @($MySqlPorts.Classic, $MySqlPorts.XProtocol) | Out-Null
 
 try {
     $BindConfigurationChanged = Set-MySqlLoopbackAddress -ConfigFile $OptionFile -ServiceName $Service.Name
@@ -102,7 +204,26 @@ if ($Service.Status -eq 'Running' -and $BindConfigurationChanged) {
     }
 }
 
+Assert-MySqlListenersAreLocal $MySqlPorts
+Remove-MySqlSetupFirewallGuard
+
 $WizardArguments = @()
 if ($Reconfigure) { $WizardArguments += '--reconfigure' }
 Write-Host 'Create the game database user below. The MySQL administrator password is entered without showing it.'
-Invoke-DatabaseWizard $WizardArguments
+$HadAdminUser = Test-Path Env:ARG_DB_ADMIN_USER
+$PreviousAdminUser = $env:ARG_DB_ADMIN_USER
+$HadAdminPassword = Test-Path Env:ARG_DB_ADMIN_PASSWORD
+$PreviousAdminPassword = $env:ARG_DB_ADMIN_PASSWORD
+try {
+    if ($RootAdminPassword) {
+        $env:ARG_DB_ADMIN_USER = 'root'
+        $env:ARG_DB_ADMIN_PASSWORD = $RootAdminPassword
+    }
+    Invoke-DatabaseWizard $WizardArguments
+} finally {
+    if ($HadAdminUser) { $env:ARG_DB_ADMIN_USER = $PreviousAdminUser }
+    else { Remove-Item Env:ARG_DB_ADMIN_USER -ErrorAction SilentlyContinue }
+    if ($HadAdminPassword) { $env:ARG_DB_ADMIN_PASSWORD = $PreviousAdminPassword }
+    else { Remove-Item Env:ARG_DB_ADMIN_PASSWORD -ErrorAction SilentlyContinue }
+    $RootAdminPassword = $null
+}
