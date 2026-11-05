@@ -21,7 +21,7 @@ Open Terminal in the game folder and run the script for your system:
 
 Desktop setup checks for missing components, prepares the optional model helper, and starts the game. It may ask you to approve installing missing components. If model dependencies are unavailable, the game still runs with Java's built-in difficulty fallback.
 
-The music WAVs are included directly in GitHub source archives. Larger artwork and model files use Git LFS; source ZIP downloads contain pointer files for those assets. To retrieve the full artwork and bundled model, clone the repository with Git LFS installed, or run `git lfs pull` from a Git clone if setup reports pointer files.
+The music WAVs are included directly in GitHub source archives. Larger artwork and model files use Git LFS; [GitHub source archives contain LFS pointer files by default](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/managing-repository-settings/managing-git-lfs-objects-in-archives-of-your-repository). To retrieve the full artwork and bundled model, clone the repository with Git LFS installed, or run `git lfs pull` from a Git clone if setup reports pointer files.
 
 To check whether the desktop setup is ready without opening the game, run:
 
