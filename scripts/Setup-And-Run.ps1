@@ -5,14 +5,31 @@ param(
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 
+function Invoke-NativeCapture([string]$CommandName, [string[]]$Arguments) {
+    $ErrorActionPreference = 'Continue'
+    $PSNativeCommandUseErrorActionPreference = $false
+    $output = (& $CommandName @Arguments 2>&1 | Out-String)
+    [pscustomobject]@{ Output = $output; ExitCode = $LASTEXITCODE }
+}
+
 function Get-JavaMajor([string]$CommandName) {
     $command = Get-Command $CommandName -ErrorAction SilentlyContinue
     if (-not $command) { return 0 }
-    $versionText = (& $CommandName -version 2>&1 | Out-String)
-    if ($LASTEXITCODE -ne 0) { return 0 }
+    $version = Invoke-NativeCapture $CommandName @('-version')
+    if ($version.ExitCode -ne 0) { return 0 }
+    $versionText = $version.Output
     if ($CommandName -eq 'java' -and $versionText -match 'version "([0-9]+)') { return [int]$Matches[1] }
     if ($CommandName -eq 'javac' -and $versionText -match 'javac ([0-9]+)') { return [int]$Matches[1] }
     return 0
+}
+
+function Get-JavaHome {
+    $properties = Invoke-NativeCapture 'java' @('-XshowSettings:properties', '-version')
+    if ($properties.ExitCode -ne 0) { return $null }
+    if ($properties.Output -match '(?m)^\s*java\.home\s*=\s*(.+?)\s*$') {
+        return $Matches[1].Trim()
+    }
+    return $null
 }
 
 $NeedsJdk = (Get-JavaMajor 'java') -lt 21 -or (Get-JavaMajor 'javac') -lt 21
@@ -52,6 +69,17 @@ if ($NeedsJdk -or $NeedsMaven) {
     if (-not [string]::IsNullOrWhiteSpace($javaHome)) {
         $env:JAVA_HOME = $javaHome
         $env:Path = "$javaHome\bin;$env:Path"
+    }
+}
+
+$DetectedJavaHome = Get-JavaHome
+if (-not [string]::IsNullOrWhiteSpace($DetectedJavaHome)) {
+    $JavacExe = Join-Path $DetectedJavaHome 'bin/javac.exe'
+    $JavacCommand = Join-Path $DetectedJavaHome 'bin/javac'
+    if ((Test-Path -LiteralPath $JavacExe -PathType Leaf) -or
+            (Test-Path -LiteralPath $JavacCommand -PathType Leaf)) {
+        $env:JAVA_HOME = $DetectedJavaHome
+        $env:Path = "$DetectedJavaHome\bin;$env:Path"
     }
 }
 
