@@ -65,6 +65,7 @@ fi
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$script_dir/termux-audio-bridge.sh"
+source "$script_dir/termux-model-venv-path.sh"
 if [[ "$project_dir_explicit" == true || -n "${ARG_PROJECT_DIR:-}" ]]; then
     if is_project_root "$project_dir"; then
         project_root="$(cd -- "$project_dir" && pwd)"
@@ -81,6 +82,7 @@ elif is_project_root "$script_dir/.."; then
 else
     project_root="$project_dir"
 fi
+model_venv_in_debian="$(termux_model_venv_for_proot "$project_root")"
 
 if ! is_project_root "$project_root"; then
     if [[ -e "$project_root" ]] \
@@ -153,6 +155,7 @@ printf 'Checking Debian packages and preparing JavaFX for Linux ARM64.\n'
 proot-distro login debian --shared-tmp \
     --bind "$project_root:/workspace/AdaptiveReadingGame" \
     --env PULSE_SERVER=127.0.0.1 \
+    --env "ARG_MODEL_VENV_DIR=$model_venv_in_debian" \
     -- /bin/bash -s <<'DEBIAN_SETUP'
 set -euo pipefail
 

@@ -142,6 +142,28 @@ class PrerequisiteScriptTest {
         assertTrue(Files.readString(helperLog).contains("CUSTOM_HELPER_STARTED"));
     }
 
+    @Test void termuxSetupForwardsTheModelVenvIntoDebian() throws Exception {
+        Path projectRoot = Path.of(".").toAbsolutePath().normalize();
+        Path helper = Path.of("scripts/termux-model-venv-path.sh").toAbsolutePath();
+        ProcessBuilder builder = new ProcessBuilder("bash", "-c",
+                "source \"$1\" && termux_model_venv_for_proot \"$2\"",
+                "bash", helper.toString(), projectRoot.toString())
+                .redirectErrorStream(true);
+        builder.environment().put("ARG_MODEL_VENV_DIR", "model-cache/.venv");
+        Process process = builder.start();
+        process.getOutputStream().close();
+        assertTrue(process.waitFor(10, TimeUnit.SECONDS));
+        String output = new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        assertEquals(0, process.exitValue(), output);
+        assertEquals("/workspace/AdaptiveReadingGame/model-cache/.venv", output.trim());
+
+        for (Path script : java.util.List.of(Path.of("scripts/termux-setup-x11.sh"), Path.of("scripts/termux-run-x11.sh"))) {
+            String contents = Files.readString(script);
+            assertTrue(contents.contains("termux_model_venv_for_proot \"$project_root\""), script.toString());
+            assertTrue(contents.contains("--env \"ARG_MODEL_VENV_DIR=$model_venv_in_debian\""), script.toString());
+        }
+    }
+
     @Test void parsesJavaVersionsWhenJavaToolOptionsAddsAStderrLine() throws Exception {
         Result result = run(Map.of("JAVA_TOOL_OPTIONS", "-Dprism.order=sw"));
         assertEquals(0, result.exitCode(), result.output());

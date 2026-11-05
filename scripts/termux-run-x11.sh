@@ -19,9 +19,11 @@ command -v am >/dev/null 2>&1 \
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$script_dir/termux-audio-bridge.sh"
+source "$script_dir/termux-model-venv-path.sh"
 project_root="$(cd -- "$script_dir/.." && pwd)"
 [[ -f "$project_root/pom.xml" && -d "$project_root/src/main/java" ]] \
     || fail "Run this script from a complete project checkout. Expected pom.xml under $project_root."
+model_venv_in_debian="$(termux_model_venv_for_proot "$project_root")"
 
 display="${ARG_TERMUX_X11_DISPLAY:-}"
 display_ready=false
@@ -148,6 +150,7 @@ proot_arguments=(
     --env TMPDIR=/tmp
     --env XDG_RUNTIME_DIR=/tmp
     --env PULSE_SERVER=tcp:127.0.0.1:4713
+    --env "ARG_MODEL_VENV_DIR=$model_venv_in_debian"
     --env ALSA_CONFIG_PATH=/workspace/AdaptiveReadingGame/scripts/termux-asoundrc
     --env ARG_FULL_SCREEN=true
     --env "ARG_TERMUX_PRISM_ORDER=$prism_order"
