@@ -12,7 +12,7 @@ Open PowerShell in the game folder and run:
 .\scripts\setup-windows.ps1
 ```
 
-If MySQL is missing, setup opens the vendor installer. When the MSI asks whether to start MySQL Configurator, choose **Configure later**; the setup script initializes the server with TCP disabled before enabling loopback-only access. Keep the default MySQL ports (3306 and 33060) if prompted. Windows Defender Firewall must be enabled; setup blocks inbound access to those ports temporarily and removes the blocks after confirming the listener is local. Enter the MySQL root password twice when prompted, then enter the local database details. If setup stops before it finishes, rerun it after fixing the displayed issue; the temporary inbound block stays in place until setup confirms local-only listening.
+If MySQL is missing, setup installs the vendor package without opening its configuration UI, then uses MySQL Configurator to initialize the server with TCP disabled before enabling loopback-only access. Windows Defender Firewall must be enabled; setup blocks inbound access to ports 3306 and 33060 temporarily and removes those blocks after confirming the listener is local. Enter the MySQL root password twice when prompted, then enter the local database details. If setup stops before it finishes, rerun it after fixing the displayed issue; the temporary inbound block stays in place until setup confirms local-only listening.
 
 ## Linux
 

@@ -166,14 +166,11 @@ if ($Services.Count -eq 0) {
     }
     Assert-MySqlDefaultPortsAvailable
     Add-MySqlSetupFirewallGuard -Ports @(3306, 33060) | Out-Null
-    Write-Host 'Installing MySQL Server. When the MSI asks, choose Configure later; setup will initialize it with TCP disabled before enabling loopback-only access. Keep the default ports if prompted.'
-    & winget install --id Oracle.MySQL --exact --accept-source-agreements --accept-package-agreements --interactive
+    Write-Host 'Installing MySQL Server silently so it cannot start its configuration UI. Setup will initialize it with TCP disabled, then enable loopback-only access.'
+    & winget install --id Oracle.MySQL --exact --accept-source-agreements --accept-package-agreements --silent
     if ($LASTEXITCODE -ne 0) { throw 'WinGet could not complete MySQL installation.' }
+    $RootAdminPassword = Invoke-NewMySqlConfigurator
     $Services = @(Get-Service -Name 'MySQL*' -ErrorAction SilentlyContinue | Sort-Object Name -Descending)
-    if ($Services.Count -eq 0) {
-        $RootAdminPassword = Invoke-NewMySqlConfigurator
-        $Services = @(Get-Service -Name 'MySQL*' -ErrorAction SilentlyContinue | Sort-Object Name -Descending)
-    }
 }
 if ($Services.Count -eq 0) { throw 'No MySQL Windows service was found. Finish MySQL Configurator, then rerun this script.' }
 
