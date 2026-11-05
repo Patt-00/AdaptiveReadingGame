@@ -117,7 +117,7 @@ function Invoke-NewMySqlConfigurator {
     $PreviousMysqlPwd = $env:MYSQL_PWD
     try {
         $env:MYSQL_PWD = $RootPassword
-        & $Configurator --console --action=configure --enable-tcp-ip=false --open-win-firewall=false
+        & $Configurator --console --action=configure --enable-tcp-ip=false --open_win_firewall=false
         $ConfiguratorExitCode = $LASTEXITCODE
     } finally {
         if ($HadMysqlPwd) { $env:MYSQL_PWD = $PreviousMysqlPwd }
