@@ -38,7 +38,19 @@ public final class MySqlSchemaMigrator {
                 recordApplied(connection, migration);
             }
         } catch (SQLException failure) {
-            throw new RepositoryException("Could not apply the MySQL schema migrations.", failure);
+            String detail = failure.getMessage();
+            Throwable cause = failure.getCause();
+            while (cause != null && cause != failure) {
+                String causeMessage = cause.getMessage();
+                if (causeMessage != null && !causeMessage.isBlank()
+                        && (detail == null || !detail.contains(causeMessage))) {
+                    detail = (detail == null || detail.isBlank()) ? causeMessage : detail + " Cause: " + causeMessage;
+                }
+                cause = cause.getCause();
+            }
+            String message = "Could not apply the MySQL schema migrations"
+                    + (detail == null || detail.isBlank() ? "." : ": " + detail);
+            throw new RepositoryException(message, failure);
         }
     }
 

@@ -6,11 +6,11 @@ Windows, macOS, and supported desktop Linux use MySQL Server 8.0 or newer. Termu
 
 ## Set up a device
 
-Use the platform setup script described in [`scripts/SCRIPT.md`](../scripts/SCRIPT.md). On first setup, the database wizard asks for a local JDBC URL, application username, and hidden application password. The suggested URL is `jdbc:mysql://127.0.0.1:3306/adaptive_reading`. Change the port or database name only if needed; setup accepts loopback hosts only. Desktop setup also binds MySQL and MySQL X Protocol to loopback, and Termux starts MariaDB on `127.0.0.1` for the game session.
+Use the platform setup script described in [`scripts/SCRIPT.md`](../scripts/SCRIPT.md). On first setup, the database wizard asks for a local JDBC URL, application username, and hidden application password. The suggested URL is `jdbc:mysql://127.0.0.1:3306/adaptive_reading`. Change the port or database name only if needed; setup accepts loopback hosts only and rejects credentials embedded in the URL. Desktop setup also binds MySQL and MySQL X Protocol to loopback, and Termux starts MariaDB on `127.0.0.1` for the game session.
 
 When the local server requires a database administrator password, setup asks for it without showing the characters. The administrator password is used only to create the database and application user. Termux uses MariaDB's local socket for that step and does not ask for a root password.
 
-The application user receives only the privileges needed by the schema and migrations on the game's database. It is separate from the MySQL or MariaDB administrator account.
+The application user receives only the privileges needed by the schema and migrations on the game's database. It is separate from the MySQL or MariaDB administrator account. Setup creates a new account for the selected local host and refuses to reset an existing account at that host. Choose an unused application username, especially when reconfiguring an existing database.
 
 ## Saved settings
 

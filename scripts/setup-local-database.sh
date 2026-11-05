@@ -6,8 +6,15 @@ project_root="$(cd -- "$script_dir/.." && pwd)"
 reconfigure=false
 check_only=false
 temporary_directory=""
+service_start_guard_owned=false
+service_start_guard_path=/usr/sbin/policy-rc.d
+service_start_guard_marker='# AdaptiveReadingGame temporary service-start guard'
 
 cleanup_temporary_directory() {
+    if [[ "$service_start_guard_owned" == true && -f "$service_start_guard_path" ]] \
+            && grep -Fqx "$service_start_guard_marker" "$service_start_guard_path"; then
+        run_privileged rm -f -- "$service_start_guard_path" >/dev/null 2>&1 || true
+    fi
     if [[ -n "$temporary_directory" && -d "$temporary_directory" ]]; then
         rm -rf -- "$temporary_directory"
     fi
@@ -115,17 +122,59 @@ install_loopback_config() {
     return 0
 }
 
+prevent_package_service_start() {
+    if [[ -e "$service_start_guard_path" ]]; then
+        if [[ -x "$service_start_guard_path" ]]; then
+            local policy_status=0
+            if "$service_start_guard_path" mysql start >/dev/null 2>&1; then
+                policy_status=0
+            else
+                policy_status=$?
+            fi
+            if (( policy_status == 101 )); then return 0; fi
+        fi
+        fail "An existing $service_start_guard_path does not deny MySQL service startup. Setup will stop before package installation to avoid starting MySQL with a network-wide listener."
+    fi
+
+    if [[ -z "$temporary_directory" ]]; then temporary_directory="$(mktemp -d)"; fi
+    local guard_file="$temporary_directory/policy-rc.d"
+    printf '#!/bin/sh\n%s\nexit 101\n' "$service_start_guard_marker" >"$guard_file"
+    run_privileged install -o root -g root -m 0755 "$guard_file" "$service_start_guard_path" \
+        || fail "Could not prevent MySQL from starting during package installation."
+    service_start_guard_owned=true
+}
+
+allow_configured_service_start() {
+    if [[ "$service_start_guard_owned" == true ]]; then
+        if [[ ! -f "$service_start_guard_path" ]] \
+                || ! grep -Fqx "$service_start_guard_marker" "$service_start_guard_path"; then
+            fail "The temporary $service_start_guard_path guard changed during setup; refusing to remove it."
+        fi
+        run_privileged rm -f -- "$service_start_guard_path" \
+            || fail "Could not remove the temporary service-start guard."
+        service_start_guard_owned=false
+    fi
+}
+
 install_apt_mysql() {
     local architecture package
     architecture="$(dpkg --print-architecture)"
     [[ "$architecture" == amd64 ]] \
         || fail "The MySQL APT repository does not publish server packages for $architecture. Use the Termux setup for Termux or install a supported local server manually."
 
-    command -v curl >/dev/null 2>&1 || {
-        run_privileged apt-get update
+    run_privileged apt-get update
+    if ! command -v curl >/dev/null 2>&1; then
         run_privileged apt-get install -y curl ca-certificates
-    }
+    fi
     command -v sha256sum >/dev/null 2>&1 || fail 'sha256sum is required to verify the MySQL APT configuration package.'
+
+    prerequisite_packages=()
+    command -v lsb_release >/dev/null 2>&1 || prerequisite_packages+=(lsb-release)
+    command -v wget >/dev/null 2>&1 || prerequisite_packages+=(wget)
+    command -v gpg >/dev/null 2>&1 || prerequisite_packages+=(gnupg)
+    if ((${#prerequisite_packages[@]} > 0)); then
+        run_privileged apt-get install -y "${prerequisite_packages[@]}"
+    fi
 
     temporary_directory="$(mktemp -d)"
     package="$temporary_directory/mysql-apt-config_0.8.40-1_all.deb"
@@ -135,9 +184,12 @@ install_apt_mysql() {
     printf '%s  %s\n' '41a796dd6ea681aef4675d3b0b27924873d4f9777e524facf7693eabdf232e93' "$package" | sha256sum --check --status \
         || fail 'The MySQL APT configuration package checksum did not match.'
 
+    run_privileged mkdir -p /etc/mysql/mysql.conf.d
+    if install_loopback_config /etc/mysql/mysql.conf.d/99-adaptive-reading-game.cnf; then :; fi
     run_privileged env DEBIAN_FRONTEND=noninteractive MYSQL_SERVER_VERSION=mysql-8.4-lts \
         MYSQL_CONNECTORS=Disabled dpkg --install "$package"
     run_privileged apt-get update
+    prevent_package_service_start
     run_privileged apt-get install -y mysql-server
 }
 
@@ -188,6 +240,7 @@ ensure_mysql_server() {
                         else
                             loopback_changed=false
                         fi
+                        allow_configured_service_start
                         ;;
                     *) fail "Automatic MySQL installation is not configured for $os_id." ;;
                 esac

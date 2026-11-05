@@ -61,7 +61,9 @@ public final class MySqlLocalDatabaseSetup {
 
         try {
             if (checkOnly) {
-                if (MySqlConfig.fromEnvironment(environment, configFile).isPresent()) {
+                var configured = MySqlConfig.fromEnvironment(environment, configFile);
+                if (configured.isPresent()) {
+                    validateLocalConfiguration(configured.orElseThrow());
                     output.println("Persistent local database settings are configured.");
                 } else {
                     output.println("No local database settings found; the game will use temporary in-memory storage.");
@@ -129,6 +131,11 @@ public final class MySqlLocalDatabaseSetup {
     }
 
     private static void migrate(MySqlConfig config) {
+        validateLocalConfiguration(config);
         new MySqlSchemaMigrator(new DriverManagerConnectionProvider(config)).migrate();
+    }
+
+    static void validateLocalConfiguration(MySqlConfig config) {
+        MySqlLocalEndpoint.fromJdbcUrl(config.url());
     }
 }

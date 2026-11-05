@@ -11,6 +11,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MySqlLocalDatabaseSetupTest {
     @TempDir Path temporary;
@@ -62,5 +63,30 @@ class MySqlLocalDatabaseSetupTest {
 
         assertEquals(2, status);
         assertTrue(error.toString(StandardCharsets.UTF_8).contains("Unset ARG_DB_URL"));
+    }
+
+    @Test void setupRejectsRemoteDatabaseTargetsBeforeConnecting() {
+        MySqlConfig remote = new MySqlConfig("jdbc:mysql://database.example:3306/adaptive_reading",
+                "adaptive_game", "local-secret");
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                () -> MySqlLocalDatabaseSetup.validateLocalConfiguration(remote));
+
+        assertTrue(failure.getMessage().contains("only localhost"));
+    }
+
+    @Test void checkOnlyRejectsAStoredRemoteDatabaseTarget() throws Exception {
+        Path file = temporary.resolve("remote.properties");
+        MySqlConfigStore.save(file,
+                new MySqlConfig("jdbc:mysql://database.example:3306/adaptive_reading", "adaptive_game", "local-secret"));
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ByteArrayOutputStream error = new ByteArrayOutputStream();
+
+        int status = MySqlLocalDatabaseSetup.run(new String[] {"--check-only"}, null,
+                new PrintStream(output), new PrintStream(error), file, Map.of());
+
+        assertEquals(1, status);
+        assertTrue(error.toString(StandardCharsets.UTF_8).contains("only localhost"));
+        assertTrue(!output.toString(StandardCharsets.UTF_8).contains("local-secret"));
     }
 }

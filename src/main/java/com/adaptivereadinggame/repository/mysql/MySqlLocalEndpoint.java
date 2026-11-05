@@ -9,6 +9,7 @@ record MySqlLocalEndpoint(String host, int port, String database, String query) 
     static MySqlLocalEndpoint fromJdbcUrl(String jdbcUrl) {
         if (jdbcUrl == null || !jdbcUrl.startsWith("jdbc:mysql://"))
             throw new IllegalArgumentException("Enter a MySQL JDBC URL such as jdbc:mysql://127.0.0.1:3306/adaptive_reading.");
+        MySqlConfig.rejectEmbeddedCredentials(jdbcUrl);
         final URI uri;
         try {
             uri = URI.create(jdbcUrl.substring("jdbc:".length()));

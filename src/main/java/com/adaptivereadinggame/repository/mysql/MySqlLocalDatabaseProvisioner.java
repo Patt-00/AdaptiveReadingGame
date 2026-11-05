@@ -38,14 +38,25 @@ public final class MySqlLocalDatabaseProvisioner {
         String administratorSecret = new String(administratorPassword);
         String applicationSecret = new String(applicationPassword);
         MySqlConfig applicationConfig = new MySqlConfig(jdbcUrl, applicationUsername, applicationSecret);
+        boolean applicationAccountCreated = false;
         try {
             executeJdbcProvisioning(endpoint, administratorUsername, administratorSecret,
                     applicationUsername, applicationSecret);
+            applicationAccountCreated = true;
             verifyApplicationConnection(applicationConfig);
             new MySqlSchemaMigrator(new DriverManagerConnectionProvider(applicationConfig)).migrate();
             MySqlConfigStore.save(configFile, applicationConfig);
             return applicationConfig;
-        } catch (SQLException | IllegalStateException failure) {
+        } catch (SQLException | RuntimeException failure) {
+            if (applicationAccountCreated) {
+                try {
+                    dropJdbcApplicationAccount(endpoint, administratorUsername, administratorSecret, applicationUsername);
+                } catch (SQLException cleanupFailure) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
+            if (failure instanceof IllegalArgumentException invalid) throw invalid;
+            if (failure instanceof RepositoryException migrationFailure) throw migrationFailure;
             throw new IllegalStateException(
                     "Could not configure the local database. Check the server, administrator credentials, and permissions.",
                     failure);
@@ -59,20 +70,34 @@ public final class MySqlLocalDatabaseProvisioner {
             char[] applicationPassword, Path configFile) {
         MySqlLocalEndpoint endpoint = MySqlLocalEndpoint.fromJdbcUrl(jdbcUrl);
         validateUsername(applicationUsername, "application");
-        if (applicationUsername.equalsIgnoreCase("root") || applicationPassword == null || applicationPassword.length == 0)
+        if (applicationUsername.equalsIgnoreCase("root") || applicationUsername.equalsIgnoreCase("mysql")
+                || applicationPassword == null || applicationPassword.length == 0)
             throw new IllegalArgumentException("Choose a separate application username and a non-empty password.");
 
         String applicationSecret = new String(applicationPassword);
         MySqlConfig applicationConfig = new MySqlConfig(jdbcUrl, applicationUsername, applicationSecret);
+        boolean applicationAccountCreated = false;
         try {
             String sqlMode = querySocketSqlMode();
+            ensureSocketApplicationAccountDoesNotExist(endpoint, applicationUsername, sqlMode);
             List<String> statements = provisioningStatements(endpoint, applicationUsername, applicationSecret, sqlMode);
-            runLocalSocketClient(String.join(";\n", statements) + ";\n");
+            runLocalSocketClient(statements.get(0) + ";\n");
+            applicationAccountCreated = true;
+            runLocalSocketClient(String.join(";\n", statements.subList(1, statements.size())) + ";\n");
             verifyApplicationConnection(applicationConfig);
             new MySqlSchemaMigrator(new DriverManagerConnectionProvider(applicationConfig)).migrate();
             MySqlConfigStore.save(configFile, applicationConfig);
             return applicationConfig;
-        } catch (SQLException | IOException failure) {
+        } catch (SQLException | IOException | RuntimeException failure) {
+            if (applicationAccountCreated) {
+                try {
+                    dropSocketApplicationAccount(endpoint, applicationUsername, "");
+                } catch (IOException cleanupFailure) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
+            if (failure instanceof IllegalArgumentException invalid) throw invalid;
+            if (failure instanceof RepositoryException migrationFailure) throw migrationFailure;
             throw new IllegalStateException("Could not configure the local database through its local socket.", failure);
         } finally {
             Arrays.fill(applicationPassword, '\0');
@@ -87,8 +112,25 @@ public final class MySqlLocalDatabaseProvisioner {
             try (var rows = statement.executeQuery("SELECT @@SESSION.sql_mode")) {
                 sqlMode = rows.next() ? rows.getString(1) : "";
             }
-            for (String sql : provisioningStatements(endpoint, applicationUsername, applicationPassword, sqlMode))
-                statement.execute(sql);
+            List<String> statements = provisioningStatements(endpoint, applicationUsername, applicationPassword, sqlMode);
+            try {
+                statement.execute(statements.get(0));
+            } catch (SQLException duplicateOrInvalid) {
+                if (duplicateOrInvalid.getErrorCode() == 1396) {
+                    throw new IllegalArgumentException(
+                            "The application account for this local host already exists. Choose a new username; setup will not modify an existing account.",
+                            duplicateOrInvalid);
+                }
+                throw duplicateOrInvalid;
+            }
+
+            try {
+                for (String sql : statements.subList(1, statements.size())) statement.execute(sql);
+            } catch (SQLException | RuntimeException failure) {
+                try { statement.execute("DROP USER IF EXISTS " + applicationAccount(endpoint, applicationUsername, sqlMode)); }
+                catch (SQLException cleanupFailure) { failure.addSuppressed(cleanupFailure); }
+                throw failure;
+            }
         }
     }
 
@@ -98,14 +140,43 @@ public final class MySqlLocalDatabaseProvisioner {
         if (applicationUsername.equalsIgnoreCase("root"))
             throw new IllegalArgumentException("Choose a separate application database username.");
         String database = quoteIdentifier(endpoint.database());
-        String appAccount = quoteString(applicationUsername, sqlMode) + "@"
-                + quoteString(endpoint.accountHost(), sqlMode);
+        String appAccount = applicationAccount(endpoint, applicationUsername, sqlMode);
         String password = quoteString(applicationPassword, sqlMode);
         return List.of(
+                "CREATE USER " + appAccount + " IDENTIFIED BY " + password,
                 "CREATE DATABASE IF NOT EXISTS " + database + " CHARACTER SET utf8mb4",
-                "CREATE USER IF NOT EXISTS " + appAccount + " IDENTIFIED BY " + password,
-                "ALTER USER " + appAccount + " IDENTIFIED BY " + password,
                 "GRANT " + APPLICATION_PRIVILEGES + " ON " + database + ".* TO " + appAccount);
+    }
+
+    private static String applicationAccount(MySqlLocalEndpoint endpoint, String username, String sqlMode) {
+        return quoteString(username, sqlMode) + "@" + quoteString(endpoint.accountHost(), sqlMode);
+    }
+
+    private static void ensureSocketApplicationAccountDoesNotExist(
+            MySqlLocalEndpoint endpoint, String username, String sqlMode) throws IOException {
+        String query = "SELECT COUNT(*) FROM mysql.user WHERE User = " + quoteString(username, sqlMode)
+                + " AND Host = " + quoteString(endpoint.accountHost(), sqlMode) + ";\n";
+        String count = runLocalSocketClient(query).trim();
+        if (!"0".equals(count))
+            throw new IllegalArgumentException(
+                    "The application account for this local host already exists. Choose a new username; setup will not modify an existing account.");
+    }
+
+    private static void dropSocketApplicationAccount(
+            MySqlLocalEndpoint endpoint, String username, String sqlMode) throws IOException {
+        runLocalSocketClient("DROP USER IF EXISTS " + applicationAccount(endpoint, username, sqlMode) + ";\n");
+    }
+
+    private static void dropJdbcApplicationAccount(MySqlLocalEndpoint endpoint, String administratorUsername,
+            String administratorPassword, String applicationUsername) throws SQLException {
+        try (Connection connection = DriverManager.getConnection(endpoint.administratorUrl(),
+                administratorUsername, administratorPassword); Statement statement = connection.createStatement()) {
+            String sqlMode;
+            try (var rows = statement.executeQuery("SELECT @@SESSION.sql_mode")) {
+                sqlMode = rows.next() ? rows.getString(1) : "";
+            }
+            statement.execute("DROP USER IF EXISTS " + applicationAccount(endpoint, applicationUsername, sqlMode));
+        }
     }
 
     private static String querySocketSqlMode() throws IOException {

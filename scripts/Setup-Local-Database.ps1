@@ -24,12 +24,32 @@ function Invoke-DatabaseWizard([string[]]$ExtraArguments) {
 
 if ($CheckOnly) {
     Invoke-DatabaseWizard @('--check-only')
-    exit 0
+    return
 }
 if ($Reconfigure) {
     if ($env:ARG_DB_URL -or $env:ARG_DB_USER -or [Environment]::GetEnvironmentVariables().Contains('ARG_DB_PASSWORD')) {
         throw 'Unset ARG_DB_URL, ARG_DB_USER, and ARG_DB_PASSWORD before reconfiguring; they override saved settings.'
     }
+}
+
+$CurrentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
+$CurrentPrincipal = [Security.Principal.WindowsPrincipal]::new($CurrentIdentity)
+if (-not $CurrentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Host 'Requesting administrator permission to configure and start the local MySQL service.'
+    $ElevatedArguments = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"{0}"' -f $PSCommandPath))
+    if ($Reconfigure) { $ElevatedArguments += '-Reconfigure' }
+    try {
+        $PowerShellExecutable = (Get-Process -Id $PID).Path
+        $ElevatedProcess = Start-Process -FilePath $PowerShellExecutable `
+            -Verb RunAs -ArgumentList $ElevatedArguments -Wait -PassThru
+    } catch {
+        throw 'Administrator permission is required to configure and restart the local MySQL service.'
+    }
+    if ($ElevatedProcess.ExitCode -ne 0) {
+        throw "Elevated database setup exited with code $($ElevatedProcess.ExitCode)."
+    }
+    $global:LASTEXITCODE = 0
+    return
 }
 
 $Services = @(Get-Service -Name 'MySQL*' -ErrorAction SilentlyContinue | Sort-Object Name -Descending)

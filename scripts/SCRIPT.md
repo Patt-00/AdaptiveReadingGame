@@ -1,6 +1,6 @@
 # Start the game
 
-Run the setup script for your device from the game folder. Setup installs or checks the required tools, configures a local database for saved accounts and progress, prepares the optional model helper, and starts the game. The first run asks for a database name, an application username, and a password that is not shown while you type. It asks for an administrator password only when the local database requires one.
+Run the setup script for your device from the game folder. Setup installs or checks the required tools, configures a local database for saved accounts and progress, prepares the optional model helper, and starts the game. The first run asks for a local database URL, an application username, and a password that is not shown while you type. It asks for an administrator password only when the local database requires one.
 
 The database stays on the device where it was created. Accounts and saved progress do not sync between devices.
 
@@ -73,7 +73,7 @@ Termux:
 ./scripts/setup-termux.sh --reconfigure-database
 ```
 
-Unset any `ARG_DB_URL`, `ARG_DB_USER`, or `ARG_DB_PASSWORD` environment variables before reconfiguring. They take priority over the saved settings.
+Unset any `ARG_DB_URL`, `ARG_DB_USER`, or `ARG_DB_PASSWORD` environment variables before reconfiguring. They take priority over the saved settings. Choose an unused application database username; setup will not reset an existing account for that local host.
 
 ## Check setup without opening the game
 

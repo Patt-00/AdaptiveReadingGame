@@ -57,12 +57,22 @@ class MySqlLocalDatabaseProvisionerIntegrationTest {
             assertEquals(6, results.getInt(1));
         }
 
-        provision(url, configFile);
+        assertThrows(IllegalArgumentException.class,
+                () -> provision(url, configFile, "different-application-password"));
+        try (var connection = DriverManager.getConnection(app.url(), app.username(), app.password());
+             var statement = connection.createStatement();
+             var results = statement.executeQuery("SELECT 1")) {
+            assertTrue(results.next(), "A duplicate username must not reset the existing application password.");
+        }
     }
 
     private MySqlConfig provision(String url, Path configFile) {
+        return provision(url, configFile, required("ARG_LOCAL_DB_APP_PASSWORD"));
+    }
+
+    private MySqlConfig provision(String url, Path configFile, String applicationPasswordValue) {
         String applicationUser = required("ARG_LOCAL_DB_APP_USER");
-        char[] applicationPassword = required("ARG_LOCAL_DB_APP_PASSWORD").toCharArray();
+        char[] applicationPassword = applicationPasswordValue.toCharArray();
         if ("socket".equalsIgnoreCase(System.getenv("ARG_DB_ADMIN_MODE")))
             return MySqlLocalDatabaseProvisioner.provisionUsingSocket(url, applicationUser, applicationPassword, configFile);
         return MySqlLocalDatabaseProvisioner.provision(url, required("ARG_LOCAL_DB_ADMIN_USER"),

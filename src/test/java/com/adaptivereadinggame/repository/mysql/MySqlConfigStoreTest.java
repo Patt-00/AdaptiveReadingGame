@@ -26,6 +26,19 @@ class MySqlConfigStoreTest {
         assertFalse(expected.toString().contains("local-secret"));
     }
 
+    @Test void rejectsCredentialsInsideJdbcUrlsAndRedactsTheUrlInLogs() {
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                () -> new MySqlConfig("jdbc:mysql://127.0.0.1:3306/adaptive_reading?user=reader&password=url-secret",
+                        "adaptive_game", "field-secret"));
+        assertTrue(failure.getMessage().contains("provide them separately"));
+        assertFalse(failure.getMessage().contains("url-secret"));
+
+        MySqlConfig config = new MySqlConfig("jdbc:mysql://127.0.0.1:3306/adaptive_reading?serverTimezone=UTC",
+                "adaptive_game", "field-secret");
+        assertFalse(config.toString().contains("serverTimezone"));
+        assertFalse(config.toString().contains("field-secret"));
+    }
+
     @Test void usesExplicitEnvironmentSettingsBeforeSavedSettings() throws Exception {
         Path file = temporary.resolve("database.properties");
         MySqlConfigStore.save(file, new MySqlConfig("jdbc:mysql://127.0.0.1:3306/adaptive_reading", "saved_user", "saved-secret"));
