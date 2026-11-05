@@ -23,6 +23,15 @@ function Get-NativeOutput([string]$Executable, [string[]]$Arguments) {
     }
 }
 
+function Get-JavaHomeFromPath {
+    $JavaProperties = Get-NativeOutput 'java' @('-XshowSettings:properties', '-version')
+    if ($NativeExitCode -ne 0) { return $null }
+    if ($JavaProperties -match '(?m)java\.home\s*=\s*(.+?)\s*$') {
+        return $Matches[1].Trim()
+    }
+    return $null
+}
+
 if (-not (Get-Command java -ErrorAction SilentlyContinue)) {
     Stop-PrerequisiteCheck 'Install JDK 21 or newer and add java to PATH.'
 }
@@ -61,6 +70,34 @@ if ($MavenInfo -notmatch '(?m)^Java version: ([0-9]+).*runtime: (.+)\s*$') {
 }
 $MavenJava = [int]$Matches[1]
 $MavenRuntime = $Matches[2].Trim()
+if ($MavenJava -lt 21 -and $JavaMajor -ge 21 -and $JavacMajor -ge 21) {
+    $PathJavaHome = Get-JavaHomeFromPath
+    if (-not [string]::IsNullOrWhiteSpace($PathJavaHome)) {
+        $JavacExe = Join-Path $PathJavaHome 'bin/javac.exe'
+        $JavacCommand = Join-Path $PathJavaHome 'bin/javac'
+        if ((Test-Path -LiteralPath $JavacExe -PathType Leaf) -or
+                (Test-Path -LiteralPath $JavacCommand -PathType Leaf)) {
+            $PreviousJavaHome = $env:JAVA_HOME
+            $HadJavaHome = Test-Path Env:JAVA_HOME
+            $PreviousPath = $env:Path
+            try {
+                $env:JAVA_HOME = $PathJavaHome
+                $env:Path = "$PathJavaHome\bin;$env:Path"
+                Write-Host "Info: Using JDK $JavaMajor from PATH for this check."
+                $MavenInfo = Get-NativeOutput 'mvn' @('-version')
+                if ($NativeExitCode -eq 0 -and
+                        $MavenInfo -match '(?m)^Java version: ([0-9]+).*runtime: (.+)\s*$') {
+                    $MavenJava = [int]$Matches[1]
+                    $MavenRuntime = $Matches[2].Trim()
+                }
+            } finally {
+                if ($HadJavaHome) { $env:JAVA_HOME = $PreviousJavaHome }
+                else { Remove-Item Env:JAVA_HOME -ErrorAction SilentlyContinue }
+                $env:Path = $PreviousPath
+            }
+        }
+    }
+}
 if ($MavenJava -lt 21) {
     Stop-PrerequisiteCheck "Maven uses Java $MavenJava; configure JAVA_HOME to a JDK 21 or newer."
 }
@@ -100,7 +137,7 @@ if ([string]::IsNullOrWhiteSpace($env:ARG_DB_URL) -and [string]::IsNullOrWhiteSp
     if ($env:ARG_DB_URL -cnotlike 'jdbc:mysql://*') { Stop-PrerequisiteCheck 'ARG_DB_URL must be a MySQL JDBC URL beginning jdbc:mysql://.' }
     if ([string]::IsNullOrWhiteSpace($env:ARG_DB_USER)) { Stop-PrerequisiteCheck 'ARG_DB_USER is required when MySQL is configured.' }
     if (-not $PasswordSet) { Stop-PrerequisiteCheck 'ARG_DB_PASSWORD must be set when MySQL is configured.' }
-    Write-Host 'OK: MySQL settings are present. Connectivity and migrations were not checked; apply V001 through V005 before launching.'
+    Write-Host 'OK: MySQL settings are present. Connectivity and migrations were not checked; apply V001 through V006 before launching.'
 }
 
 $AssetRoot = if ([string]::IsNullOrWhiteSpace($env:ARG_ASSET_DIR)) { Join-Path $ProjectRoot 'assets' }

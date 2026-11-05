@@ -14,30 +14,7 @@ Story choices change the narrative. Your first submitted answer to each question
 
 ## Start the game
 
-Open the game folder in PowerShell on Windows, or Terminal on Linux and macOS. Run the setup script for your computer:
-
-Windows PowerShell:
-
-```powershell
-.\scripts\Setup-And-Run.ps1
-```
-
-Linux or macOS:
-
-```sh
-./scripts/setup-and-run.sh
-```
-
-The setup script checks for the components needed to run the game and starts it. It may ask you to approve installation of missing components. When the opening and loading screens finish, press Space or click **PRESS SPACE TO ENTER**.
-
-### Android tablets
-
-Android play requires Termux and Termux:X11. Install the [Termux:X11 app](https://github.com/termux/termux-x11/releases), then run these commands from the game folder in Termux. Run setup once; use the second command whenever you want to start the game.
-
-```sh
-./scripts/termux-setup-x11.sh
-./scripts/termux-run-x11.sh
-```
+Choose the setup steps for your device in the [script guide](scripts/SCRIPT.md). It covers Windows, Linux, macOS, and Android tablets using Termux:X11.
 
 ## Save your progress
 
