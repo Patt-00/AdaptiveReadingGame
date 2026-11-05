@@ -41,6 +41,8 @@
                 <Button text="BACK" onAction="#showSelection" styleClass="auth-secondary" prefWidth="200"/>
             </VBox>
             <Button text="AUDIO SETTINGS" onAction="#audioSettings" styleClass="account-link"/>
+            <Label fx:id="playerDataNotice" alignment="CENTER" wrapText="true" maxWidth="580"
+                   minHeight="-Infinity" styleClass="account-note" visible="false" managed="false"/>
         </VBox>
       </content>
     </ScrollPane>

@@ -1,6 +1,8 @@
 package com.adaptivereadinggame.ui;
 
+import com.adaptivereadinggame.AdaptiveReadingGameApp;
 import com.adaptivereadinggame.audio.GameAudio;
+import com.adaptivereadinggame.AdaptiveReadingGameApp;
 import com.adaptivereadinggame.backend.BackendContext;
 import com.adaptivereadinggame.view.OpeningScreen;
 import com.adaptivereadinggame.settings.PlayerPreferences;
@@ -16,7 +18,9 @@ import javafx.stage.Stage;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.Assumptions;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
@@ -45,6 +49,44 @@ class OpeningScreenUiTest {
         assertTrue(ready.await(10, TimeUnit.SECONDS));
     }
     @AfterEach void close() throws Exception { if (stage != null) fx(() -> { stage.hide(); return null; }); }
+
+    @Test void temporaryProgressNoticeAppearsBeforeSignupAndOnTheMainMenu() throws Exception {
+        Assumptions.assumeTrue(System.getenv("ARG_DB_URL") == null
+                        && System.getenv("ARG_DB_USER") == null
+                        && System.getenv("ARG_DB_PASSWORD") == null,
+                "This test covers the default temporary-storage launch.");
+        fx(() -> {
+            stage = new Stage();
+            new AdaptiveReadingGameApp().start(stage);
+            stage.toFront();
+            stage.requestFocus();
+            return null;
+        });
+        await(() -> root("#enterGame") != null && root("#enterGame").isVisible());
+        click("#enterGame");
+        await(() -> root("#accountRoot") != null);
+        assertProgressNotice();
+
+        clickButtonText("SIGN UP");
+        fx(() -> {
+            ((javafx.scene.control.TextField) root("#usernameField")).setText("storage-notice-reader");
+            ((javafx.scene.control.TextField) root("#displayNameField")).setText("Storage Notice Reader");
+            ((javafx.scene.control.PasswordField) root("#passwordField")).setText("StrongPass1!");
+            ((Button) root("#submitButton")).fire();
+            return null;
+        });
+        await(() -> ((Label) root("#statusLabel")).getText().contains("Account created successfully"));
+        fx(() -> {
+            ((javafx.scene.control.PasswordField) root("#passwordField")).setText("StrongPass1!");
+            ((Button) root("#submitButton")).fire();
+            return null;
+        });
+        await(() -> root("#appearanceRoot") != null);
+        click("#choiceA");
+        click("#confirmButton");
+        await(() -> root("#menuRoot") != null);
+        assertProgressNotice();
+    }
 
     @Test void openingRestoresMuteAndReducedMotionBeforeEntering() throws Exception {
         Preferences node = Preferences.userRoot().node("com/adaptivereadinggame-tests/" + UUID.randomUUID());
@@ -246,6 +288,26 @@ class OpeningScreenUiTest {
             Robot robot = new Robot();
             robot.mouseMove(bounds.getCenterX(), bounds.getCenterY());
             robot.mouseClick(MouseButton.PRIMARY);
+            return null;
+        });
+    }
+
+    private void clickButtonText(String text) throws Exception {
+        fx(() -> {
+            Button button = stage.getScene().getRoot().lookupAll(".button").stream()
+                    .filter(Button.class::isInstance).map(Button.class::cast)
+                    .filter(candidate -> candidate.getText().equals(text)).findFirst().orElseThrow();
+            button.fire();
+            return null;
+        });
+    }
+
+    private void assertProgressNotice() throws Exception {
+        fx(() -> {
+            Label notice = (Label) root("#playerDataNotice");
+            assertNotNull(notice, "The screen must explain that this account's progress is temporary.");
+            assertTrue(notice.isVisible());
+            assertEquals("Your progress is temporary and will be lost when the game closes.", notice.getText());
             return null;
         });
     }

@@ -53,6 +53,7 @@ public final class MenuController {
     @FXML private Button continueButton;
     @FXML private Label accountLabel;
     @FXML private Label continueStatusLabel;
+    @FXML private Label playerDataNotice;
 
     public MenuController(AppNavigator navigator) { this.navigator = Objects.requireNonNull(navigator); }
 
@@ -62,6 +63,9 @@ public final class MenuController {
         menuRoot.heightProperty().addListener((observable, before, after) -> updateCompactLayout(after.doubleValue()));
         accountLabel.setText(navigator.backend().accountGameService().currentAccount()
                 .map(account -> "Welcome, " + account.displayName()).orElse("No account signed in"));
+        playerDataNotice.setText(navigator.playerDataNotice());
+        playerDataNotice.setVisible(!navigator.playerDataNotice().isBlank());
+        playerDataNotice.setManaged(!navigator.playerDataNotice().isBlank());
         refresh();
     }
 

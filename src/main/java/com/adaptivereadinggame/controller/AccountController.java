@@ -31,6 +31,7 @@ public final class AccountController {
     @FXML private PasswordField passwordField;
     @FXML private Label passwordLabel;
     @FXML private Label statusLabel;
+    @FXML private Label playerDataNotice;
     @FXML private Label formTitle;
     @FXML private Button submitButton;
 
@@ -42,6 +43,9 @@ public final class AccountController {
         usernameLabel.setLabelFor(usernameField);
         displayNameLabel.setLabelFor(displayNameField);
         passwordLabel.setLabelFor(passwordField);
+        playerDataNotice.setText(navigator.playerDataNotice());
+        playerDataNotice.setVisible(!navigator.playerDataNotice().isBlank());
+        playerDataNotice.setManaged(!navigator.playerDataNotice().isBlank());
         showSelection();
     }
 

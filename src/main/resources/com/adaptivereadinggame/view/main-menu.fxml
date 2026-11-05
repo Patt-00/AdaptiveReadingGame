@@ -36,6 +36,8 @@
             </VBox>
             <Label fx:id="continueStatusLabel" alignment="CENTER" wrapText="true" minHeight="-Infinity"
                    maxWidth="660" styleClass="account-note"/>
+            <Label fx:id="playerDataNotice" alignment="CENTER" wrapText="true" minHeight="-Infinity"
+                   maxWidth="660" styleClass="account-note" visible="false" managed="false"/>
             <Label fx:id="accountLabel" alignment="CENTER" wrapText="true" minHeight="-Infinity" styleClass="account-note"/>
             <HBox fx:id="accountActions" alignment="CENTER" spacing="24">
                 <Button text="READING HISTORY" onAction="#history" styleClass="account-link"/>

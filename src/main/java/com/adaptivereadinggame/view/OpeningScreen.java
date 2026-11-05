@@ -47,7 +47,13 @@ import java.util.Objects;
 
 /** A skippable text opening followed by actual startup progress and optional artwork. */
 public final class OpeningScreen {
-    public record Loaded(BackendContext backend) {}
+    public record Loaded(BackendContext backend, String playerDataNotice) {
+        public Loaded(BackendContext backend) { this(backend, ""); }
+        public Loaded {
+            Objects.requireNonNull(backend);
+            playerDataNotice = Objects.requireNonNullElse(playerDataNotice, "");
+        }
+    }
     public static final class LoadFailure extends Exception {
         public LoadFailure(String message, Throwable cause) { super(message, cause); }
         public LoadFailure(String message) { super(message); }
@@ -445,7 +451,8 @@ public final class OpeningScreen {
         scene.removeEventFilter(ActionEvent.ACTION, soundFilter);
         scene.removeEventFilter(KeyEvent.KEY_PRESSED, keyFilter);
         try {
-            AppNavigator navigator = new AppNavigator(stage, loaded.backend(), audio, preferences);
+            AppNavigator navigator = new AppNavigator(stage, loaded.backend(), audio, preferences,
+                    loaded.playerDataNotice());
             navigator.setReducedMotion(reduceMotion.isSelected());
             navigator.startAtAccount();
         } catch (IOException failure) {

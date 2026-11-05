@@ -56,7 +56,12 @@ public class AdaptiveReadingGameApp extends Application {
                     "The story could not be opened. Please close the game and open it again.", failure);
         }
         progress.update(4, 4, "Game ready.");
-        return new OpeningScreen.Loaded(backend);
+        return new OpeningScreen.Loaded(backend, playerProgressNotice(database.isPresent()));
+    }
+
+    static String playerProgressNotice(boolean persistent) {
+        return persistent ? "Your progress is saved to your account."
+                : "Your progress is temporary and will be lost when the game closes.";
     }
 
     static Path resolveContentPack(String configuredContentPack, Path projectRoot) throws IOException {

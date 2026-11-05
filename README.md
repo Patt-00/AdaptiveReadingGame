@@ -88,7 +88,7 @@ Run `./scripts/termux-build-check.sh` from a Termux checkout when you only need 
 
 The launch class is `com.adaptivereadinggame.AdaptiveReadingGameApp`. It opens an animated text introduction and a loading screen. Once startup finishes, press Space or select Enter to open authentication. A new account selects a servant appearance before reaching the main menu.
 
-With no database settings, the app uses temporary in-memory storage and logs the storage mode at startup. To use MySQL, set `ARG_DB_URL`, `ARG_DB_USER`, and `ARG_DB_PASSWORD`, then apply the migrations described in [database setup](database/README.md). Migrations V001 through V006 are in `database/migrations/`.
+With no database settings, the app uses temporary in-memory storage and shows a plain-language notice on the account and main menu before logging the storage mode at startup. With MySQL settings, progress is saved to the configured account. To use MySQL, set `ARG_DB_URL`, `ARG_DB_USER`, and `ARG_DB_PASSWORD`, then apply the migrations described in [database setup](database/README.md). Migrations V001 through V006 are in `database/migrations/`.
 
 The app loads `assets/content/hailey-investigation-complete.json` when `ARG_CONTENT_PACK` is not set. That version-3 pack contains the unchanged review draft, the previous completed edition, and the new selectable edition under separate stable IDs. The new edition has 36 question entries across its four route-specific checkpoints, with three questions at each difficulty; a normal route answers six questions. Version-1 and version-2 packs remain supported, and older pack versions default to selectable chapters. See [the content-pack guide](assets/README.md).
 
@@ -102,11 +102,12 @@ For commands without Maven, see [Manual Compilation](Module%20Guide/Manual%20Com
 
 - Startup shows the animated opening and loading progress. Space or Enter enters the game after loading; Reduce Motion is available.
 - Players can sign up, log in, select a servant appearance, adjust reading and audio settings, play stories, save and load progress, view Reading History, manage their account, and quit.
+- The account and main-menu screens explain whether progress is temporary or saved to the player's account.
 - The default version-3 pack preserves earlier editions for saved progress and offers a new edition for new games. It supports both investigation orders and four story outcomes.
 - Each checkpoint stores three questions at every difficulty. A normal route presents six questions. Only each question's first submitted answer counts; story choices do not affect comprehension scores.
 - Reading level wording describes questions, not story scenes. Java owns scoring, persistence coordination, and the final difficulty choice. The optional Qwen helper suggests a level; Java applies its safeguards and fallback.
 - The game uses written dialogue and images. Menu music and a click effect are bundled; optional story tracks remain local under their distribution terms. The 40 `uiux-*.fxml` files are visual references; the running game uses `how-to-play.fxml`, `gameplay.fxml`, `results.fxml`, and `analysis.fxml`.
-- See the [integration verification report](docs/requirements/Final-Integration-Verification-2026-11-02.md) for test results and platform limits. The new story conclusion and question set need group and teacher review. Educational quality of the optional model has not been evaluated; teacher and parent reporting remains deferred.
+- See the [latest integration verification report](docs/requirements/Final-Integration-Verification-2026-11-05.md) for test results and platform limits. The new story conclusion and question set need group and teacher review. Educational quality of the optional model has not been evaluated; teacher and parent reporting remains deferred.
 
 ## Backend development
 

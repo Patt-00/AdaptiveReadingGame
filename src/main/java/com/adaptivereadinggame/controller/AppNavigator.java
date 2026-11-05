@@ -48,6 +48,7 @@ public final class AppNavigator {
             "(?i)(^|[.!?,;:]\\s+)servant(?=\\s*[,;:.!?])");
     private final Stage stage;
     private final BackendContext backend;
+    private final String playerDataNotice;
     private final StoryStageDirections stageDirections;
     private final GameAudio audio;
     private final PlayerPreferences preferences;
@@ -69,26 +70,33 @@ public final class AppNavigator {
     private ChapterSummary pendingChapter;
 
     public AppNavigator(Stage stage, BackendContext backend) {
-        this(stage, backend, loadStageDirections(), new GameAudio(new JavaFxAudioOutput()), PlayerPreferences.temporary());
+        this(stage, backend, loadStageDirections(), new GameAudio(new JavaFxAudioOutput()),
+                PlayerPreferences.temporary(), "");
     }
 
     public AppNavigator(Stage stage, BackendContext backend, GameAudio audio) {
-        this(stage, backend, loadStageDirections(), audio, PlayerPreferences.temporary());
+        this(stage, backend, loadStageDirections(), audio, PlayerPreferences.temporary(), "");
     }
 
     public AppNavigator(Stage stage, BackendContext backend, GameAudio audio, PlayerPreferences preferences) {
-        this(stage, backend, loadStageDirections(), audio, preferences);
+        this(stage, backend, audio, preferences, "");
+    }
+
+    public AppNavigator(Stage stage, BackendContext backend, GameAudio audio, PlayerPreferences preferences,
+                        String playerDataNotice) {
+        this(stage, backend, loadStageDirections(), audio, preferences, playerDataNotice);
     }
 
     public AppNavigator(Stage stage, BackendContext backend, StoryStageDirections stageDirections) {
         this(stage, backend, new StageDirectionsLoad(Objects.requireNonNull(stageDirections), ""),
-                new GameAudio(new JavaFxAudioOutput()), PlayerPreferences.temporary());
+                new GameAudio(new JavaFxAudioOutput()), PlayerPreferences.temporary(), "");
     }
 
     private AppNavigator(Stage stage, BackendContext backend, StageDirectionsLoad stageLoad,
-                         GameAudio audio, PlayerPreferences preferences) {
+                         GameAudio audio, PlayerPreferences preferences, String playerDataNotice) {
         this.stage = Objects.requireNonNull(stage);
         this.backend = Objects.requireNonNull(backend);
+        this.playerDataNotice = Objects.requireNonNullElse(playerDataNotice, "");
         this.stageDirections = stageLoad.directions();
         this.stageDirectionsNotice = stageLoad.notice();
         this.audio = Objects.requireNonNull(audio);
@@ -100,6 +108,7 @@ public final class AppNavigator {
 
     public BackendContext backend() { return backend; }
     public Stage stage() { return stage; }
+    public String playerDataNotice() { return playerDataNotice; }
     public StoryStageDirections stageDirections() { return stageDirections; }
     public String stageDirectionsNotice() { return stageDirectionsNotice; }
     public boolean workInProgress() { return workInProgress; }

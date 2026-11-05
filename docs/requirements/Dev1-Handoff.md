@@ -140,7 +140,7 @@ The application uses MySQL when all `ARG_DB_*` settings are present and otherwis
 
 ## Remaining review
 
-The previous chapter editions and startup flow have automated and virtual-display verification. The [game finalization QA report](Game-Finalization-QA-2026-10-30.md) records the latest content, compatibility, test, desktop, and Termux results. Remaining work needs review on the group's environment:
+The previous chapter editions and startup flow have automated and virtual-display verification. The [latest integration verification report](Final-Integration-Verification-2026-11-05.md) records the current content, compatibility, test, desktop, and Termux results. Remaining work needs review on the group's environment:
 
 1. Ask the group and teacher to review the protagonist presentation, Prince Owen naming, Lord Robert reveal, four endings, character portraits, and expanded question set.
 2. Play the completed chapter on the target desktop and listen to the click and music tracks.

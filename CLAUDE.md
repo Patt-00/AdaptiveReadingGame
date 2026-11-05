@@ -81,7 +81,7 @@ src/test/java/                            # JUnit tests
 
 ### Enums
 - **Difficulty** - EASY, MEDIUM, HARD (with `move(step)` for bounded transitions)
-- **ReadingLevel** - BEGINNER, INTERMEDIATE, ADVANCED (legacy profile field)
+- **ReadingLevel** - BEGINNER, DEVELOPING, PROFICIENT, ADVANCED (legacy profile field)
 - **DifficultyDecisionSource** - JAVA_RULES, MODEL, JAVA_FALLBACK, JAVA_GUARDRAIL
 
 ## Key Services
@@ -164,7 +164,7 @@ mvn exec:java                  # Run BackendDemo (exec.mainClass in pom.xml)
 - MySQL config via `MySqlConfig.fromEnvironment()`
 
 ## Key Architectural Decisions
-1. **A reading level describes questions, never the story** - Only `LevelCopy` in the controller package may word a level. Story screens must hide the level chip; reading-check screens show `Question level: X`. `ChapterSummary.adaptive` tells a view whether `difficulty` is a chapter property (legacy) or only the starting question level.
+1. **A reading level describes questions, never the story** - Only `LevelCopy` in the controller package may word a level. Story screens hide the level chip; reading-check screens show `Question level: X`. `ChapterSummary.adaptive` indicates whether a chapter changes question level at its checkpoints.
 2. **No arbitrary student IDs in controllers** - All operations derive studentId from authenticated account
 3. **First-answer immutability** - Assessment drafts store first answers; retries don't overwrite
 4. **Story service owns narrative state** - `StoryService` handles advance/choose/restore logic
