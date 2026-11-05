@@ -132,12 +132,22 @@ if (-not [string]::IsNullOrWhiteSpace($env:ARG_CONTENT_PACK)) {
 
 $PasswordSet = [Environment]::GetEnvironmentVariables().Contains('ARG_DB_PASSWORD')
 if ([string]::IsNullOrWhiteSpace($env:ARG_DB_URL) -and [string]::IsNullOrWhiteSpace($env:ARG_DB_USER) -and -not $PasswordSet) {
-    Write-Host 'OK: No MySQL settings found; the game will use temporary in-memory storage.'
+    if (-not [string]::IsNullOrWhiteSpace($env:ARG_DB_CONFIG_FILE)) {
+        if ([IO.Path]::IsPathRooted($env:ARG_DB_CONFIG_FILE)) { $DatabaseConfigFile = $env:ARG_DB_CONFIG_FILE }
+        else { $DatabaseConfigFile = Join-Path $ProjectRoot $env:ARG_DB_CONFIG_FILE }
+    } else {
+        $DatabaseConfigFile = Join-Path $env:APPDATA 'AdaptiveReadingGame/database.properties'
+    }
+    if (Test-Path -LiteralPath $DatabaseConfigFile -PathType Leaf) {
+        Write-Host 'OK: Saved local database settings were found. The game will use persistent local storage.'
+    } else {
+        Write-Host 'OK: No local database settings found; the game will use temporary in-memory storage.'
+    }
 } else {
     if ($env:ARG_DB_URL -cnotlike 'jdbc:mysql://*') { Stop-PrerequisiteCheck 'ARG_DB_URL must be a MySQL JDBC URL beginning jdbc:mysql://.' }
     if ([string]::IsNullOrWhiteSpace($env:ARG_DB_USER)) { Stop-PrerequisiteCheck 'ARG_DB_USER is required when MySQL is configured.' }
     if (-not $PasswordSet) { Stop-PrerequisiteCheck 'ARG_DB_PASSWORD must be set when MySQL is configured.' }
-    Write-Host 'OK: MySQL settings are present. Connectivity and migrations were not checked; apply V001 through V006 before launching.'
+    Write-Host 'OK: MySQL environment settings are present. Setup checks connectivity and applies missing migrations before launch.'
 }
 
 $AssetRoot = if ([string]::IsNullOrWhiteSpace($env:ARG_ASSET_DIR)) { Join-Path $ProjectRoot 'assets' }

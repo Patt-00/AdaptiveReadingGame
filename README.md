@@ -20,7 +20,7 @@ Choose the setup steps for your device in the [script guide](scripts/SCRIPT.md).
 
 Use Save/Load from the main menu to save your current story in a slot. Save again after making more progress. If the game warns that your current progress is unsaved, return to the game, save from Save/Load, then quit.
 
-The account and main menu tell you whether progress is saved to your account or temporary. The standard local setup uses temporary progress unless persistent account saving has been set up. If the notice says progress is temporary, your account and save slots will be lost when the game closes, even if you saved to a slot. If it says progress is saved to your account, saved slots remain available when you sign in again.
+The setup script configures a database stored on the device. Accounts and progress do not sync between devices. Windows, macOS, and desktop Linux use MySQL; Termux stores its MariaDB files inside its Debian environment. The setup asks for a local database URL, an application username, and a hidden password. If the game is launched without setup, it uses temporary storage and accounts and save slots are lost when it closes.
 
 ## If startup fails
 

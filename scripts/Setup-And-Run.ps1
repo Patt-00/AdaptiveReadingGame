@@ -1,5 +1,6 @@
 param(
-    [switch]$InstallOnly
+    [switch]$InstallOnly,
+    [switch]$ReconfigureDatabase
 )
 
 $ErrorActionPreference = 'Stop'
@@ -84,6 +85,11 @@ if (-not [string]::IsNullOrWhiteSpace($DetectedJavaHome)) {
 }
 
 $CheckScript = Join-Path $PSScriptRoot 'Check-Prerequisites.ps1'
+$DatabaseScript = Join-Path $PSScriptRoot 'Setup-Local-Database.ps1'
+if ($ReconfigureDatabase) { & $DatabaseScript -Reconfigure }
+else { & $DatabaseScript }
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 & $CheckScript -CheckOnly
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

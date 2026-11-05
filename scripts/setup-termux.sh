@@ -3,11 +3,12 @@ set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 install_only=false
+reconfigure_database=false
 project_dir="${ARG_PROJECT_DIR:-}"
 
 usage() {
-    printf 'Usage: scripts/setup-termux.sh [--install-only] [--project-dir PATH]\n'
-    printf 'Prepares Termux:X11, Debian, JavaFX, and the optional model helper.\n'
+    printf 'Usage: scripts/setup-termux.sh [--install-only] [--project-dir PATH] [--reconfigure-database]\n'
+    printf 'Prepares Termux:X11, Debian, JavaFX, local MariaDB storage, and the optional model helper.\n'
     printf 'Without --install-only, it launches the game after setup.\n'
 }
 
@@ -25,6 +26,10 @@ while (($# > 0)); do
             (($# >= 2)) || { usage >&2; printf 'Pass a path after --project-dir.\n' >&2; exit 2; }
             project_dir="$2"
             shift 2
+            ;;
+        --reconfigure-database)
+            reconfigure_database=true
+            shift
             ;;
         --help|-h)
             usage
@@ -49,6 +54,8 @@ if [[ -z "$project_dir" ]]; then
 fi
 if [[ "$project_dir" != /* ]]; then project_dir="$PWD/$project_dir"; fi
 
-"$script_dir/termux-setup-x11.sh" --project-dir "$project_dir"
+setup_arguments=(--project-dir "$project_dir")
+if [[ "$reconfigure_database" == true ]]; then setup_arguments+=(--reconfigure-database); fi
+"$script_dir/termux-setup-x11.sh" "${setup_arguments[@]}"
 if [[ "$install_only" == true ]]; then exit 0; fi
 exec "$project_dir/scripts/termux-run-x11.sh"

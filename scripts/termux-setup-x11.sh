@@ -4,17 +4,19 @@ set -euo pipefail
 repo_url="https://github.com/Patt-00/AdaptiveReadingGame.git"
 project_dir="${ARG_PROJECT_DIR:-$HOME/AdaptiveReadingGame-Termux}"
 project_dir_explicit=false
+reconfigure_database=false
 
 usage() {
     cat <<'EOF'
-Usage: scripts/termux-setup-x11.sh [--project-dir PATH]
+Usage: scripts/termux-setup-x11.sh [--project-dir PATH] [--reconfigure-database]
 
 Install the Termux:X11 and Debian PRoot prerequisites for Adaptive Reading Game.
 The setup compiles the Java sources and downloads game artwork and menu music.
-The optional Qwen model and MySQL server are not required to launch the game.
+Debian MariaDB is configured locally so accounts and progress persist on this tablet.
 
 Options:
   --project-dir PATH  Use or create a project checkout at PATH.
+  --reconfigure-database  Replace the saved local database settings.
   --help              Show this help.
 EOF
 }
@@ -39,6 +41,10 @@ while (($# > 0)); do
             project_dir="$2"
             project_dir_explicit=true
             shift 2
+            ;;
+        --reconfigure-database)
+            reconfigure_database=true
+            shift
             ;;
         --help|-h)
             usage
@@ -171,7 +177,7 @@ package_available libgtk-3-0t64 && gtk_package=libgtk-3-0t64
 package_available libasound2t64 && alsa_package=libasound2t64
 
 packages=(
-    openjdk-21-jdk maven git git-lfs python3 python3-venv python3-pip
+    openjdk-21-jdk maven git git-lfs python3 python3-venv python3-pip mariadb-server mariadb-client
     "$gtk_package" "$alsa_package" libasound2-plugins
     libfontconfig1 libgl1 libegl1 libxtst6 libxi6 libxrender1
     libxrandr2 libxinerama1 libxxf86vm1
@@ -231,5 +237,10 @@ fi
 if [[ "$x11_app_state" == unknown ]]; then
     printf 'Warning: Android did not confirm the Termux:X11 app. The launcher will try to open it before starting the game.\n' >&2
 fi
+
+printf '\nConfiguring the local MariaDB database. Accounts and progress will stay on this tablet.\n'
+database_arguments=()
+if [[ "$reconfigure_database" == true ]]; then database_arguments+=(--reconfigure); fi
+(cd "$project_root" && ./scripts/termux-setup-database.sh "${database_arguments[@]}")
 
 printf '\nSetup complete for %s. Run scripts/termux-run-x11.sh from the project root to open the game.\n' "$project_root"

@@ -4,13 +4,19 @@ set -euo pipefail
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd -- "$script_dir/.." && pwd)"
 install_only=false
+reconfigure_database=false
 
-if [[ "${1:-}" == "--install-only" ]]; then
-    install_only=true
-elif [[ "$#" -gt 0 ]]; then
-    printf 'Usage: %s [--install-only]\n' "$0" >&2
-    exit 2
-fi
+while (($# > 0)); do
+    case "$1" in
+        --install-only) install_only=true; shift ;;
+        --reconfigure-database) reconfigure_database=true; shift ;;
+        --help|-h)
+            printf 'Usage: %s [--install-only] [--reconfigure-database]\n' "$0"
+            exit 0
+            ;;
+        *) printf 'Usage: %s [--install-only] [--reconfigure-database]\n' "$0" >&2; exit 2 ;;
+    esac
+done
 
 fail() {
     printf 'Setup could not continue: %s\n' "$1" >&2
@@ -113,6 +119,10 @@ if [[ "$need_jdk" == true || "$need_maven" == true || "$need_python" == true || 
     esac
     hash -r
 fi
+
+database_arguments=()
+if [[ "$reconfigure_database" == true ]]; then database_arguments+=(--reconfigure); fi
+"$script_dir/setup-local-database.sh" "${database_arguments[@]}"
 
 "$script_dir/check-prerequisites.sh" --check-only
 

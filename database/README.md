@@ -1,97 +1,70 @@
-# MySQL setup and verification
+# Local database setup
 
-The JavaFX app stores accounts, story episodes, route choices, adaptive checkpoints, first answers, results, and three full-save slots in MySQL. This guide covers `src/main/java/com/adaptivereadinggame/repository/mysql/` and the migrations in `database/migrations/`.
+The application stores accounts, story progress, answers, results, and three save slots in a database on the same device. Data does not sync between devices.
 
-## Requirements
+Windows, macOS, and supported desktop Linux use MySQL Server 8.0 or newer. Termux uses MariaDB inside its Debian PRoot environment. The game setup scripts provision the database and application user, apply migrations V001 through V006, and save the application connection settings for later launches.
 
-- MySQL Server 8.0 or newer.
-- JDK 21 or newer and Maven.
-- The Maven build downloads MySQL Connector/J 9.7.0. Its official release notes state support for MySQL Server 8.0 and later: [Connector/J 9.7.0 release notes](https://dev.mysql.com/doc/relnotes/connector-j/en/news-9-7-0.html).
+## Set up a device
 
-The schema stores timestamps as UTC in `DATETIME(6)` columns. The account username column uses a binary collation so MySQL compares the normalized value that Java supplies.
+Use the platform setup script described in [`scripts/SCRIPT.md`](../scripts/SCRIPT.md). On first setup, the database wizard asks for a local JDBC URL, application username, and hidden application password. The suggested URL is `jdbc:mysql://127.0.0.1:3306/adaptive_reading`. Change the port or database name only if needed; setup accepts loopback hosts only. Desktop setup also binds MySQL and MySQL X Protocol to loopback, and Termux starts MariaDB on `127.0.0.1` for the game session.
 
-## Create the database
+When the local server requires a database administrator password, setup asks for it without showing the characters. The administrator password is used only to create the database and application user. Termux uses MariaDB's local socket for that step and does not ask for a root password.
 
-Use an administrator account to create the application database and a local application user. Replace the example username with your own choice. Choose the password locally and do not commit it.
+The application user receives only the privileges needed by the schema and migrations on the game's database. It is separate from the MySQL or MariaDB administrator account.
 
-```sql
-CREATE DATABASE adaptive_reading CHARACTER SET utf8mb4;
-CREATE USER 'adaptive_game'@'localhost' IDENTIFIED BY 'choose-a-local-secret';
-GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, REFERENCES
-    ON adaptive_reading.* TO 'adaptive_game'@'localhost';
-```
+## Saved settings
 
-The application does not create the database or MySQL user. The migration command creates the project tables inside the database.
+The URL, application username, and password are stored outside the repository:
 
-The integration test creates and removes temporary triggers to force rollback cases. Give `TRIGGER` permission only to the disposable test user, not to a shared application user. On MySQL installations with binary logging enabled, the disposable test instance may also need `log_bin_trust_function_creators=1` so the test user can create its temporary triggers.
+- Windows: `%APPDATA%\AdaptiveReadingGame\database.properties`, with an ACL limited to the current user.
+- Linux and macOS: `${XDG_CONFIG_HOME:-~/.config}/adaptive-reading-game/database.properties`, with file permissions set to `0600`.
+- Termux: `/root/.config/adaptive-reading-game/database.properties` inside the Debian PRoot container.
 
-## Set the connection variables
+The password is plain text in this local file. Setup does not print it or include it in a command-line argument. Set `ARG_DB_CONFIG_FILE` to choose a different file path. On Termux, the path must point inside the Debian PRoot environment. The file is not committed to Git.
 
-Set the following variables in the terminal or IDE run configuration. Store the password in the local environment, not in a source file.
+Explicit environment settings take priority over the saved file. If any application setting is provided, all three are required:
 
-| Variable | Default | Usage |
-| --- | --- | --- |
-| `ARG_DB_URL` | Not set | MySQL JDBC URL. Example: `jdbc:mysql://localhost:3306/adaptive_reading`. |
-| `ARG_DB_USER` | Not set | MySQL username used by the app and migration command. |
-| `ARG_DB_PASSWORD` | Not set | Password for that MySQL user. |
-| `ARG_MYSQL_TEST_URL` | Not set | Loopback-only test URL ending in `/adaptive_reading_test`. |
-| `ARG_MYSQL_TEST_USER` | Not set | User for the disposable MySQL integration-test database. |
-| `ARG_MYSQL_TEST_PASSWORD` | Not set | Password for the integration-test user. |
+| Variable | Purpose |
+| --- | --- |
+| `ARG_DB_URL` | MySQL JDBC URL, such as `jdbc:mysql://127.0.0.1:3306/adaptive_reading`. |
+| `ARG_DB_USER` | Application database username. |
+| `ARG_DB_PASSWORD` | Application database password. |
 
-When all `ARG_DB_*` variables are absent, JavaFX starts in visibly labeled in-memory development mode. When any one is set, all three are required and the app selects MySQL. The app does not silently fall back to memory after a configured database connection fails.
+If no environment settings or saved configuration exist, a direct game launch uses the visibly labeled temporary in-memory mode. Accounts and progress in that mode disappear when the game closes. A setup-script launch configures persistent storage before the game opens.
 
-For Linux or macOS, set the URL and user in the current shell, then provide the password through your shell or IDE environment settings:
+## Manual migration and launch
+
+When using an existing local database outside the setup wizard, provide the three `ARG_DB_*` variables and run:
 
 ```sh
-export ARG_DB_URL='jdbc:mysql://localhost:3306/adaptive_reading'
-export ARG_DB_USER='adaptive_game'
-```
-
-For Windows PowerShell, set the same values in the current terminal:
-
-```powershell
-$env:ARG_DB_URL = 'jdbc:mysql://localhost:3306/adaptive_reading'
-$env:ARG_DB_USER = 'adaptive_game'
-```
-
-Set `ARG_DB_PASSWORD` before running either command below.
-
-## Apply the schema and start the app
-
-Run the migration before the first database-backed launch. Existing databases should run the migration command again to apply any missing versions through V006:
-
-```sh
-mvn compile -Dexec.cleanupDaemonThreads=false -Dexec.mainClass=com.adaptivereadinggame.repository.mysql.MySqlSchemaMigrator exec:java
+mvn compile -Dexec.cleanupDaemonThreads=false \
+  -Dexec.mainClass=com.adaptivereadinggame.repository.mysql.MySqlSchemaMigrator exec:java
 mvn javafx:run
 ```
 
-The migration creates `schema_migrations` and applies V001 through V006. V004 adds checkpoint-specific question variants and outcomes, route IDs, scene asset keys, and checkpoint progress fields. V005 stores one cosmetic servant appearance per account. V006 adds `chapters.available_for_new_game`; older chapters remain available for save restoration but are excluded from new-game selection when the content pack marks them unavailable. Versions recorded as applied are skipped on later runs. Future schema changes need a new numbered file. Back up a database before running any later migration that changes existing records. If a migration fails partway through, inspect the schema before retrying because MySQL DDL may already have taken effect.
+The migrator applies unapplied SQL files from `database/migrations/` and records their versions in `schema_migrations`. Applied versions are skipped on later runs. Add a new numbered migration for each schema change; do not edit a migration that has already been applied to user data.
 
-V004 retains a default-empty `voice_asset_key` column for schema compatibility. The text-only application does not read or write it.
+V004 adds checkpoint question variants and outcomes, route IDs, scene asset keys, and checkpoint progress. V005 stores the player's appearance. V006 adds `chapters.available_for_new_game` so retired chapters can remain available to restore existing saves without appearing in new-game selection.
 
-The application expects three save slots. Full saves store a version-2 `GameState` JSON snapshot with its current route, checkpoint, difficulty, prior checkpoint result ID, and first answers. The codec still reads version-1 saves. See the [version-2 save example](examples/game-state-v2.json) and the [version-1 save example](examples/game-state-v1.json). A basic checkpoint overwrite clears an older full snapshot in that slot. The app loads `assets/content/hailey-investigation-complete.json` by default. This version-3 pack preserves two earlier editions for save restoration and offers only the new edition for new games. Set `ARG_CONTENT_PACK` to select another local JSON file. See [the content-pack guide](../assets/README.md).
+MySQL Connector/J 9.7.0 supports MySQL Server 8.0 and later according to its [release notes](https://dev.mysql.com/doc/relnotes/connector-j/en/news-9-7-0.html). The schema stores timestamps as UTC in `DATETIME(6)` columns. Account usernames use a binary collation after Java normalizes them.
 
-## Run the MySQL integration test
+## Integration tests
 
-Use a disposable local database named exactly `adaptive_reading_test`. The opt-in test rejects non-loopback hosts and any other database name. It adds uniquely named fixture rows and temporary triggers, then removes its triggers. Do not point it at a shared or production database.
+The MySQL repository integration test is opt-in and requires a disposable loopback database named `adaptive_reading_test`. It creates fixture data and temporary triggers to verify account isolation, first-answer locking, save rollback, result idempotency, route persistence, and migration repeatability. Never point this test at a database containing user data.
 
-Set these test variables in addition to the application variables:
+The local setup integration test is also opt-in. Set `ARG_LOCAL_DB_URL` to a loopback URL whose database name ends in `_test`, and provide `ARG_LOCAL_DB_APP_USER` and `ARG_LOCAL_DB_APP_PASSWORD`. For administrator-password provisioning, also set `ARG_LOCAL_DB_ADMIN_USER` and `ARG_LOCAL_DB_ADMIN_PASSWORD`. For a local MariaDB socket test, set `ARG_DB_ADMIN_MODE=socket` and `ARG_DB_ADMIN_CLIENT=mariadb`.
 
-- `ARG_MYSQL_TEST_URL`, for example `jdbc:mysql://127.0.0.1:13317/adaptive_reading_test`.
-- `ARG_MYSQL_TEST_USER` and `ARG_MYSQL_TEST_PASSWORD`.
-
-Run the focused test with:
+Run it with:
 
 ```sh
-mvn -B -Darg.mysqlTests=true -Dtest=MySqlGameRepositoryIntegrationTest test
+mvn -B -Darg.mysqlLocalSetupTests=true \
+  -Dtest=MySqlLocalDatabaseProvisionerIntegrationTest test
 ```
 
-The test applies the migrations twice. It checks account isolation, first-answer locking, full-save rollback, result idempotency, version-1 content, adaptive question variants, route persistence, and checkpoint restoration after creating a new application context. JavaFX player-flow coverage uses in-memory content; this test verifies the MySQL adapter against a disposable database rather than a production deployment.
+The test requires administrator access to its disposable database because it creates the schema and user. Remove the test database and test user after running it.
 
-## Stored data and remaining boundary
+## Stored data
 
-The schema contains accounts, credentials, students, chapters, questions, answer choices, story nodes, route choices, checkpoint outcome definitions, first-answer drafts, checkpoint assessments with a decision source, and three save slots. Java stores only password verifiers in `credentials`; public `Account` records contain no verifier.
+The schema stores accounts and password verifiers, chapters, questions, answer choices, story nodes, route choices, checkpoint results, first answers, and three full-save slots. Public account records do not contain the password verifier. The game applies the first submitted answer to scoring; story choices only change the narrative route.
 
-`MySqlGameRepository.saveStoryNodes` stores a validated, immutable scene graph with stable node and choice IDs. The application imports a validated version-1 or version-2 pack at startup. Chapter and question UUIDs are derived from stable pack IDs; keep those source IDs stable once learner data refers to them. Do not publish randomized test IDs as permanent content. The database stores checkpoint passages, question difficulty variants, answer explanations, asset keys, route IDs, and the validated source of each difficulty decision.
-
-The current MySQL and player-flow results are recorded in [playable-flow verification](../docs/requirements/Dev1-Reading-Draft-Verification-2026-10-26.md). The earlier [MySQL adapter record](../docs/requirements/Dev1-MySQL-Verification-2026-10-22.md) documents the initial storage test scope.
+The application imports a validated content pack at startup. Keep chapter, question, node, and choice IDs stable after player data refers to them. See the [content pack guide](../assets/README.md) for the content format.

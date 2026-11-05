@@ -156,6 +156,9 @@ proot_arguments=(
     --env "ARG_TERMUX_PRISM_ORDER=$prism_order"
     --env "ARG_TERMUX_MEDIA_DEBUG=${ARG_TERMUX_MEDIA_DEBUG:-false}"
 )
+if [[ -n "${ARG_DB_CONFIG_FILE:-}" ]]; then
+    proot_arguments+=(--env "ARG_DB_CONFIG_FILE=$ARG_DB_CONFIG_FILE")
+fi
 
 xauthority_file="${XAUTHORITY:-$HOME/.Xauthority}"
 if [[ -f "$xauthority_file" ]]; then
@@ -178,7 +181,7 @@ log_file="$project_root/target/$log_name"
 ln -sfn "$log_name" "$project_root/target/termux-game.log"
 proot_arguments+=(--env "ARG_GAME_LOG_NAME=$log_name")
 proot-distro "${proot_arguments[@]}" debian -- \
-    /bin/bash -lc 'cd /workspace/AdaptiveReadingGame && exec ./scripts/termux-run-javafx.sh > "target/${ARG_GAME_LOG_NAME:?}" 2>&1'
+    /bin/bash -lc 'cd /workspace/AdaptiveReadingGame && ./scripts/termux-database-session.sh run > "target/${ARG_GAME_LOG_NAME:?}" 2>&1'
 
 for ((attempt = 0; attempt < 60; attempt++)); do
     if grep -Eq 'Loaded [0-9]+ story chapter' "$log_file" 2>/dev/null; then

@@ -57,12 +57,24 @@ fi
 db_url="${ARG_DB_URL:-}"
 db_user="${ARG_DB_USER:-}"
 if [[ -z "${db_url//[[:space:]]/}" && -z "${db_user//[[:space:]]/}" && -z "${ARG_DB_PASSWORD+x}" ]]; then
-    printf 'OK: No MySQL settings found; the game will use temporary in-memory storage.\n'
+    if [[ -n "${ARG_DB_CONFIG_FILE:-}" ]]; then
+        database_config_file="$ARG_DB_CONFIG_FILE"
+        [[ "$database_config_file" == /* ]] || database_config_file="$project_root/$database_config_file"
+    elif [[ -n "${XDG_CONFIG_HOME:-}" ]]; then
+        database_config_file="$XDG_CONFIG_HOME/adaptive-reading-game/database.properties"
+    else
+        database_config_file="$HOME/.config/adaptive-reading-game/database.properties"
+    fi
+    if [[ -f "$database_config_file" ]]; then
+        printf 'OK: Saved local database settings were found. The game will use persistent local storage.\n'
+    else
+        printf 'OK: No local database settings found; the game will use temporary in-memory storage.\n'
+    fi
 else
     [[ "$db_url" == jdbc:mysql://* ]] || fail 'ARG_DB_URL must be a MySQL JDBC URL beginning jdbc:mysql://.'
     [[ -n "${db_user//[[:space:]]/}" ]] || fail 'ARG_DB_USER is required when MySQL is configured.'
     [[ -n "${ARG_DB_PASSWORD+x}" ]] || fail 'ARG_DB_PASSWORD must be set when MySQL is configured.'
-    printf 'OK: MySQL settings are present. Connectivity and migrations were not checked; apply V001 through V005 before launching.\n'
+    printf 'OK: MySQL environment settings are present. Setup checks connectivity and applies missing migrations before launch.\n'
 fi
 
 asset_root="${ARG_ASSET_DIR:-$project_root/assets}"

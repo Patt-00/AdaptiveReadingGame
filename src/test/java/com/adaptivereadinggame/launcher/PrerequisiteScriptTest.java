@@ -26,7 +26,7 @@ class PrerequisiteScriptTest {
         executable(tools.resolve("java"), "#!/bin/sh\nif [ -n \"${JAVA_TOOL_OPTIONS:-}\" ]; then printf 'Picked up JAVA_TOOL_OPTIONS: %s\\n' \"$JAVA_TOOL_OPTIONS\" >&2; fi\nprintf 'openjdk version \"25\"\\n' >&2\n");
         executable(tools.resolve("javac"), "#!/bin/sh\nif [ -n \"${JAVA_TOOL_OPTIONS:-}\" ]; then printf 'Picked up JAVA_TOOL_OPTIONS: %s\\n' \"$JAVA_TOOL_OPTIONS\" >&2; fi\nprintf 'javac 25\\n'\n");
         executable(runtime.resolve("bin/javac"), "#!/bin/sh\nexit 0\n");
-        executable(tools.resolve("mvn"), "#!/bin/sh\nprintf 'Apache Maven 3.9.0\\nJava version: %s, runtime: %s\\n' \"$FAKE_MAVEN_JAVA\" \"$FAKE_RUNTIME\"\n");
+        executable(tools.resolve("mvn"), "#!/bin/sh\nif [ -n \"${FAKE_MAVEN_LOG:-}\" ]; then printf '%s\\n' \"$*\" >> \"$FAKE_MAVEN_LOG\"; fi\nprintf 'Apache Maven 3.9.0\\nJava version: %s, runtime: %s\\n' \"$FAKE_MAVEN_JAVA\" \"$FAKE_RUNTIME\"\n");
     }
 
     @Test void checksMavensJavaRatherThanOnlyThePathJava() throws Exception {
@@ -91,9 +91,14 @@ class PrerequisiteScriptTest {
 
     @Test void setupInstallsPythonSupportWhenTheModelVenvIsMissing() throws Exception {
         Path packageLog = temporary.resolve("package-install.log");
+        Path mavenLog = temporary.resolve("maven-commands.log");
+        Path mysqlConfigDir = Files.createDirectories(temporary.resolve("mysql-config"));
         executable(tools.resolve("python3"), "#!/bin/sh\nexit 1\n");
         executable(tools.resolve("dnf"), "#!/bin/sh\nprintf '%s\\n' \"$*\" > \"$FAKE_PACKAGE_LOG\"\n");
         executable(tools.resolve("sudo"), "#!/bin/sh\nexec \"$@\"\n");
+        executable(tools.resolve("mysqld"), "#!/bin/sh\nprintf 'mysqld MySQL Community Server 8.4\\n'\n");
+        executable(tools.resolve("systemctl"), "#!/bin/sh\nexit 0\n");
+        executable(tools.resolve("install"), "#!/bin/sh\nsource=\"$7\"\ndestination=\"$8\"\ncp \"$source\" \"$FAKE_MYSQL_CONFIG_DIR/$(basename \"$destination\")\"\n");
 
         ProcessBuilder builder = new ProcessBuilder("bash", Path.of("scripts/setup-and-run.sh").toAbsolutePath().toString(), "--install-only")
                 .directory(Path.of(".").toAbsolutePath().toFile()).redirectErrorStream(true);
@@ -103,6 +108,8 @@ class PrerequisiteScriptTest {
         environment.put("FAKE_RUNTIME", runtime.toString());
         environment.put("FAKE_MAVEN_JAVA", "25");
         environment.put("FAKE_PACKAGE_LOG", packageLog.toString());
+        environment.put("FAKE_MAVEN_LOG", mavenLog.toString());
+        environment.put("FAKE_MYSQL_CONFIG_DIR", mysqlConfigDir.toString());
         environment.put("ARG_MODEL_PYTHON", "python3");
         environment.put("ARG_MODEL_VENV_DIR", temporary.resolve("model helper venv").toString());
 
@@ -113,6 +120,9 @@ class PrerequisiteScriptTest {
         assertTrue(Files.exists(packageLog), output);
         String installedPackages = Files.readString(packageLog);
         assertTrue(installedPackages.contains("python3"), installedPackages);
+        assertTrue(Files.readString(mavenLog).contains("com.adaptivereadinggame.repository.mysql.MySqlLocalDatabaseSetup"));
+        assertTrue(Files.readString(mysqlConfigDir.resolve("99-adaptive-reading-game.cnf"))
+                .contains("bind-address=127.0.0.1"));
     }
 
     @Test void gameLauncherStartsTheConfiguredModelVenv() throws Exception {
@@ -164,6 +174,14 @@ class PrerequisiteScriptTest {
         }
     }
 
+    @Test void termuxDatabaseScriptsForwardTheOptionalConfigPathIntoDebian() throws Exception {
+        for (Path script : java.util.List.of(
+                Path.of("scripts/termux-setup-database.sh"), Path.of("scripts/termux-run-x11.sh"))) {
+            String contents = Files.readString(script);
+            assertTrue(contents.contains("ARG_DB_CONFIG_FILE=$ARG_DB_CONFIG_FILE"), script.toString());
+        }
+    }
+
     @Test void parsesJavaVersionsWhenJavaToolOptionsAddsAStderrLine() throws Exception {
         Result result = run(Map.of("JAVA_TOOL_OPTIONS", "-Dprism.order=sw"));
         assertEquals(0, result.exitCode(), result.output());
@@ -175,7 +193,7 @@ class PrerequisiteScriptTest {
         Result result = run(Map.of("ARG_DB_URL", "jdbc:mysql://localhost/test", "ARG_DB_USER", "reader",
                 "ARG_DB_PASSWORD", ""));
         assertEquals(0, result.exitCode(), result.output());
-        assertTrue(result.output().contains("Connectivity and migrations were not checked"));
+        assertTrue(result.output().contains("MySQL environment settings are present"));
     }
 
     @Test void rejectsPartialDatabaseSettingsAndMissingPack() throws Exception {
