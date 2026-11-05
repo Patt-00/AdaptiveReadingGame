@@ -69,6 +69,7 @@ asset_root="${ARG_ASSET_DIR:-$project_root/assets}"
 [[ "$asset_root" == /* ]] || asset_root="$project_root/$asset_root"
 pointer_count=0
 for asset in "$asset_root"/characters/*.png "$asset_root"/scenes/*.jpg "$asset_root"/cg/*.png \
+        "$asset_root"/local-music/*.wav \
         "$project_root/src/main/resources/com/adaptivereadinggame/audio/comfortable-mystery.wav"; do
     [[ -f "$asset" ]] || continue
     (( $(wc -c < "$asset") <= 512 )) || continue
@@ -77,7 +78,7 @@ for asset in "$asset_root"/characters/*.png "$asset_root"/scenes/*.jpg "$asset_r
     fi
 done
 if (( pointer_count > 0 )); then
-    printf 'Warning: %s artwork or music files are Git LFS pointers; fetch game assets with Git LFS for the full presentation.\n' "$pointer_count" >&2
+    printf 'Warning: %s game media files, including artwork or story music, are Git LFS pointers; run git lfs pull for the full presentation.\n' "$pointer_count" >&2
 fi
 for track in "$asset_root"/local-music/investigation.wav "$asset_root"/local-music/tense.wav; do
     if [[ ! -f "$track" ]]; then
@@ -88,7 +89,7 @@ model_weights="$project_root/model-tool/models/Qwen2.5-0.5B-Instruct/model.safet
 if [[ ! -f "$model_weights" ]] || (( $(wc -c < "$model_weights") <= 512 )); then
     printf 'Info: Optional Qwen weights are unavailable locally; Java will keep its fallback unless the helper can load the pinned model.\n'
 fi
-printf 'Info: The optional model helper is started separately; see model-tool/README.md.\n'
+printf 'Info: The platform setup prepares the model helper when supported; Java fallback remains available.\n'
 
 if [[ "$check_only" == true ]]; then
     printf 'All startup prerequisites passed.\n'

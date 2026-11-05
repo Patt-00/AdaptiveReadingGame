@@ -18,5 +18,8 @@ Modules/
 __pycache__/
 *.py[cod]
 
-# Locally downloaded licensed soundtrack files
-assets/local-music/
+# Local source downloads are excluded; only the bundled game-ready WAV tracks are tracked.
+assets/local-music/*
+!assets/local-music/
+!assets/local-music/investigation.wav
+!assets/local-music/tense.wav

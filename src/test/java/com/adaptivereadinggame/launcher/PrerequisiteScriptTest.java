@@ -35,6 +35,40 @@ class PrerequisiteScriptTest {
         assertTrue(result.output().contains("Maven uses Java 17"));
     }
 
+    @Test void platformSetupScriptsExposeHelpWithoutInstallingAnything() throws Exception {
+        for (String name : java.util.List.of("setup-linux.sh", "setup-macos.sh", "setup-termux.sh")) {
+            Result result = runScript(Path.of("scripts", name), "--help");
+            assertEquals(0, result.exitCode(), name + ": " + result.output());
+            assertTrue(result.output().toLowerCase(java.util.Locale.ROOT).contains("usage:"),
+                    name + " should explain its startup command.");
+        }
+    }
+
+    @Test void modelHelperSetupExposesNonInstallingHelp() throws Exception {
+        Result result = runScript(Path.of("scripts", "setup-model-helper.sh"), "--help");
+        assertEquals(0, result.exitCode(), result.output());
+        assertTrue(result.output().toLowerCase(java.util.Locale.ROOT).contains("model helper"));
+        assertTrue(result.output().contains("Linux, including ARM64, uses CPU-only PyTorch."), result.output());
+    }
+
+    @Test void bundledMusicIsIncludedAsReadableWavFilesInSourceArchives() throws Exception {
+        for (Path track : java.util.List.of(
+                Path.of("src/main/resources/com/adaptivereadinggame/audio/comfortable-mystery.wav"),
+                Path.of("assets/local-music/investigation.wav"),
+                Path.of("assets/local-music/tense.wav"))) {
+            byte[] header = Files.readAllBytes(track);
+            assertTrue(header.length > 512, track + " should contain the WAV track, not an LFS pointer.");
+            assertEquals("RIFF", new String(header, 0, 4, java.nio.charset.StandardCharsets.US_ASCII), track.toString());
+            assertEquals("WAVE", new String(header, 8, 4, java.nio.charset.StandardCharsets.US_ASCII), track.toString());
+            Process process = new ProcessBuilder("git", "check-attr", "filter", "--", track.toString())
+                    .redirectErrorStream(true).start();
+            assertTrue(process.waitFor(10, TimeUnit.SECONDS));
+            String attribute = new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            assertEquals(0, process.exitValue(), attribute);
+            assertTrue(attribute.trim().endsWith("filter: unspecified"), track + ": " + attribute);
+        }
+    }
+
     @Test void parsesJavaVersionsWhenJavaToolOptionsAddsAStderrLine() throws Exception {
         Result result = run(Map.of("JAVA_TOOL_OPTIONS", "-Dprism.order=sw"));
         assertEquals(0, result.exitCode(), result.output());
@@ -67,6 +101,17 @@ class PrerequisiteScriptTest {
         assertTrue(result.output().contains("Git LFS pointers"));
     }
 
+    @Test void warnsAboutUnmaterializedBundledStoryMusic() throws Exception {
+        Path assets = temporary.resolve("story-music");
+        Files.createDirectories(assets.resolve("local-music"));
+        Files.writeString(assets.resolve("local-music/investigation.wav"),
+                "version https://git-lfs.github.com/spec/v1\n");
+        Result result = run(Map.of("ARG_ASSET_DIR", assets.toString()));
+        assertEquals(0, result.exitCode(), result.output());
+        assertTrue(result.output().contains("Git LFS pointers"), result.output());
+        assertTrue(result.output().contains("story music"), result.output());
+    }
+
     private Result run(Map<String, String> overrides) throws Exception {
         ProcessBuilder builder = new ProcessBuilder("bash", script.toString(), "--check-only");
         builder.directory(temporary.toFile());
@@ -78,6 +123,13 @@ class PrerequisiteScriptTest {
         environment.put("FAKE_MAVEN_JAVA", "25");
         environment.putAll(overrides);
         Process process = builder.start();
+        assertTrue(process.waitFor(20, TimeUnit.SECONDS));
+        return new Result(process.exitValue(), new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    private Result runScript(Path path, String argument) throws Exception {
+        Process process = new ProcessBuilder("bash", path.toAbsolutePath().toString(), argument)
+                .directory(Path.of(".").toAbsolutePath().toFile()).redirectErrorStream(true).start();
         assertTrue(process.waitFor(20, TimeUnit.SECONDS));
         return new Result(process.exitValue(), new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
     }

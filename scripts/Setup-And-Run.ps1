@@ -87,6 +87,16 @@ $CheckScript = Join-Path $PSScriptRoot 'Check-Prerequisites.ps1'
 & $CheckScript -CheckOnly
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+try {
+    $ModelSetupScript = Join-Path $PSScriptRoot 'Setup-Model-Helper.ps1'
+    $ModelSetupResult = & $ModelSetupScript
+    if ($ModelSetupResult -ne 0) {
+        Write-Warning 'The model helper is unavailable; the game will use Java difficulty fallback.'
+    }
+} catch {
+    Write-Warning 'The model helper could not be prepared; the game will use Java difficulty fallback.'
+}
+
 if ($InstallOnly) {
     Write-Host 'Setup complete. Run scripts/Run-Game.ps1 to launch the game.'
     exit 0

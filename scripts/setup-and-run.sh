@@ -41,6 +41,8 @@ if [[ -z "$java_major" || -z "$javac_major" ]] \
 fi
 need_maven=false
 command -v mvn >/dev/null 2>&1 || need_maven=true
+need_python=false
+command -v python3 >/dev/null 2>&1 || need_python=true
 
 run_privileged() {
     if (( EUID == 0 )); then
@@ -52,7 +54,7 @@ run_privileged() {
     fi
 }
 
-if [[ "$need_jdk" == true || "$need_maven" == true ]]; then
+if [[ "$need_jdk" == true || "$need_maven" == true || "$need_python" == true ]]; then
     os_name="$(uname -s)"
     case "$os_name" in
         Darwin)
@@ -60,6 +62,7 @@ if [[ "$need_jdk" == true || "$need_maven" == true ]]; then
                 || fail "Homebrew is required to install missing tools automatically. Install Homebrew, then rerun $0."
             if [[ "$need_jdk" == true ]]; then brew install openjdk@21; fi
             if [[ "$need_maven" == true ]]; then brew install maven; fi
+            if [[ "$need_python" == true ]]; then brew install python@3.14; fi
             if [[ "$need_jdk" == true ]]; then
                 java_home="$(brew --prefix openjdk@21)"
                 export JAVA_HOME="$java_home"
@@ -68,6 +71,10 @@ if [[ "$need_jdk" == true || "$need_maven" == true ]]; then
             if [[ "$need_maven" == true ]]; then
                 maven_home="$(brew --prefix maven)"
                 export PATH="$maven_home/bin:$PATH"
+            fi
+            if [[ "$need_python" == true ]]; then
+                python_home="$(brew --prefix python@3.14)"
+                export PATH="$python_home/bin:$PATH"
             fi
             ;;
         Linux)
@@ -80,11 +87,13 @@ if [[ "$need_jdk" == true || "$need_maven" == true ]]; then
                 packages=()
                 [[ "$need_jdk" != true ]] || packages+=(java-21-openjdk-devel)
                 [[ "$need_maven" != true ]] || packages+=(maven)
+                [[ "$need_python" != true ]] || packages+=(python3 python3-pip)
                 run_privileged dnf install -y "${packages[@]}"
             elif command -v apt-get >/dev/null 2>&1; then
                 packages=()
                 [[ "$need_jdk" != true ]] || packages+=(openjdk-21-jdk)
                 [[ "$need_maven" != true ]] || packages+=(maven)
+                [[ "$need_python" != true ]] || packages+=(python3 python3-venv python3-pip)
                 run_privileged apt-get update
                 run_privileged apt-get install -y "${packages[@]}"
             else
@@ -99,6 +108,10 @@ if [[ "$need_jdk" == true || "$need_maven" == true ]]; then
 fi
 
 "$script_dir/check-prerequisites.sh" --check-only
+
+if ! "$script_dir/setup-model-helper.sh"; then
+    printf 'Warning: Model helper setup failed; the game will use Java difficulty fallback.\n' >&2
+fi
 
 if [[ "$install_only" == true ]]; then
     printf 'Setup complete. Run scripts/run-game.sh to launch the game.\n'

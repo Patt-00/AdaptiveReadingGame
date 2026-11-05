@@ -147,10 +147,14 @@ $AssetPaths = @((Join-Path $AssetRoot 'characters'), (Join-Path $AssetRoot 'scen
 $AssetFiles = foreach ($Path in $AssetPaths) {
     if (Test-Path -LiteralPath $Path -PathType Container) { Get-ChildItem -LiteralPath $Path -File }
 }
+$StoryMusicPath = Join-Path $AssetRoot 'local-music'
+if (Test-Path -LiteralPath $StoryMusicPath -PathType Container) {
+    $AssetFiles = @($AssetFiles) + (Get-ChildItem -LiteralPath $StoryMusicPath -Filter '*.wav' -File)
+}
 $MusicFile = Join-Path $ProjectRoot 'src/main/resources/com/adaptivereadinggame/audio/comfortable-mystery.wav'
 if (Test-Path -LiteralPath $MusicFile -PathType Leaf) { $AssetFiles = @($AssetFiles) + (Get-Item -LiteralPath $MusicFile) }
 $PointerCount = @($AssetFiles | Where-Object { $_.Length -le 512 -and (Get-Content -LiteralPath $_.FullName -TotalCount 1) -eq 'version https://git-lfs.github.com/spec/v1' }).Count
-if ($PointerCount -gt 0) { Write-Warning "$PointerCount artwork or music files are Git LFS pointers; fetch game assets with Git LFS for the full presentation." }
+if ($PointerCount -gt 0) { Write-Warning "$PointerCount game media files, including artwork or story music, are Git LFS pointers; run git lfs pull for the full presentation." }
 foreach ($Track in @((Join-Path $AssetRoot 'local-music/investigation.wav'), (Join-Path $AssetRoot 'local-music/tense.wav'))) {
     if (-not (Test-Path -LiteralPath $Track -PathType Leaf)) { Write-Host "Info: Optional story music is missing: $Track" }
 }
@@ -158,7 +162,7 @@ $ModelWeights = Join-Path $ProjectRoot 'model-tool/models/Qwen2.5-0.5B-Instruct/
 if (-not (Test-Path -LiteralPath $ModelWeights -PathType Leaf) -or (Get-Item -LiteralPath $ModelWeights).Length -le 512) {
     Write-Host 'Info: Optional Qwen weights are unavailable locally; Java keeps its fallback unless the helper can load the pinned model.'
 }
-Write-Host 'Info: The optional model helper is started separately; see model-tool/README.md.'
+Write-Host 'Info: The platform setup prepares the model helper when supported; Java fallback remains available.'
 
 if ($CheckOnly) {
     Write-Host 'All startup prerequisites passed.'

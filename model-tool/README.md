@@ -30,7 +30,9 @@ This repository tracks the pinned snapshot in `model-tool/models/Qwen2.5-0.5B-In
 
 Clone the branch with Git LFS enabled, or run `git lfs pull` after cloning, to retrieve the weight file. The helper validates the local manifest, revision, weight size, and checksum before using the bundled snapshot. If those files are absent, it falls back to the pinned Hugging Face revision and may need internet access.
 
-## Start the helper
+## Start the helper manually
+
+The platform setup scripts try to prepare the helper and start it with the game when its dependencies are available. Use these commands when starting the helper manually for troubleshooting.
 
 Open a terminal at the project root and run:
 

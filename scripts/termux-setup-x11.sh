@@ -168,7 +168,7 @@ package_available libgtk-3-0t64 && gtk_package=libgtk-3-0t64
 package_available libasound2t64 && alsa_package=libasound2t64
 
 packages=(
-    openjdk-21-jdk maven git git-lfs
+    openjdk-21-jdk maven git git-lfs python3 python3-venv python3-pip
     "$gtk_package" "$alsa_package" libasound2-plugins
     libfontconfig1 libgl1 libegl1 libxtst6 libxi6 libxrender1
     libxrandr2 libxinerama1 libxxf86vm1
@@ -196,7 +196,11 @@ command -v git-lfs >/dev/null 2>&1 \
     || { printf 'Git LFS is unavailable after installation.\n' >&2; exit 1; }
 git -C /workspace/AdaptiveReadingGame lfs install --local
 git -C /workspace/AdaptiveReadingGame lfs pull \
-    --include='assets/**,src/main/resources/com/adaptivereadinggame/audio/comfortable-mystery.wav'
+    --include='assets/**,model-tool/models/**,src/main/resources/com/adaptivereadinggame/audio/comfortable-mystery.wav'
+
+if ! /bin/bash /workspace/AdaptiveReadingGame/scripts/setup-model-helper.sh; then
+    printf 'Warning: Termux could not prepare the Python model helper; Java fallback remains available.\n' >&2
+fi
 
 if pactl info >/dev/null 2>&1; then
     printf 'Debian can reach the Termux PulseAudio server.\n'
