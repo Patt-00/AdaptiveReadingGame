@@ -32,6 +32,10 @@ class MySqlConfigStoreTest {
                         "adaptive_game", "field-secret"));
         assertTrue(failure.getMessage().contains("provide them separately"));
         assertFalse(failure.getMessage().contains("url-secret"));
+        IllegalArgumentException keyStoreFailure = assertThrows(IllegalArgumentException.class,
+                () -> new MySqlConfig("jdbc:mysql://127.0.0.1:3306/adaptive_reading?trustCertificateKeyStorePassword=key-secret",
+                        "adaptive_game", "field-secret"));
+        assertFalse(keyStoreFailure.getMessage().contains("key-secret"));
 
         MySqlConfig config = new MySqlConfig("jdbc:mysql://127.0.0.1:3306/adaptive_reading?serverTimezone=UTC",
                 "adaptive_game", "field-secret");

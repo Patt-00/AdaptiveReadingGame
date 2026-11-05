@@ -7,7 +7,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Locale;
-import java.util.Set;
 
 /** MySQL settings read from environment variables; credentials are never checked in. */
 public record MySqlConfig(String url, String username, String password) {
@@ -48,12 +47,12 @@ public record MySqlConfig(String url, String username, String password) {
             throw new IllegalArgumentException("Do not put a username or password in ARG_DB_URL; provide them separately.");
         String query = uri.getRawQuery();
         if (query == null) return;
-        Set<String> credentialProperties = Set.of("user", "username", "password", "password1", "password2", "password3");
         try {
             for (String property : query.split("[&;]")) {
                 String rawName = property.split("=", 2)[0];
                 String name = URLDecoder.decode(rawName, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT);
-                if (credentialProperties.contains(name))
+                if (name.equals("user") || name.equals("username")
+                        || (name.contains("password") && !name.equals("passwordcharacterencoding")))
                     throw new IllegalArgumentException("Do not put a username or password in ARG_DB_URL; provide them separately.");
             }
         } catch (IllegalArgumentException malformed) {

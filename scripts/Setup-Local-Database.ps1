@@ -81,7 +81,11 @@ if ([string]::IsNullOrWhiteSpace($OptionFile) -or -not (Test-Path -LiteralPath $
     throw "Could not locate the MySQL option file used by $($Service.Name). Finish MySQL Configurator, then rerun setup."
 }
 
-$BindConfigurationChanged = Set-MySqlLoopbackAddress -ConfigFile $OptionFile -ServiceName $Service.Name
+try {
+    $BindConfigurationChanged = Set-MySqlLoopbackAddress -ConfigFile $OptionFile -ServiceName $Service.Name
+} catch {
+    throw "Could not limit MySQL to local connections by updating $OptionFile. Verify the file is writable, then rerun setup. Details: $($_.Exception.Message)"
+}
 if ($Service.Status -eq 'Running' -and $BindConfigurationChanged) {
     try {
         Restart-Service -Name $Service.Name
