@@ -43,6 +43,13 @@ need_maven=false
 command -v mvn >/dev/null 2>&1 || need_maven=true
 need_python=false
 command -v python3 >/dev/null 2>&1 || need_python=true
+need_python_venv=false
+model_venv="${ARG_MODEL_VENV_DIR:-$project_root/model-tool/.venv}"
+[[ "$model_venv" == /* ]] || model_venv="$project_root/$model_venv"
+export ARG_MODEL_VENV_DIR="$model_venv"
+if [[ "$need_python" != true && ! -x "$model_venv/bin/python" ]]; then
+    need_python_venv=true
+fi
 
 run_privileged() {
     if (( EUID == 0 )); then
@@ -54,7 +61,7 @@ run_privileged() {
     fi
 }
 
-if [[ "$need_jdk" == true || "$need_maven" == true || "$need_python" == true ]]; then
+if [[ "$need_jdk" == true || "$need_maven" == true || "$need_python" == true || "$need_python_venv" == true ]]; then
     os_name="$(uname -s)"
     case "$os_name" in
         Darwin)
@@ -62,7 +69,7 @@ if [[ "$need_jdk" == true || "$need_maven" == true || "$need_python" == true ]];
                 || fail "Homebrew is required to install missing tools automatically. Install Homebrew, then rerun $0."
             if [[ "$need_jdk" == true ]]; then brew install openjdk@21; fi
             if [[ "$need_maven" == true ]]; then brew install maven; fi
-            if [[ "$need_python" == true ]]; then brew install python@3.14; fi
+            if [[ "$need_python" == true || "$need_python_venv" == true ]]; then brew install python@3.14; fi
             if [[ "$need_jdk" == true ]]; then
                 java_home="$(brew --prefix openjdk@21)"
                 export JAVA_HOME="$java_home"
@@ -72,7 +79,7 @@ if [[ "$need_jdk" == true || "$need_maven" == true || "$need_python" == true ]];
                 maven_home="$(brew --prefix maven)"
                 export PATH="$maven_home/bin:$PATH"
             fi
-            if [[ "$need_python" == true ]]; then
+            if [[ "$need_python" == true || "$need_python_venv" == true ]]; then
                 python_home="$(brew --prefix python@3.14)"
                 export PATH="$python_home/bin:$PATH"
             fi
@@ -87,13 +94,13 @@ if [[ "$need_jdk" == true || "$need_maven" == true || "$need_python" == true ]];
                 packages=()
                 [[ "$need_jdk" != true ]] || packages+=(java-21-openjdk-devel)
                 [[ "$need_maven" != true ]] || packages+=(maven)
-                [[ "$need_python" != true ]] || packages+=(python3 python3-pip)
+                [[ "$need_python" != true && "$need_python_venv" != true ]] || packages+=(python3 python3-pip)
                 run_privileged dnf install -y "${packages[@]}"
             elif command -v apt-get >/dev/null 2>&1; then
                 packages=()
                 [[ "$need_jdk" != true ]] || packages+=(openjdk-21-jdk)
                 [[ "$need_maven" != true ]] || packages+=(maven)
-                [[ "$need_python" != true ]] || packages+=(python3 python3-venv python3-pip)
+                [[ "$need_python" != true && "$need_python_venv" != true ]] || packages+=(python3 python3-venv python3-pip)
                 run_privileged apt-get update
                 run_privileged apt-get install -y "${packages[@]}"
             else

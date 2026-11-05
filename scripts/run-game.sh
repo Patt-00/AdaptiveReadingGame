@@ -7,7 +7,9 @@ project_root="$(cd -- "$script_dir/.." && pwd)"
 cd "$project_root"
 
 model_pid=""
-model_python="$project_root/model-tool/.venv/bin/python"
+model_venv="${ARG_MODEL_VENV_DIR:-$project_root/model-tool/.venv}"
+[[ "$model_venv" == /* ]] || model_venv="$project_root/$model_venv"
+model_python="$model_venv/bin/python"
 cleanup_model_helper() {
     if [[ -n "$model_pid" ]] && kill -0 "$model_pid" 2>/dev/null; then
         kill "$model_pid" 2>/dev/null || true
