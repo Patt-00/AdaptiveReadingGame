@@ -6,11 +6,11 @@ Windows, macOS, and supported desktop Linux use MySQL Server 8.0 or newer. On Fe
 
 ## Set up a device
 
-Use the platform setup script described in [`scripts/SCRIPT.md`](../scripts/SCRIPT.md). On first setup, the database wizard asks for a local JDBC URL, application username, and hidden application password. The suggested URL is `jdbc:mysql://127.0.0.1:3306/adaptive_reading`. Change the port or database name only if needed; setup accepts loopback hosts only and rejects credentials embedded in the URL. Desktop setup binds the database service to loopback; MySQL X Protocol is also bound to loopback when MySQL is used. Termux starts MariaDB on `127.0.0.1` for the game session.
+Use the platform setup script described in [`scripts/SCRIPT.md`](../scripts/SCRIPT.md). Setup automatically generates a unique application database username and password, creates the schema, runs migrations, and saves the connection settings. Desktop setup uses loopback-only access. Windows creates a separate game-only MySQL service on ports 3307 and 33070, with its own data directory; it does not change any other MySQL service. Termux starts MariaDB on `127.0.0.1` for the game session.
 
-When the local server requires a database administrator password, setup asks for it without showing the characters. The administrator password is used only to create the database and application user. Fedora MariaDB and Termux use the local MariaDB socket for provisioning instead of asking for a database root password.
+On Windows, setup generates the dedicated service's MySQL administrator password and protects it for the current Windows user. On Linux and macOS, an existing server may require its administrator password once. Fedora MariaDB and Termux use the local MariaDB socket for provisioning instead of asking for a database root password.
 
-The application user receives only the privileges needed by the schema and migrations on the game's database. It is separate from the MySQL or MariaDB administrator account. Setup creates a new account for the selected local host and refuses to reset an existing account at that host. Choose an unused application username, especially when reconfiguring an existing database.
+The application user receives only the privileges needed by the schema and migrations on the game's database. It is separate from the MySQL or MariaDB administrator account. Its generated name is unique, so setup does not reuse or reset an existing account.
 
 ## Saved settings
 

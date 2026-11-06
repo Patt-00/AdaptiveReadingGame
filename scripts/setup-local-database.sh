@@ -307,9 +307,7 @@ if [[ "$(uname -s)" == Linux ]] && command -v dnf >/dev/null 2>&1; then
         printf 'Info: On a first Fedora MySQL install, the one-time root password may be in /var/log/mysqld.log. Read it with: sudo grep "temporary password" /var/log/mysqld.log\n'
     fi
 fi
-if [[ "$reconfigure" == true ]]; then
-    mvn -q -Dexec.mainClass=com.adaptivereadinggame.repository.mysql.MySqlLocalDatabaseSetup \
-        -Dexec.args=--reconfigure exec:java
-else
-    mvn -q -Dexec.mainClass=com.adaptivereadinggame.repository.mysql.MySqlLocalDatabaseSetup exec:java
-fi
+database_setup_arguments=(--automatic)
+if [[ "$reconfigure" == true ]]; then database_setup_arguments+=(--reconfigure); fi
+mvn -q -Dexec.mainClass=com.adaptivereadinggame.repository.mysql.MySqlLocalDatabaseSetup \
+    "-Dexec.args=${database_setup_arguments[*]}" exec:java

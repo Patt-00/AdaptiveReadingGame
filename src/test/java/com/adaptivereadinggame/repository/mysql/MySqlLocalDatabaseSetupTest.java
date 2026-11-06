@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class MySqlLocalDatabaseSetupTest {
     @TempDir Path temporary;
@@ -23,8 +24,25 @@ class MySqlLocalDatabaseSetupTest {
 
         assertTrue(usage.contains("--reconfigure"));
         assertTrue(usage.contains("--check-only"));
+        assertTrue(usage.contains("--automatic"));
         assertTrue(usage.contains("local MySQL"));
         assertTrue(usage.contains("password"));
+    }
+
+    @Test void automaticDatabaseCredentialsAreGeneratedWithValidLocalNames() {
+        var first = MySqlLocalDatabaseSetup.generateApplicationCredentials();
+        var second = MySqlLocalDatabaseSetup.generateApplicationCredentials();
+        try {
+            assertTrue(first.username().matches("adaptive_game_[a-f0-9]{16}"));
+            assertTrue(second.username().matches("adaptive_game_[a-f0-9]{16}"));
+            assertEquals(32, first.password().length);
+            assertEquals(32, second.password().length);
+            assertNotEquals(first.username(), second.username());
+            assertNotEquals(new String(first.password()), new String(second.password()));
+        } finally {
+            java.util.Arrays.fill(first.password(), '\0');
+            java.util.Arrays.fill(second.password(), '\0');
+        }
     }
 
     @Test void checkOnlyReportsTemporaryModeWithoutPromptingWhenNoSettingsExist() {
@@ -37,6 +55,17 @@ class MySqlLocalDatabaseSetupTest {
         assertEquals(0, status);
         assertTrue(output.toString(StandardCharsets.UTF_8).contains("temporary in-memory storage"));
         assertEquals("", error.toString(StandardCharsets.UTF_8));
+    }
+
+    @Test void automaticCheckOnlyOptionDoesNotRequireAnInteractiveConsole() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ByteArrayOutputStream error = new ByteArrayOutputStream();
+
+        int status = MySqlLocalDatabaseSetup.run(new String[] {"--automatic", "--check-only"}, null,
+                new PrintStream(output), new PrintStream(error), temporary.resolve("missing.properties"), Map.of());
+
+        assertEquals(0, status);
+        assertTrue(error.toString(StandardCharsets.UTF_8).isEmpty());
     }
 
     @Test void checkOnlyFindsSavedPersistentSettingsWithoutPrintingThePassword() {

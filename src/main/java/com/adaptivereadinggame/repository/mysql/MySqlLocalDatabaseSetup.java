@@ -7,8 +7,11 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.HexFormat;
 import java.util.Map;
 
 /** First-run wizard for creating and migrating a per-device local database. */
@@ -16,13 +19,19 @@ public final class MySqlLocalDatabaseSetup {
     private static final String DEFAULT_URL = "jdbc:mysql://127.0.0.1:3306/adaptive_reading";
     private static final String DEFAULT_ADMIN_USER = "root";
     private static final String DEFAULT_APPLICATION_USER = "adaptive_game";
+    private static final SecureRandom CREDENTIAL_RANDOM = new SecureRandom();
+    static record GeneratedApplicationCredentials(String username, char[] password) {
+        @Override public String toString() {
+            return "GeneratedApplicationCredentials[username=" + username + ", password=<redacted>]";
+        }
+    }
 
     private MySqlLocalDatabaseSetup() {}
 
     public static String usage() {
-        return "Usage: MySqlLocalDatabaseSetup [--reconfigure | --check-only] [--help]\n"
+        return "Usage: MySqlLocalDatabaseSetup [--automatic] [--reconfigure | --check-only] [--help]\n"
                 + "Create a local MySQL database, application user, and schema.\n"
-                + "The wizard prompts for the local URL, usernames, and hidden passwords.";
+                + "--automatic uses the local default URL and generates the app username and password.";
     }
 
     public static void main(String[] args) {
@@ -47,6 +56,7 @@ public final class MySqlLocalDatabaseSetup {
             Path configFile, Map<String, String> environment) {
         boolean reconfigure = false;
         boolean checkOnly = false;
+        boolean automatic = false;
         for (String argument : args) {
             if ("--help".equals(argument) || "-h".equals(argument)) {
                 output.println(usage());
@@ -58,6 +68,10 @@ public final class MySqlLocalDatabaseSetup {
             }
             if ("--check-only".equals(argument)) {
                 checkOnly = true;
+                continue;
+            }
+            if ("--automatic".equals(argument)) {
+                automatic = true;
                 continue;
             }
             error.println(usage());
@@ -96,6 +110,10 @@ public final class MySqlLocalDatabaseSetup {
                 output.println("Saved local database connection is ready and migrations are current.");
                 return 0;
             }
+            if (automatic) {
+                configureAutomatically(output, configFile, environment, console);
+                return 0;
+            }
             if (console == null)
                 throw new IllegalStateException("Run setup in an interactive terminal to enter database credentials.");
             configure(console, output, configFile, environment);
@@ -124,6 +142,52 @@ public final class MySqlLocalDatabaseSetup {
                 error.println("A local setup file could not be read or written.");
                 return;
             }
+        }
+    }
+
+    static GeneratedApplicationCredentials generateApplicationCredentials() {
+        byte[] usernameEntropy = new byte[8];
+        byte[] passwordEntropy = new byte[24];
+        CREDENTIAL_RANDOM.nextBytes(usernameEntropy);
+        CREDENTIAL_RANDOM.nextBytes(passwordEntropy);
+        try {
+            String username = "adaptive_game_" + HexFormat.of().formatHex(usernameEntropy);
+            char[] password = Base64.getUrlEncoder().withoutPadding().encodeToString(passwordEntropy).toCharArray();
+            return new GeneratedApplicationCredentials(username, password);
+        } finally {
+            Arrays.fill(usernameEntropy, (byte) 0);
+            Arrays.fill(passwordEntropy, (byte) 0);
+        }
+    }
+
+    private static void configureAutomatically(PrintStream output, Path configFile,
+            Map<String, String> environment, Console console) {
+        String jdbcUrl = environment.getOrDefault("ARG_DB_SETUP_URL", DEFAULT_URL);
+        MySqlLocalEndpoint.fromJdbcUrl(jdbcUrl);
+        GeneratedApplicationCredentials generated = generateApplicationCredentials();
+        char[] applicationPassword = generated.password();
+        try {
+            if ("socket".equalsIgnoreCase(environment.get("ARG_DB_ADMIN_MODE"))) {
+                MySqlLocalDatabaseProvisioner.provisionUsingSocket(
+                        jdbcUrl, generated.username(), applicationPassword, configFile);
+            } else {
+                String administratorUser = environment.getOrDefault("ARG_DB_ADMIN_USER", DEFAULT_ADMIN_USER);
+                String passwordOverride = environment.get("ARG_DB_ADMIN_PASSWORD");
+                char[] administratorPassword = passwordOverride == null
+                        ? console == null ? null : console.readPassword("Local MySQL administrator password: ")
+                        : passwordOverride.toCharArray();
+                if (administratorPassword == null)
+                    throw new IllegalStateException("Run setup in an interactive terminal to enter the MySQL administrator password.");
+                try {
+                    MySqlLocalDatabaseProvisioner.provision(jdbcUrl, administratorUser, administratorPassword,
+                            generated.username(), applicationPassword, configFile);
+                } finally {
+                    Arrays.fill(administratorPassword, '\0');
+                }
+            }
+            output.println("The game database user was generated and its connection settings were saved locally.");
+        } finally {
+            Arrays.fill(applicationPassword, '\0');
         }
     }
 

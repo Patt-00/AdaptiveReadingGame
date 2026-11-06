@@ -87,12 +87,9 @@ else
 fi
 if [[ "$config_file" != /* ]]; then config_file="$project_root/$config_file"; fi
 if [[ "$mode" == setup ]]; then
-    if (($# > 0)); then
-        mvn -q -Dexec.mainClass=com.adaptivereadinggame.repository.mysql.MySqlLocalDatabaseSetup \
-            "-Dexec.args=$*" exec:java
-    else
-        mvn -q -Dexec.mainClass=com.adaptivereadinggame.repository.mysql.MySqlLocalDatabaseSetup exec:java
-    fi
+    database_setup_arguments=(--automatic "$@")
+    mvn -q -Dexec.mainClass=com.adaptivereadinggame.repository.mysql.MySqlLocalDatabaseSetup \
+        "-Dexec.args=${database_setup_arguments[*]}" exec:java
 elif [[ -f "$config_file" ]]; then
     ./scripts/termux-run-javafx.sh
 else
