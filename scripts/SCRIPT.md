@@ -7,7 +7,9 @@
 3. Run the command for your device below. Keep the terminal open while setup runs.
 4. Follow the prompts until the game opens. The setup checks the required tools, prepares a local database, and installs the optional model helper when supported.
 
-The database stays on the device where you set it up. Accounts and saved progress do not sync between devices. On the first run, enter the suggested local database URL or press Enter to accept it, then choose a database username and password. Passwords are hidden while you type. These database details are separate from the account you create inside the game.
+The database stays on the device where you set it up. Accounts and saved progress do not sync between devices. The setup asks for a local database URL, an application database username, and its password. Passwords are hidden while you type. These are separate from the account you create inside the game.
+
+The **application database user** is created for the game. The **MySQL administrator user** already belongs to the MySQL server and is used once to create the game's database and application user. It is usually `root`; it is not your Windows username or your in-game username.
 
 ## Windows
 
@@ -20,7 +22,8 @@ The database stays on the device where you set it up. Accounts and saved progres
 
 3. Allow the administrator prompt so setup can install and start the local MySQL service.
 4. If asked to create a MySQL administrator password, enter it twice. Setup keeps MySQL restricted to this device and temporarily blocks inbound connections while it checks the listener.
-5. Enter the local database details when prompted. If MySQL was configured earlier, enter its existing administrator password when asked. Wait for the game to open.
+5. Enter the local database URL, application username, and application password. Press Enter to keep the suggested values. If setup asks for the MySQL administrator username, keep `root` unless you configured a different MySQL administrator. Enter that account's MySQL password, not your Windows or game password.
+6. Wait for the game to open.
 
 To start the game later, run:
 
@@ -109,6 +112,12 @@ Termux:
 ```
 
 Before reconfiguring, remove any `ARG_DB_URL`, `ARG_DB_USER`, and `ARG_DB_PASSWORD` environment settings so they do not override the saved connection. Choose an unused database username; setup will not change an existing account.
+
+## If MySQL rejects the administrator login
+
+An error such as `SQLState 28000, error code 1045` means MySQL rejected the administrator username and password. Setup stops before creating the game's database or application user. Check that you entered the MySQL administrator account and the password set for that account; leaving the password blank works only when that MySQL account has no password.
+
+If you have forgotten the MySQL `root` password, follow the [official MySQL 8.4 Windows password reset steps](https://dev.mysql.com/doc/refman/8.4/en/resetting-permissions.html#resetting-permissions-windows). Run the reset procedure locally as a Windows administrator, remove its temporary password file when finished, then run `setup-windows.ps1` again. Do not send the MySQL password in chat.
 
 ## If artwork or story music is missing
 
