@@ -72,6 +72,22 @@ class AccountGameServiceTest {
         assertEquals(snapshot.checkpoint(), backend.progressService().load(first.id(), 2).orElseThrow());
         assertFalse(game.hasUnsavedProgress()); assertTrue(game.canContinue());
     }
+    @Test void saveDescriptionsNameAdaptiveReadingCheckpoints() {
+        Map<String, String> labels = Map.of(
+                "study-first", "Study, first",
+                "hall-first", "Hall, first",
+                "study-second", "Study, second");
+        for (var checkpoint : labels.entrySet()) {
+            String route = checkpoint.getKey().startsWith("study-") ? "study-first" : "hall-first";
+            GameState state = new GameState(first.id(), chapter.id(), "reading-check", null, 0, Map.of(),
+                    route, checkpoint.getKey(), chapter.difficulty(), "");
+            SaveGame slot = new SaveGame(first.id(), 1, chapter.id(), "reading-check", chapter.difficulty(),
+                    now, route, checkpoint.getKey());
+
+            assertEquals("Reading check · " + checkpoint.getValue(),
+                    game.describeSnapshot(new SaveSnapshot(slot, state)).phase());
+        }
+    }
     @Test void occupiedSlotNeedsConfirmationAndCancelKeepsOldSave() {
         start(); var before = game.save(1, false);
         game.advanceStory(); var current = state();
@@ -279,7 +295,7 @@ class AccountGameServiceTest {
         }
         public Optional<String> firstNodeId(UUID chapter) { return Optional.of("opening"); }
         public Optional<StoryNode> findNode(UUID chapter, String node) {
-            if (!Set.of("opening", "ending").contains(node)) return Optional.empty();
+            if (!Set.of("opening", "ending", "reading-check").contains(node)) return Optional.empty();
             return Optional.of(new StoryNode(node, "Mia", "A garden.", false, List.of(), "", true));
         }
     }

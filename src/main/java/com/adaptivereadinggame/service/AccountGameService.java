@@ -147,7 +147,10 @@ public final class AccountGameService {
         if (chapter.isEmpty() || node.isEmpty()) phase = "Story not available";
         else if (node.get().storyComplete()) phase = "Completed";
         else if (completedResultForCurrentState(state, chapter.get(), node.get(), learnerId).isPresent()) phase = "Results";
-        else if (state.assessmentSessionId() != null || node.get().readingCheck()) phase = "Reading check";
+        else if (state.assessmentSessionId() != null || node.get().readingCheck()) {
+            phase = state.activeCheckpointId().isEmpty() ? "Reading check"
+                    : "Reading check · " + checkpointLabel(state.activeCheckpointId());
+        }
         String route = switch (state.routeId()) {
             case "study-first" -> "Study first";
             case "hall-first" -> "Hall first";
