@@ -84,6 +84,12 @@ if (-not [string]::IsNullOrWhiteSpace($DetectedJavaHome)) {
     }
 }
 
+$CompileResult = Invoke-NativeCapture 'mvn' @('-q', '-DskipTests', 'compile')
+if ($CompileResult.ExitCode -ne 0) {
+    if (-not [string]::IsNullOrWhiteSpace($CompileResult.Output)) { Write-Host $CompileResult.Output }
+    throw 'The game could not be compiled. Resolve the Maven message above, then rerun setup.'
+}
+
 $CheckScript = Join-Path $PSScriptRoot 'Check-Prerequisites.ps1'
 $DatabaseScript = Join-Path $PSScriptRoot 'Setup-Local-Database.ps1'
 if ($ReconfigureDatabase) { & $DatabaseScript -Reconfigure }

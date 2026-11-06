@@ -122,6 +122,9 @@ fi
 
 database_arguments=()
 if [[ "$reconfigure_database" == true ]]; then database_arguments+=(--reconfigure); fi
+if ! mvn -q -DskipTests compile; then
+    fail 'The game could not be compiled. Resolve the Maven message above, then rerun setup.'
+fi
 "$script_dir/setup-local-database.sh" "${database_arguments[@]}"
 
 "$script_dir/check-prerequisites.sh" --check-only
