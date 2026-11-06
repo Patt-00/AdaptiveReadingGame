@@ -1,58 +1,88 @@
 # Start the game
 
-Run the setup script for your device from the game folder. Setup installs or checks the required tools, configures a local database for saved accounts and progress, prepares the optional model helper, and starts the game. The first run asks for a local database URL, an application username, and a password that is not shown while you type. It asks for an administrator password only when the local database requires one.
+## Before the first launch
 
-The database stays on the device where it was created. Accounts and saved progress do not sync between devices.
+1. Open the `AdaptiveReadingGame` project folder. It should contain `pom.xml` and the `scripts` folder.
+2. Open a terminal in that folder.
+3. Run the command for your device below. Keep the terminal open while setup runs.
+4. Follow the prompts until the game opens. The setup checks the required tools, prepares a local database, and installs the optional model helper when supported.
+
+The database stays on the device where you set it up. Accounts and saved progress do not sync between devices. On the first run, enter the suggested local database URL or press Enter to accept it, then choose a database username and password. Passwords are hidden while you type. These database details are separate from the account you create inside the game.
 
 ## Windows
 
-Open PowerShell in the game folder and run:
+1. Open PowerShell in the project folder.
+2. Run:
+
+   ```powershell
+   .\scripts\setup-windows.ps1
+   ```
+
+3. Allow the administrator prompt so setup can install and start the local MySQL service.
+4. If asked to create a MySQL administrator password, enter it twice. Setup keeps MySQL restricted to this device and temporarily blocks inbound connections while it checks the listener.
+5. Enter the local database details when prompted. If MySQL was configured earlier, enter its existing administrator password when asked. Wait for the game to open.
+
+To start the game later, run:
 
 ```powershell
-.\scripts\setup-windows.ps1
+.\scripts\Run-Game.ps1
 ```
-
-If MySQL is missing, setup installs the vendor package without opening its configuration UI, then uses MySQL Configurator to initialize the server with TCP disabled before enabling loopback-only access. Windows Defender Firewall must be enabled; setup blocks inbound access to ports 3306 and 33060 temporarily and removes those blocks after confirming the listener is local. Enter the MySQL root password twice when prompted, then enter the local database details. If setup stops before it finishes, rerun it after fixing the displayed issue; the temporary inbound block stays in place until setup confirms local-only listening.
 
 ## Linux
 
-Open Terminal in the game folder and run:
+1. Open Terminal in the project folder.
+2. Run:
+
+   ```sh
+   ./scripts/setup-linux.sh
+   ```
+
+3. If asked, enter your computer's administrator password to install packages and start the database service.
+4. On Fedora, setup uses Fedora's MariaDB server when its MariaDB package is already installed. Otherwise, supported Fedora, Debian, and Ubuntu setups use MySQL. A new Fedora MySQL installation may create a temporary root password; setup prints the command to read it before asking for the database details.
+5. Enter the local database details and wait for the game to open.
+
+To start the game later, run:
 
 ```sh
-./scripts/setup-linux.sh
+./scripts/run-game.sh
 ```
-
-Automatic database setup supports Fedora and Debian or Ubuntu on supported processor types and may ask for administrator permission. On Fedora, if the Fedora MariaDB package is already installed, setup uses its matching server package instead of trying to install the conflicting MySQL server package. Setup binds the database service to loopback before starting it. On a new Fedora MySQL install, MySQL generates a one-time root password; setup prints the command to read it from `/var/log/mysqld.log` before entering it in the database prompt. Other Linux distributions need MySQL installed before running setup.
 
 ## macOS
 
-Open Terminal in the game folder and run:
+1. Install Homebrew if it is not already installed.
+2. Open Terminal in the project folder and run:
 
-```sh
-./scripts/setup-macos.sh
-```
+   ```sh
+   ./scripts/setup-macos.sh
+   ```
 
-Homebrew is required for automatic installation. Setup installs MySQL if needed and starts its local service. Homebrew configures MySQL to accept connections from this device only.
+3. Allow setup to install any missing tools and start local MySQL.
+4. Enter the local database details when prompted, then wait for the game to open.
+
+Run `./scripts/setup-macos.sh` again when you want to open the game later. It will use the saved database settings.
 
 ## Android tablet with Termux:X11
 
-Install [Termux:X11](https://github.com/termux/termux-x11/releases). In Termux, open the game folder and run:
+1. Install the Termux app and the separate [Termux:X11 app](https://github.com/termux/termux-x11/releases).
+2. In Termux, open the project folder.
+3. Run:
 
-```sh
-./scripts/setup-termux.sh
-```
+   ```sh
+   ./scripts/setup-termux.sh
+   ```
 
-This installs MariaDB inside the tablet's Debian environment. The database files remain there, and the launcher starts MariaDB for the game session. The model helper is optional; Java uses its built-in difficulty fallback if the model cannot run on the tablet.
+4. Let setup install the tablet's required packages and configure MariaDB inside its Debian environment. Open Termux:X11 if Android asks.
+5. Wait for the game window to appear.
 
-To open the game later, run:
+To open the game later, run this in the project folder:
 
 ```sh
 ./scripts/termux-run-x11.sh
 ```
 
-## Reconfigure the local database
+## Change saved database settings
 
-Run the matching setup script with its database reconfiguration option:
+Use this only if you want to replace the saved database connection. Do not add the reconfiguration option to the first setup command.
 
 Windows PowerShell:
 
@@ -60,10 +90,15 @@ Windows PowerShell:
 .\scripts\setup-windows.ps1 -ReconfigureDatabase
 ```
 
-Linux or macOS:
+Linux:
 
 ```sh
 ./scripts/setup-linux.sh --reconfigure-database
+```
+
+macOS:
+
+```sh
 ./scripts/setup-macos.sh --reconfigure-database
 ```
 
@@ -73,26 +108,14 @@ Termux:
 ./scripts/setup-termux.sh --reconfigure-database
 ```
 
-Unset any `ARG_DB_URL`, `ARG_DB_USER`, or `ARG_DB_PASSWORD` environment variables before reconfiguring. They take priority over the saved settings. Choose an unused application database username; setup will not reset an existing account for that local host.
+Before reconfiguring, remove any `ARG_DB_URL`, `ARG_DB_USER`, and `ARG_DB_PASSWORD` environment settings so they do not override the saved connection. Choose an unused database username; setup will not change an existing account.
 
-## Check setup without opening the game
+## If artwork or story music is missing
 
-Windows PowerShell:
-
-```powershell
-.\scripts\Check-Prerequisites.ps1 -CheckOnly
-```
-
-Linux or macOS:
+Some large artwork and model files use Git LFS. If setup warns that files are pointer files, install Git LFS, open a terminal in the project folder, and run:
 
 ```sh
-./scripts/check-prerequisites.sh --check-only
+git lfs pull
 ```
 
-The check reports whether saved database settings exist. It does not print the password. If no database settings are present, a direct game launch uses temporary storage; new accounts and save slots are lost when the game closes.
-
-## Game files
-
-The music WAV files are included directly in GitHub source archives. Larger artwork and model files use Git LFS; [GitHub source archives contain LFS pointer files by default](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/managing-repository-settings/managing-git-lfs-objects-in-archives-of-your-repository). To retrieve the complete artwork and bundled model, clone the repository with Git LFS installed, or run `git lfs pull` from a Git clone if setup reports pointer files.
-
-When the opening and loading screens finish, press Space or click **PRESS SPACE TO ENTER**.
+The opening and loading screens finish before the main menu. Press **Space** or click **PRESS SPACE TO ENTER** to continue.
