@@ -2,13 +2,13 @@
 
 The application stores accounts, story progress, answers, results, and three save slots in a database on the same device. Data does not sync between devices.
 
-Windows, macOS, and supported desktop Linux use MySQL Server 8.0 or newer. Termux uses MariaDB inside its Debian PRoot environment. The game setup scripts provision the database and application user, apply migrations V001 through V006, and save the application connection settings for later launches.
+Windows, macOS, and supported desktop Linux use MySQL Server 8.0 or newer. On Fedora, if the Fedora MariaDB package is already installed, setup uses its matching MariaDB server instead of replacing the conflicting package. Termux uses MariaDB inside its Debian PRoot environment. The game setup scripts provision the database and application user, apply migrations V001 through V006, and save the application connection settings for later launches.
 
 ## Set up a device
 
-Use the platform setup script described in [`scripts/SCRIPT.md`](../scripts/SCRIPT.md). On first setup, the database wizard asks for a local JDBC URL, application username, and hidden application password. The suggested URL is `jdbc:mysql://127.0.0.1:3306/adaptive_reading`. Change the port or database name only if needed; setup accepts loopback hosts only and rejects credentials embedded in the URL. Desktop setup also binds MySQL and MySQL X Protocol to loopback, and Termux starts MariaDB on `127.0.0.1` for the game session.
+Use the platform setup script described in [`scripts/SCRIPT.md`](../scripts/SCRIPT.md). On first setup, the database wizard asks for a local JDBC URL, application username, and hidden application password. The suggested URL is `jdbc:mysql://127.0.0.1:3306/adaptive_reading`. Change the port or database name only if needed; setup accepts loopback hosts only and rejects credentials embedded in the URL. Desktop setup binds the database service to loopback; MySQL X Protocol is also bound to loopback when MySQL is used. Termux starts MariaDB on `127.0.0.1` for the game session.
 
-When the local server requires a database administrator password, setup asks for it without showing the characters. The administrator password is used only to create the database and application user. Termux uses MariaDB's local socket for that step and does not ask for a root password.
+When the local server requires a database administrator password, setup asks for it without showing the characters. The administrator password is used only to create the database and application user. Fedora MariaDB and Termux use the local MariaDB socket for provisioning instead of asking for a database root password.
 
 The application user receives only the privileges needed by the schema and migrations on the game's database. It is separate from the MySQL or MariaDB administrator account. Setup creates a new account for the selected local host and refuses to reset an existing account at that host. Choose an unused application username, especially when reconfiguring an existing database.
 

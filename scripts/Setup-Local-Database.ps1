@@ -161,14 +161,24 @@ if (-not $CurrentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Adm
 $RootAdminPassword = $null
 $Services = @(Get-Service -Name 'MySQL*' -ErrorAction SilentlyContinue | Sort-Object Name -Descending)
 if ($Services.Count -eq 0) {
-    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        throw 'Install MySQL Server 8.4 with its MySQL Configurator, then rerun this script.'
+    $MySqlServerDirectory = Join-Path $env:ProgramFiles 'MySQL/MySQL Server 8.4'
+    $ExistingServerBinary = Join-Path $MySqlServerDirectory 'bin/mysqld.exe'
+    $ExistingServerIsInstalled = Test-Path -LiteralPath $ExistingServerBinary -PathType Leaf
+
+    if (-not $ExistingServerIsInstalled) {
+        if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+            throw 'Install MySQL Server 8.4 with its MySQL Configurator, then rerun this script.'
+        }
+        Write-Host 'Installing MySQL Server silently so it cannot start its configuration UI. Setup will initialize it with TCP disabled, then enable loopback-only access.'
+        & winget install --id Oracle.MySQL --exact --accept-source-agreements --accept-package-agreements --silent
+        if ($LASTEXITCODE -ne 0 -and -not (Test-Path -LiteralPath $ExistingServerBinary -PathType Leaf)) {
+            throw 'WinGet could not complete MySQL installation. Check the WinGet message above, then rerun setup.'
+        }
+    } else {
+        Write-Host 'An existing MySQL Server 8.4 installation was found. Reusing it without asking WinGet to upgrade it.'
     }
     Assert-MySqlDefaultPortsAvailable
     Add-MySqlSetupFirewallGuard -Ports @(3306, 33060) | Out-Null
-    Write-Host 'Installing MySQL Server silently so it cannot start its configuration UI. Setup will initialize it with TCP disabled, then enable loopback-only access.'
-    & winget install --id Oracle.MySQL --exact --accept-source-agreements --accept-package-agreements --silent
-    if ($LASTEXITCODE -ne 0) { throw 'WinGet could not complete MySQL installation.' }
     $RootAdminPassword = Invoke-NewMySqlConfigurator
     $Services = @(Get-Service -Name 'MySQL*' -ErrorAction SilentlyContinue | Sort-Object Name -Descending)
 }

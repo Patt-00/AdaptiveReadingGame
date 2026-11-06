@@ -9,6 +9,7 @@ temporary_directory=""
 service_start_guard_owned=false
 service_start_guard_path=/usr/sbin/policy-rc.d
 service_start_guard_marker='# AdaptiveReadingGame temporary service-start guard'
+database_server_flavor=mysql
 
 cleanup_temporary_directory() {
     if [[ "$service_start_guard_owned" == true && -f "$service_start_guard_path" ]] \
@@ -122,6 +123,27 @@ install_loopback_config() {
     return 0
 }
 
+install_mariadb_loopback_config() {
+    local destination="$1" directory temporary_file
+    directory="$(dirname -- "$destination")"
+    [[ -d "$directory" ]] \
+        || fail "The MariaDB option include directory is missing: $directory"
+
+    if [[ -e "$destination" ]]; then
+        if cmp -s <(printf '[mysqld]\nbind-address=127.0.0.1\n') "$destination"; then
+            return 1
+        fi
+        fail "Refusing to overwrite an existing MariaDB option file: $destination"
+    fi
+
+    if [[ -z "$temporary_directory" ]]; then temporary_directory="$(mktemp -d)"; fi
+    temporary_file="$temporary_directory/adaptive-reading-game-mariadb.cnf"
+    printf '[mysqld]\nbind-address=127.0.0.1\n' >"$temporary_file"
+    run_privileged install -o root -g root -m 0644 "$temporary_file" "$destination" \
+        || fail "Could not write the loopback-only MariaDB setting to $destination."
+    return 0
+}
+
 prevent_package_service_start() {
     if [[ -e "$service_start_guard_path" ]]; then
         if [[ -x "$service_start_guard_path" ]]; then
@@ -215,17 +237,41 @@ ensure_mysql_server() {
                 os_id=unknown
             fi
             if command -v dnf >/dev/null 2>&1; then
-                if ! command -v mysqld >/dev/null 2>&1; then
-                    run_privileged dnf install -y mysql-server
+                local server_version=""
+                if command -v mysqld >/dev/null 2>&1; then
+                    server_version="$(mysqld --version 2>&1 || true)"
+                    if grep -qi MariaDB <<<"$server_version"; then
+                        database_server_flavor=mariadb
+                    fi
+                elif command -v mariadbd >/dev/null 2>&1; then
+                    database_server_flavor=mariadb
+                elif command -v rpm >/dev/null 2>&1 && rpm -q mariadb >/dev/null 2>&1; then
+                    # Fedora's mariadb client package conflicts with mysql-server.
+                    # Keep it and install the matching server package instead.
+                    database_server_flavor=mariadb
                 fi
-                service_name=mysqld
-                if command -v mysqld >/dev/null 2>&1 && mysqld --version 2>&1 | grep -qi MariaDB; then
-                    fail 'The selected package is MariaDB. This setup requires MySQL on desktop Linux.'
-                fi
-                if install_loopback_config /etc/my.cnf.d/99-adaptive-reading-game.cnf; then
-                    loopback_changed=true
+
+                if [[ "$database_server_flavor" == mariadb ]]; then
+                    install_mariadb_loopback_config /etc/my.cnf.d/99-adaptive-reading-game-mariadb.cnf \
+                        && loopback_changed=true || loopback_changed=false
+                    if ! command -v mariadbd >/dev/null 2>&1 \
+                            && { ! command -v mysqld >/dev/null 2>&1 || grep -qi MariaDB <<<"$server_version"; }; then
+                        run_privileged dnf install -y mariadb-server
+                    fi
+                    service_name=mariadb
+                    export ARG_DB_ADMIN_MODE="${ARG_DB_ADMIN_MODE:-socket}"
+                    export ARG_DB_ADMIN_CLIENT="${ARG_DB_ADMIN_CLIENT:-mariadb}"
+                    export ARG_DB_ADMIN_USE_SUDO="${ARG_DB_ADMIN_USE_SUDO:-true}"
                 else
-                    loopback_changed=false
+                    if ! command -v mysqld >/dev/null 2>&1; then
+                        run_privileged dnf install -y mysql-server
+                    fi
+                    service_name=mysqld
+                    if install_loopback_config /etc/my.cnf.d/99-adaptive-reading-game.cnf; then
+                        loopback_changed=true
+                    else
+                        loopback_changed=false
+                    fi
                 fi
                 start_or_restart_linux_service "$service_name" "$loopback_changed"
             elif command -v apt-get >/dev/null 2>&1; then
@@ -257,7 +303,9 @@ ensure_mysql_server() {
 
 ensure_mysql_server
 if [[ "$(uname -s)" == Linux ]] && command -v dnf >/dev/null 2>&1; then
-    printf 'Info: On a first Fedora MySQL install, the one-time root password may be in /var/log/mysqld.log. Read it with: sudo grep "temporary password" /var/log/mysqld.log\n'
+    if [[ "$database_server_flavor" == mysql ]]; then
+        printf 'Info: On a first Fedora MySQL install, the one-time root password may be in /var/log/mysqld.log. Read it with: sudo grep "temporary password" /var/log/mysqld.log\n'
+    fi
 fi
 if [[ "$reconfigure" == true ]]; then
     mvn -q -Dexec.mainClass=com.adaptivereadinggame.repository.mysql.MySqlLocalDatabaseSetup \

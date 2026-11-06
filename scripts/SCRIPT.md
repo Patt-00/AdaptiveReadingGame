@@ -22,7 +22,7 @@ Open Terminal in the game folder and run:
 ./scripts/setup-linux.sh
 ```
 
-The automatic MySQL installation supports Fedora and Debian or Ubuntu on supported processor types. It may ask for administrator permission. Setup writes a loopback-only MySQL setting before starting the local service. On a new Fedora install, MySQL generates a one-time root password; setup prints the command to read it from `/var/log/mysqld.log` before entering it in the database prompt. Other Linux distributions need MySQL installed before running setup.
+Automatic database setup supports Fedora and Debian or Ubuntu on supported processor types and may ask for administrator permission. On Fedora, if the Fedora MariaDB package is already installed, setup uses its matching server package instead of trying to install the conflicting MySQL server package. Setup binds the database service to loopback before starting it. On a new Fedora MySQL install, MySQL generates a one-time root password; setup prints the command to read it from `/var/log/mysqld.log` before entering it in the database prompt. Other Linux distributions need MySQL installed before running setup.
 
 ## macOS
 

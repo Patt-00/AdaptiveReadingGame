@@ -20,7 +20,7 @@ Choose the setup steps for your device in the [script guide](scripts/SCRIPT.md).
 
 Use Save/Load from the main menu to save your current story in a slot. Save again after making more progress. If the game warns that your current progress is unsaved, return to the game, save from Save/Load, then quit.
 
-The setup script configures a database stored on the device. Accounts and progress do not sync between devices. Windows, macOS, and desktop Linux use MySQL; Termux stores its MariaDB files inside its Debian environment. The setup asks for a local database URL, an application username, and a hidden password. If the game is launched without setup, it uses temporary storage and accounts and save slots are lost when it closes.
+The setup script configures a database stored on the device. Accounts and progress do not sync between devices. Windows, macOS, and most desktop Linux setups use MySQL; Fedora can use its MariaDB server when Fedora's MariaDB package is already installed. Termux stores its MariaDB files inside its Debian environment. The setup asks for a local database URL, an application username, and a hidden password. If the game is launched without setup, it uses temporary storage and accounts and save slots are lost when it closes.
 
 ## If startup fails
 
