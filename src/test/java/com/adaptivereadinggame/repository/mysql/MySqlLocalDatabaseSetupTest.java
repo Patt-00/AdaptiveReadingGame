@@ -7,11 +7,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class MySqlLocalDatabaseSetupTest {
     @TempDir Path temporary;
@@ -73,6 +75,21 @@ class MySqlLocalDatabaseSetupTest {
                 () -> MySqlLocalDatabaseSetup.validateLocalConfiguration(remote));
 
         assertTrue(failure.getMessage().contains("only localhost"));
+    }
+
+    @Test void safeFailureReportIncludesMySqlErrorCodeWithoutLeakingTheCauseMessage() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        RuntimeException failure = new IllegalStateException("Could not configure the local database.",
+                new SQLException("Access denied; password=private-value", "28000", 1045));
+
+        MySqlLocalDatabaseSetup.printSafeFailure(new PrintStream(output), failure);
+
+        String report = output.toString(StandardCharsets.UTF_8);
+        assertTrue(report.contains("SQLState 28000"));
+        assertTrue(report.contains("error code 1045"));
+        assertTrue(report.contains("administrator credentials"));
+        assertFalse(report.contains("private-value"));
+        assertFalse(report.contains("Access denied;"));
     }
 
     @Test void checkOnlyRejectsAStoredRemoteDatabaseTarget() throws Exception {

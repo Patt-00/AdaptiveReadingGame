@@ -1,9 +1,13 @@
 package com.adaptivereadinggame.repository.mysql;
 
 import java.io.Console;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -22,8 +26,17 @@ public final class MySqlLocalDatabaseSetup {
     }
 
     public static void main(String[] args) {
-        int status = run(args, System.console(), System.out, System.err);
-        if (status != 0) System.exit(status);
+        ByteArrayOutputStream errorOutput = new ByteArrayOutputStream();
+        int status;
+        try (PrintStream error = new PrintStream(errorOutput, true, StandardCharsets.UTF_8)) {
+            status = run(args, System.console(), System.out, error);
+        }
+        if (status != 0) {
+            String detail = errorOutput.toString(StandardCharsets.UTF_8).trim();
+            throw new IllegalStateException(detail.isEmpty()
+                    ? "Local database setup failed with exit code " + status + "."
+                    : detail);
+        }
     }
 
     static int run(String[] args, Console console, PrintStream output, PrintStream error) {
@@ -88,8 +101,29 @@ public final class MySqlLocalDatabaseSetup {
             configure(console, output, configFile, environment);
             return 0;
         } catch (RuntimeException failure) {
-            error.println("Local database setup failed: " + failure.getMessage());
+            printSafeFailure(error, failure);
             return 1;
+        }
+    }
+
+    static void printSafeFailure(PrintStream error, RuntimeException failure) {
+        String message = failure.getMessage();
+        error.println("Local database setup failed: "
+                + (message == null || message.isBlank() ? failure.getClass().getSimpleName() : message));
+        for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sql) {
+                String sqlState = sql.getSQLState() == null ? "unknown" : sql.getSQLState();
+                error.println("Database server response: SQLState " + sqlState
+                        + ", error code " + sql.getErrorCode() + ".");
+                if ("28000".equals(sqlState) && sql.getErrorCode() == 1045) {
+                    error.println("MySQL did not accept the administrator credentials. Check the entered username and password.");
+                }
+                return;
+            }
+            if (cause instanceof IOException) {
+                error.println("A local setup file could not be read or written.");
+                return;
+            }
         }
     }
 
